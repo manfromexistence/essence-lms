@@ -178,6 +178,11 @@ class Student extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function courseEnrollments(): HasMany
+    {
+        return $this->hasMany(CourseEnrollment::class);
+    }
+
     /**
      * Get the invoices for the student.
      */

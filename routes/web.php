@@ -335,6 +335,9 @@ Route::middleware('auth')->group(function () {
         // Course Enrollment Payment Routes (Task 15)
         Route::get('/courses', [\App\Http\Controllers\StudentPortalController::class, 'courses'])->name('courses');
         Route::get('/courses/{course}/enroll', [\App\Http\Controllers\StudentPortalController::class, 'enroll'])->name('course.enroll');
+        Route::get('/courses/{course}/watch', [\App\Http\Controllers\StudentPortalController::class, 'watchCourse'])->name('course.watch');
+        Route::get('/courses/{course}/watch/{video}', [\App\Http\Controllers\StudentPortalController::class, 'watchCourse'])->name('course.video');
+        Route::post('/courses/{course}/watch/{video}/complete', [\App\Http\Controllers\StudentPortalController::class, 'completeVideo'])->name('course.video.complete');
         Route::get('/payment/form/{course}', [\App\Http\Controllers\PaymentController::class, 'showForm'])->name('payment.form');
         Route::post('/payment/submit', [\App\Http\Controllers\PaymentController::class, 'submit'])->name('payment.submit');
         Route::get('/payment/dashboard', [\App\Http\Controllers\PaymentController::class, 'dashboard'])->name('payment.dashboard');
@@ -348,4 +351,3 @@ Route::middleware(['auth', 'role:admin,super-admin'])->prefix('admin')->name('pa
     Route::post('/payment-review/{payment}/approve', [\App\Http\Controllers\PaymentController::class, 'approve'])->name('approve');
     Route::post('/payment-review/{payment}/reject', [\App\Http\Controllers\PaymentController::class, 'reject'])->name('reject');
 });
-

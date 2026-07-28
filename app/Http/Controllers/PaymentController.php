@@ -6,9 +6,14 @@ use App\Models\Course;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\Batch;
+use App\Models\CourseEnrollment;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -21,6 +26,12 @@ class PaymentController extends Controller
      */
     public function showForm(Course $course): View
     {
+        abort_unless(Auth::user()?->isStudent() && Auth::user()->student, 403);
+
+        if (CourseEnrollment::where('student_id', Auth::user()->student->id)->where('course_id', $course->id)->exists()) {
+            abort(409, 'You are already enrolled in this course.');
+        }
+
         // Load payment methods from config
         $paymentMethods = config('payment-methods.methods');
         
@@ -38,9 +49,12 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'payment_method' => 'required|in:bkash,nagad,rocket,bank_transfer',
-            'transaction_id' => 'required|string|max:255',
+            'transaction_id' => [
+                'required', 'string', 'max:255',
+                Rule::unique('payments')->where(fn ($query) => $query->where('payment_method', $request->payment_method)),
+            ],
+            'sender_number' => 'required_if:payment_method,bkash|nullable|regex:/^01[3-9][0-9]{8}$/',
             'screenshot' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
-            'amount' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -51,6 +65,17 @@ class PaymentController extends Controller
             return redirect()->back()->with('error', 'Student profile not found.');
         }
 
+        $course = Course::active()->findOrFail($validated['course_id']);
+
+        if (CourseEnrollment::where('student_id', $student->id)->where('course_id', $course->id)->exists()) {
+            return back()->with('error', 'You are already enrolled in this course.');
+        }
+
+        if (Payment::where('student_id', $student->id)->where('course_id', $course->id)
+            ->where('status', Payment::STATUS_PENDING)->exists()) {
+            return back()->with('error', 'You already have a payment awaiting review for this course.');
+        }
+
         // Store screenshot
         $screenshotPath = $request->file('screenshot')->store('payment-screenshots', 'public');
 
@@ -59,13 +84,29 @@ class PaymentController extends Controller
             'student_id' => $student->id,
             'course_id' => $validated['course_id'],
             'payment_method' => $validated['payment_method'],
-            'transaction_id' => $validated['transaction_id'],
+            'transaction_id' => strtoupper(trim($validated['transaction_id'])),
+            'sender_number' => $validated['sender_number'] ?? null,
+            'transaction_reference' => $validated['payment_method'] . ':' . strtoupper(trim($validated['transaction_id'])),
             'screenshot_path' => $screenshotPath,
-            'amount' => $validated['amount'],
+            'amount' => $course->price,
+            'payment_date' => today(),
             'status' => Payment::STATUS_PENDING,
             'submitted_at' => now(),
             'notes' => $validated['notes'] ?? null,
         ]);
+
+        User::whereHas('roles', fn ($query) => $query->whereIn('slug', ['admin', 'super-admin']))
+            ->pluck('id')->each(function ($userId) use ($payment, $course, $student) {
+                Notification::create([
+                    'user_id' => $userId,
+                    'user_type' => 'admin',
+                    'type' => 'course_payment_submitted',
+                    'title' => 'New course payment to review',
+                    'message' => "{$student->user->name} submitted payment for {$course->name} ({$payment->transaction_id}).",
+                    'data' => ['payment_id' => $payment->id, 'course_id' => $course->id],
+                    'action_url' => route('payment.review.detail', $payment),
+                ]);
+            });
 
         return redirect()->route('student.payment.dashboard')
             ->with('success', 'Payment submitted successfully. Your payment is under review.');
@@ -112,37 +153,43 @@ class PaymentController extends Controller
             return redirect()->back()->with('error', 'Payment has already been processed.');
         }
 
-        // Update payment status
-        $payment->update([
-            'status' => Payment::STATUS_APPROVED,
-            'reviewed_at' => now(),
-            'reviewed_by' => Auth::id(),
-            'admin_notes' => $request->input('admin_notes'),
-        ]);
+        $request->validate(['admin_notes' => 'nullable|string|max:1000']);
 
-        // Add student to course batch
-        // Find an active batch for the course or create one
-        $batch = Batch::where('course_id', $payment->course_id)
-            ->where('status', 'active')
-            ->first();
+        DB::transaction(function () use ($payment, $request) {
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+            abort_unless($payment->isPending(), 409, 'Payment has already been processed.');
 
-        if (!$batch) {
-            // Create a new batch if none exists
-            $batch = Batch::create([
-                'course_id' => $payment->course_id,
-                'name' => 'Batch ' . date('Y-m'),
-                'start_date' => now(),
-                'status' => 'active',
+            $batch = Batch::where('course_id', $payment->course_id)->active()
+                ->where(function ($query) {
+                    $query->whereNull('max_students')
+                        ->orWhereRaw('(SELECT COUNT(*) FROM students WHERE students.batch_id = batches.id) < batches.max_students');
+                })->first();
+
+            $payment->update([
+                'status' => Payment::STATUS_APPROVED,
+                'reviewed_at' => now(),
+                'reviewed_by' => Auth::id(),
+                'admin_notes' => $request->input('admin_notes'),
             ]);
-        }
 
-        // Enroll student in batch
-        $student = $payment->student;
-        if ($student && !$student->batch_id) {
-            $student->update(['batch_id' => $batch->id]);
-        }
+            CourseEnrollment::updateOrCreate(
+                ['student_id' => $payment->student_id, 'course_id' => $payment->course_id],
+                ['batch_id' => $batch?->id, 'payment_id' => $payment->id, 'enrolled_at' => now()]
+            );
+            if ($batch && !$payment->student->batch_id) {
+                $payment->student->update(['batch_id' => $batch->id]);
+            }
 
-        // TODO: Send notification to student (email or SMS)
+            Notification::create([
+                'user_id' => $payment->student->user_id,
+                'user_type' => 'student',
+                'type' => 'course_payment_approved',
+                'title' => 'Course payment approved',
+                'message' => "Your payment for {$payment->course->name} was verified. You now have course access.",
+                'data' => ['payment_id' => $payment->id, 'course_id' => $payment->course_id],
+                'action_url' => route('student.course.watch', $payment->course_id),
+            ]);
+        });
 
         return redirect()->route('payment.review.list')
             ->with('success', 'Payment approved and student enrolled successfully.');
@@ -173,7 +220,15 @@ class PaymentController extends Controller
             'admin_notes' => $request->input('admin_notes'),
         ]);
 
-        // TODO: Send notification to student (email or SMS)
+        Notification::create([
+            'user_id' => $payment->student->user_id,
+            'user_type' => 'student',
+            'type' => 'course_payment_rejected',
+            'title' => 'Course payment needs attention',
+            'message' => "Your payment for {$payment->course->name} was not approved: {$request->input('admin_notes')}",
+            'data' => ['payment_id' => $payment->id, 'course_id' => $payment->course_id],
+            'action_url' => route('student.payment.dashboard'),
+        ]);
 
         return redirect()->route('payment.review.list')
             ->with('success', 'Payment rejected successfully.');

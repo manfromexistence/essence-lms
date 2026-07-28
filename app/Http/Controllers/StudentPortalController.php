@@ -10,6 +10,9 @@ use App\Models\CqSubmission;
 use App\Models\Payment;
 use App\Models\CourseMaterial;
 use App\Models\Course;
+use App\Models\CourseEnrollment;
+use App\Models\CourseVideo;
+use App\Models\VideoView;
 use App\Services\StudentPortalService;
 use App\Services\ExamTakingService;
 use App\Services\MarkSheetService;
@@ -861,6 +864,54 @@ class StudentPortalController extends Controller
         }
     }
 
+    public function watchCourse(Course $course, ?CourseVideo $video = null)
+    {
+        $student = $this->getStudent();
+        abort_unless($student && CourseEnrollment::where('student_id', $student->id)
+            ->where('course_id', $course->id)->exists(), 403, 'Purchase approval is required.');
+
+        $videos = $course->videos()->get();
+        abort_if($videos->isEmpty(), 404, 'This course has no videos yet.');
+
+        if ($video) {
+            abort_unless($video->course_id === $course->id, 404);
+        } else {
+            $firstIncompleteId = $videos->first(fn ($item) => !VideoView::where('student_id', $student->id)
+                ->where('course_video_id', $item->id)->where('completed', true)->exists())?->id;
+            $video = $videos->firstWhere('id', $firstIncompleteId) ?? $videos->first();
+        }
+
+        $progress = VideoView::where('student_id', $student->id)
+            ->whereIn('course_video_id', $videos->pluck('id'))->get()->keyBy('course_video_id');
+        $currentIndex = $videos->search(fn ($item) => $item->id === $video->id);
+        $nextVideo = $videos->get($currentIndex + 1);
+
+        return view('student.course-player', compact('course', 'video', 'videos', 'progress', 'nextVideo'));
+    }
+
+    public function completeVideo(Course $course, CourseVideo $video, Request $request)
+    {
+        $student = $this->getStudent();
+        abort_unless($student && $video->course_id === $course->id
+            && CourseEnrollment::where('student_id', $student->id)->where('course_id', $course->id)->exists(), 403);
+
+        $data = $request->validate(['watched_seconds' => 'nullable|integer|min:0']);
+        VideoView::updateOrCreate(
+            ['student_id' => $student->id, 'course_video_id' => $video->id],
+            ['watched_seconds' => $data['watched_seconds'] ?? $video->duration ?? 0, 'completed' => true, 'last_watched_at' => now()]
+        );
+
+        $next = $course->videos()->where(function ($query) use ($video) {
+            $query->where('order', '>', $video->order)
+                ->orWhere(fn ($q) => $q->where('order', $video->order)->where('id', '>', $video->id));
+        })->orderBy('order')->orderBy('id')->first();
+
+        return response()->json([
+            'completed' => true,
+            'next_url' => $next ? route('student.course.video', [$course, $next]) : null,
+        ]);
+    }
+
     /**
      * Show CQ exam question paper.
      */
@@ -1136,7 +1187,7 @@ class StudentPortalController extends Controller
 
         // Get authenticated student's enrolled course IDs
         // Student is enrolled through batch, and batch belongs to a course
-        $enrolledCourseIds = [];
+        $enrolledCourseIds = CourseEnrollment::where('student_id', $student->id)->pluck('course_id')->all();
         if ($student->batch_id) {
             $batch = \App\Models\Batch::find($student->batch_id);
             if ($batch && $batch->course_id) {
@@ -1168,5 +1219,10 @@ class StudentPortalController extends Controller
             'enrolledCourseIds' => $enrolledCourseIds,
             'pendingPaymentCourseIds' => $pendingPaymentCourseIds,
         ]);
+    }
+
+    public function courses()
+    {
+        return $this->browse();
     }
 }

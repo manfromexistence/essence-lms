@@ -4,8 +4,9 @@ return [
     'methods' => [
         'bkash' => [
             'name' => 'bKash',
-            'number' => '01XXXXXXXXX',
-            'instructions' => 'Send money to the above bKash number using "Send Money" option. After successful payment, note down the Transaction ID and upload a screenshot of the transaction.',
+            'number' => env('BKASH_ADMIN_NUMBER', '01XXXXXXXXX'),
+            'account_name' => env('BKASH_ACCOUNT_NAME', 'LMS Admin'),
+            'instructions' => 'Open bKash, choose Send Money, enter the admin number shown here, enter the exact course fee, confirm with your PIN, then submit the sender number, bKash Transaction ID, and a clear receipt screenshot below. Access is activated only after admin verification.',
             'icon' => 'bkash-icon.png',
         ],
         'nagad' => [

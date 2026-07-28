@@ -98,6 +98,11 @@ class Course extends Model
         );
     }
 
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(CourseEnrollment::class);
+    }
+
     /**
      * Get the teachers for the course.
      */

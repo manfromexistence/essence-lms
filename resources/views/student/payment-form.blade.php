@@ -79,17 +79,24 @@
             <!-- Amount -->
             <div class="mb-6">
                 <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Amount Paid *</label>
-                <input type="number" id="amount" name="amount" step="0.01" min="0" value="{{ $course->price }}" 
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                <input type="text" value="৳{{ number_format($course->price, 2) }}"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" readonly>
                 @error('amount')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
+            <div class="mb-6">
+                <label for="sender_number" class="block text-sm font-medium text-gray-700 mb-2">Sender bKash Number *</label>
+                <input type="tel" id="sender_number" name="sender_number" value="{{ old('sender_number') }}"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="01XXXXXXXXX">
+                @error('sender_number')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
             <!-- Transaction ID -->
             <div class="mb-6">
                 <label for="transaction_id" class="block text-sm font-medium text-gray-700 mb-2">Transaction ID *</label>
-                <input type="text" id="transaction_id" name="transaction_id" 
+                <input type="text" id="transaction_id" name="transaction_id" value="{{ old('transaction_id') }}"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                     placeholder="Enter transaction ID from payment receipt" required>
                 @error('transaction_id')

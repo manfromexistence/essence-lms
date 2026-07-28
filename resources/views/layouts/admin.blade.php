@@ -595,6 +595,18 @@
                     <p class="text-xs lg:text-sm text-gray-500 mt-1 hidden sm:block">@yield('page-description', '')</p>
                 </div>
                 <div class="flex items-center space-x-2 lg:space-x-4">
+                    @php
+                        $unreadPaymentNotifications = auth()->check()
+                            ? \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->latest()->take(5)->get()
+                            : collect();
+                    @endphp
+                    @if($unreadPaymentNotifications->isNotEmpty())
+                        <a href="{{ $unreadPaymentNotifications->first()->action_url ?? route('student.payment.dashboard') }}"
+                           class="relative rounded-full p-2 text-gray-600 hover:bg-gray-100" title="{{ $unreadPaymentNotifications->first()->title }}">
+                            <i class="fa-solid fa-bell"></i>
+                            <span class="absolute right-0 top-0 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] text-white">{{ $unreadPaymentNotifications->count() }}</span>
+                        </a>
+                    @endif
                     <div class="text-right hidden sm:block">
                         <p class="text-xs lg:text-sm font-medium text-gray-900">{{ Auth::user()->name }}</p>
                         <p class="text-xs text-gray-500">
@@ -654,6 +666,7 @@
 
     {{-- Custom Confirmation Dialog --}}
     <x-ui.confirm-dialog />
+    @stack('scripts')
 </body>
 
 </html>

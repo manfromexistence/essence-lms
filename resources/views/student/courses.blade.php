@@ -145,10 +145,9 @@
                         
                         <!-- Action Button -->
                         @if(in_array($course->id, $enrolledCourseIds))
-                        <!-- Enrolled - Show badge only -->
-                        <span class="px-4 py-2 bg-green-100 text-green-800 text-sm font-semibold rounded-lg">
-                            ✓ Enrolled
-                        </span>
+                        <a href="{{ route('student.course.watch', $course) }}" class="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700">
+                            Continue learning
+                        </a>
                         @elseif(in_array($course->id, $pendingPaymentCourseIds))
                         <!-- Payment Pending - Show status -->
                         <span class="px-4 py-2 bg-yellow-100 text-yellow-800 text-sm font-semibold rounded-lg">

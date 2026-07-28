@@ -87,6 +87,12 @@
                         <p class="text-sm text-gray-600">Transaction ID</p>
                         <p class="font-semibold text-gray-800">{{ $payment->transaction_id }}</p>
                     </div>
+                    @if($payment->sender_number)
+                    <div>
+                        <p class="text-sm text-gray-600">Sender bKash Number</p>
+                        <p class="font-semibold text-gray-800">{{ $payment->sender_number }}</p>
+                    </div>
+                    @endif
                     <div>
                         <p class="text-sm text-gray-600">Amount Paid</p>
                         <p class="font-semibold text-gray-800 text-2xl text-green-600">৳{{ number_format($payment->amount, 2) }}</p>

@@ -21,6 +21,8 @@ class Payment extends Model
         'payment_method',
         'receipt_number',
         'transaction_id',
+        'sender_number',
+        'transaction_reference',
         'screenshot_path',
         'payment_date',
         'submitted_at',

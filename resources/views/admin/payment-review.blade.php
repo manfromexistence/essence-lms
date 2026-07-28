@@ -62,6 +62,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <p class="font-semibold text-gray-900">৳{{ number_format($payment->amount, 2) }}</p>
+                            <p class="text-xs text-gray-500">{{ $payment->transaction_id }}</p>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $payment->submitted_at->format('M d, Y') }}<br>
