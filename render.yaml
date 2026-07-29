@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: essence-lms
+    name: dhaka-it-institute
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
@@ -9,7 +9,7 @@ services:
       - key: APP_KEY
         generateValue: true
       - key: APP_URL
-        sync: false
+        value: https://dhaka-it-institute.onrender.com
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -17,70 +17,18 @@ services:
       - key: APP_NAME
         value: "Dhaka IT Institute"
       - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_URL
-        fromDatabase:
-          name: dhaka-it-institute-db
-          property: connectionString
+        value: sqlite
+      - key: DB_DATABASE
+        value: /var/www/html/database/database.sqlite
       - key: SESSION_DRIVER
-        value: database
+        value: file
       - key: QUEUE_CONNECTION
-        value: database
+        value: sync
       - key: CACHE_STORE
-        value: database
+        value: file
       - key: LOG_CHANNEL
-        value: stack
+        value: stderr
       - key: LOG_LEVEL
         value: warning
       - key: MAIL_MAILER
-        sync: false
-      - key: PRIVATE_FILESYSTEM_DISK
-        value: s3
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_DEFAULT_REGION
-        sync: false
-      - key: AWS_BUCKET
-        sync: false
-      - key: AWS_ENDPOINT
-        sync: false
-  - type: worker
-    name: dhaka-it-institute-queue
-    runtime: docker
-    plan: starter
-    dockerfilePath: ./Dockerfile
-    dockerCommand: php artisan queue:work --sleep=3 --tries=3 --timeout=120 --max-time=3600
-    envVars:
-      - key: APP_KEY
-        sync: false
-      - key: APP_ENV
-        value: production
-      - key: APP_DEBUG
-        value: "false"
-      - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_URL
-        fromDatabase:
-          name: dhaka-it-institute-db
-          property: connectionString
-      - key: QUEUE_CONNECTION
-        value: database
-      - key: CACHE_STORE
-        value: database
-      - key: PRIVATE_FILESYSTEM_DISK
-        value: s3
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_DEFAULT_REGION
-        sync: false
-      - key: AWS_BUCKET
-        sync: false
-      - key: AWS_ENDPOINT
-        sync: false
-databases:
-  - name: dhaka-it-institute-db
-    plan: free
+        value: log
