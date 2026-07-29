@@ -48,6 +48,10 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 - Payment evidence and premium learning assets are no longer public URLs.
 - Automated release suite: 11 tests and 25 assertions passing as of 2026-07-29.
 
+### Fixed
+
+- Fixed invalid compiled Blade PHP in the shared admin header that caused every authenticated Render dashboard page to return HTTP 500.
+
 ## Release policy
 
 Production releases must run the test suite, build frontend assets, review `TODO.md`,

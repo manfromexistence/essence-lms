@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,5 +31,14 @@ class ProductionSecurityTest extends TestCase
     {
         $this->get('/admin/payment-review/1/proof')->assertRedirect('/login');
         $this->get('/student/payment/1/proof')->assertRedirect('/login');
+    }
+
+    public function test_super_admin_dashboard_layout_renders(): void
+    {
+        $role = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin']);
+        $user = User::factory()->create(['is_active' => true]);
+        $user->roles()->attach($role);
+
+        $this->actingAs($user)->get('/dashboard')->assertSuccessful();
     }
 }
