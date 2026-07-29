@@ -25,6 +25,11 @@ class UpdateStudentRequest extends FormRequest
         return [
             // Basic Information
             'name_bn' => 'sometimes|required|string|max:255',
+            'name' => 'nullable|string|max:255',
+            'email' => [
+                'nullable', 'email:rfc', 'max:255',
+                Rule::unique('users', 'email')->ignore($this->route('student')?->user_id),
+            ],
             'phone' => 'sometimes|required|string|max:20',
             'dob' => 'nullable|date',
             'gender' => 'nullable|in:Male,Female,Other',
@@ -43,6 +48,12 @@ class UpdateStudentRequest extends FormRequest
                 'max:50',
                 Rule::unique('students', 'registration_no')->ignore($studentId),
             ],
+            'course_id' => 'nullable|exists:courses,id',
+            'profession' => 'nullable|string|max:255',
+            'marital_status' => 'nullable|in:single,married',
+            'admission_purpose' => 'nullable|string|max:1000',
+            'admission_mode' => 'nullable|in:online,offline',
+            'admission_status' => 'nullable|in:pending,approved,rejected',
 
             // Parent/Guardian Information
             'father_name' => 'nullable|string|max:255',

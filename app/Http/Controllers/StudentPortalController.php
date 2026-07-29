@@ -1182,6 +1182,7 @@ class StudentPortalController extends Controller
         // Fetch all active courses
         $courses = \App\Models\Course::active()
             ->with(['batches'])
+            ->where('delivery_mode', request()->session()->get('course_mode', 'online'))
             ->orderBy('name')
             ->get();
 

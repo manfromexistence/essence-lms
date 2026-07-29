@@ -76,6 +76,11 @@ class HomeController extends Controller
         $query = \App\Models\Course::active()
             ->with(['batches.students', 'videos'])
             ->withCount('videos');
+
+        if (request()->filled('mode')) {
+            request()->validate(['mode' => 'in:online,offline']);
+            $query->where('delivery_mode', request('mode'));
+        }
         
         // Apply search filter
         if (request()->filled('search')) {

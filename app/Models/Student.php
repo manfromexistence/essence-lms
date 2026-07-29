@@ -73,7 +73,13 @@ class Student extends Model
         'status',
         'phone',
         'profile_image',
-        'featured'
+        'featured',
+        'profession',
+        'marital_status',
+        'admission_purpose',
+        'admission_mode',
+        'admission_status',
+        'applied_at',
     ];
 
     /**
@@ -90,6 +96,7 @@ class Student extends Model
             'due_amount' => 'decimal:2',
             'balance' => 'decimal:2',
             'featured' => 'boolean',
+            'applied_at' => 'datetime',
         ];
     }
 

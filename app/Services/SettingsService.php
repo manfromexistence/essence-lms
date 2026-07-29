@@ -80,12 +80,12 @@ class SettingsService
 
         // Institution Info
         'institution_name' => [
-            'value' => 'Alpha LMS',
+            'value' => 'Dhaka IT Institute',
             'group' => 'institution',
             'type' => 'string',
         ],
         'institution_logo' => [
-            'value' => '',
+            'value' => 'images/brand/dhaka-it-institute-logo.png',
             'group' => 'institution',
             'type' => 'string',
         ],
@@ -95,7 +95,7 @@ class SettingsService
             'type' => 'string',
         ],
         'institution_address' => [
-            'value' => '',
+            'value' => 'House #62, Road #4, Block #B, Section #12, Pallabi, Mirpur, Dhaka',
             'group' => 'institution',
             'type' => 'text',
         ],
@@ -141,7 +141,7 @@ class SettingsService
 
         // Theme Settings
         'theme_primary_color' => [
-            'value' => '#3d59f9',
+            'value' => '#168536',
             'group' => 'theme',
             'type' => 'string',
         ],
@@ -151,7 +151,7 @@ class SettingsService
             'type' => 'string',
         ],
         'theme_secondary_color' => [
-            'value' => '#8b5cf6',
+            'value' => '#171717',
             'group' => 'theme',
             'type' => 'string',
         ],
@@ -398,6 +398,10 @@ class SettingsService
         }
         
         // If it's a storage path, convert to asset URL
+        if (str_starts_with($logo, 'images/')) {
+            return asset($logo);
+        }
+
         return asset('storage/' . $logo);
     }
 

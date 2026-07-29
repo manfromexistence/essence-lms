@@ -83,6 +83,14 @@
                         <option value="intermediate">Intermediate</option>
                         <option value="advanced">Advanced</option>
                     </x-ui.select>
+                    <x-ui.select name="delivery_mode" label="Delivery Mode" required persist>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                    </x-ui.select>
+                    <div class="md:col-span-3 grid gap-4 md:grid-cols-2">
+                        <div><label class="mb-1 block text-sm font-semibold">Online student details</label><textarea name="online_details" rows="4" class="w-full rounded-lg border-gray-300" placeholder="Live link policy, platform, support, recordings...">{{ old('online_details') }}</textarea></div>
+                        <div><label class="mb-1 block text-sm font-semibold">Offline student details</label><textarea name="offline_details" rows="4" class="w-full rounded-lg border-gray-300" placeholder="Campus, room, class schedule, materials...">{{ old('offline_details') }}</textarea></div>
+                    </div>
                 </div>
             </div>
 

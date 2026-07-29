@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\TestUploadController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AdmissionController;
 
 // Test Upload Routes (for debugging)
 Route::get('/test-upload', [TestUploadController::class, 'index'])->name('test-upload.index');
@@ -33,6 +34,8 @@ Route::get('/students', [HomeController::class, 'students'])->name('students');
 Route::get('/results', [HomeController::class, 'results'])->name('results');
 
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
+Route::get('/admission', [AdmissionController::class, 'create'])->name('admission.create');
+Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');
 
 Route::get('/announcements/{announcement}', [HomeController::class, 'showAnnouncement'])->name('announcement.show');
 
@@ -49,13 +52,18 @@ Route::get('/unauthorized', function () {
 
 // Dashboard Routes (Protected)
 Route::middleware('auth')->group(function () {
+    Route::post('/dashboard/course-mode', function (\Illuminate\Http\Request $request) {
+        $validated = $request->validate(['mode' => 'required|in:online,offline']);
+        $request->session()->put('course_mode', $validated['mode']);
+        return back();
+    })->name('dashboard.course-mode');
     // Main Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::match(['get', 'post'], '/dashboard/config', [DashboardController::class, 'config'])->name('dashboard.config');
     Route::get('/dashboard/chart-data/{type}', [DashboardController::class, 'chartData'])->name('dashboard.chart-data');
 
     // Admin Panel Routes
-    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::middleware('role:admin,super-admin')->prefix('dashboard')->name('dashboard.')->group(function () {
         // User Management
         Route::resource('users', UserController::class);
 
@@ -281,6 +289,9 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{page}', [\App\Http\Controllers\Admin\PageController::class, 'destroy'])->name('destroy');
         });
         
+    });
+
+    Route::middleware('role:parent')->prefix('dashboard')->name('dashboard.')->group(function () {
         Route::get('children', [\App\Http\Controllers\ParentPortalController::class, 'index'])->name('children');
         Route::get('children/progress', [\App\Http\Controllers\ParentPortalController::class, 'progress'])->name('children.progress');
         Route::get('children/attendance', [\App\Http\Controllers\ParentPortalController::class, 'attendance'])->name('children.attendance');

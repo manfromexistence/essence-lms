@@ -11,7 +11,7 @@
                 @php
                     $settingsService = app(\App\Services\SettingsService::class);
                     $logoUrl = $settingsService->getLogo();
-                    $institutionName = $settingsService->get('institution_name', 'Alpha LMS');
+                    $institutionName = $settingsService->get('institution_name', 'Dhaka IT Institute');
                 @endphp
                 <a href="{{ url('/') }}">
                     <img src="{{ $logoUrl }}" alt="{{ $institutionName }}"
@@ -41,6 +41,7 @@
                 <a href="{{ route('contact') }}"
                     class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('contact') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">যোগাযোগ</a>
+                <a href="{{ route('admission.create') }}" class="ml-2 rounded-md bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">Admission</a>
             </nav>
 
             <!-- Desktop Auth Button -->

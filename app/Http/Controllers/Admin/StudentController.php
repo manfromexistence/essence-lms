@@ -14,6 +14,7 @@ use App\Services\StudentService;
 use App\Services\StudentIdGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -70,18 +71,6 @@ class StudentController extends Controller
         // Generate secure random password
         $password = \Illuminate\Support\Str::random(12);
         
-        $user = User::create([
-            'name' => $validated['name_bn'] ?? $request->input('name', 'Student'),
-            'email' => $request->input('email', 'student_' . time() . '@lms.local'),
-            'password' => Hash::make($password),
-        ]);
-
-        // Assign student role
-        $studentRole = Role::where('slug', 'student')->first();
-        if ($studentRole) {
-            $user->roles()->attach($studentRole->id);
-        }
-
         // Handle profile image - file upload takes priority over URL
         $imagePath = $this->handleImageInput($request, 'profile_image', 'students/profiles');
         if ($imagePath) {
@@ -96,11 +85,22 @@ class StudentController extends Controller
             }
         }
 
-        // Add user_id to student data
-        $validated['user_id'] = $user->id;
+        DB::transaction(function () use ($validated, $request, $password) {
+            $user = User::create([
+                'name' => $request->input('name') ?: $validated['name_bn'],
+                'email' => $validated['email'],
+                'password' => Hash::make($password),
+            ]);
 
-        // Create student using service
-        $student = $this->studentService->create($validated);
+            if ($studentRole = Role::where('slug', 'student')->first()) {
+                $user->roles()->attach($studentRole->id);
+            }
+
+            $validated['user_id'] = $user->id;
+            $validated['applied_at'] = now();
+            $validated['admission_status'] = !empty($validated['batch_id']) ? 'approved' : 'pending';
+            $this->studentService->create($validated);
+        });
 
         // Store password temporarily in session for display (will be cleared after showing)
         session()->flash('generated_password', $password);

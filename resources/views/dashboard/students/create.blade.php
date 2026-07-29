@@ -43,12 +43,18 @@
 
                 <x-ui.text-input name="email" label="Email Address" type="email" placeholder="john@example.com" required persist />
                 <x-ui.text-input name="phone" label="Mobile No." type="tel" placeholder="017xxxxxxxx" max="20" persist />
+                <x-ui.text-input name="profession" label="Profession" max="255" persist />
                 <x-ui.date-picker name="dob" label="Date of Birth" placeholder="Select Birth Date" persist />
 
                 <x-ui.select name="gender" label="Gender" persist>
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
+                </x-ui.select>
+                <x-ui.select name="marital_status" label="Marital Status" persist>
+                    <option value="">Select Status</option>
+                    <option value="single">Single</option>
+                    <option value="married">Married</option>
                 </x-ui.select>
 
                 <x-ui.select name="blood_group" label="Blood Group" persist>
@@ -71,6 +77,7 @@
                     <option value="Christianity">Christianity</option>
                     <option value="Other">Other</option>
                 </x-ui.select>
+                <x-ui.text-input name="admission_purpose" label="Purpose" max="1000" persist />
 
                 <div class="md:col-span-3">
                     <x-ui.image-input name="profile_image" label="Profile Photo"
@@ -221,6 +228,10 @@
                 <h3 class="text-lg font-semibold text-gray-900">Academic Information</h3>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-ui.select name="admission_mode" label="Class Mode" required persist>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                </x-ui.select>
                 <!-- Class -->
                 <x-ui.select name="class" label="Select Class" required persist>
                     <option value="">Select Class</option>

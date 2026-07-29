@@ -22,7 +22,9 @@ class StoreStudentRequest extends FormRequest
     {
         return [
             // Basic Information
-            'name_bn' => 'required|string|max:255',
+            'name_bn' => 'nullable|required_without:name|string|max:255',
+            'name' => 'nullable|required_without:name_bn|string|max:255',
+            'email' => 'required|email:rfc|max:255|unique:users,email',
             'phone' => 'required|string|max:20',
             'dob' => 'nullable|date',
             'gender' => 'nullable|in:Male,Female,Other',
@@ -36,6 +38,11 @@ class StoreStudentRequest extends FormRequest
             'class' => 'nullable|string|max:50',
             'batch_id' => 'nullable|exists:batches,id',
             'registration_no' => 'nullable|string|max:50|unique:students,registration_no',
+            'course_id' => 'nullable|exists:courses,id',
+            'profession' => 'nullable|string|max:255',
+            'marital_status' => 'nullable|in:single,married',
+            'admission_purpose' => 'nullable|string|max:1000',
+            'admission_mode' => 'required|in:online,offline',
 
             // Parent/Guardian Information
             'father_name' => 'nullable|string|max:255',

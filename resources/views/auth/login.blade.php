@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Alpha LMS</title>
+    <title>Login - Dhaka IT Institute</title>
     @php
         $settingsService = app(\App\Services\SettingsService::class);
         $faviconUrl = $settingsService->getFavicon();
@@ -78,7 +78,7 @@
             @php
                 $settingsService = app(\App\Services\SettingsService::class);
                 $logoUrl = $settingsService->getLogo();
-                $institutionName = $settingsService->get('institution_name', 'Alpha LMS');
+                $institutionName = $settingsService->get('institution_name', 'Dhaka IT Institute');
             @endphp
             <div class="inline-flex items-center justify-center mb-4">
                 <img src="{{ $logoUrl }}" alt="{{ $institutionName }} Logo" class="h-16 w-auto">
@@ -98,6 +98,15 @@
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
+                </div>
+            @endif
+            @if(session('success'))
+                <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                    <p>{{ session('success') }}</p>
+                    @if(session('generated_password'))
+                        <p class="mt-2 font-semibold">Temporary password: <code class="rounded bg-white px-2 py-1">{{ session('generated_password') }}</code></p>
+                        <p class="mt-1 text-xs">Save it now. It is displayed only once.</p>
+                    @endif
                 </div>
             @endif
 

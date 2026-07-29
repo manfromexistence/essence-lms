@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Dashboard') - Alpha LMS</title>
+    <title>@yield('title', 'Dashboard') - Dhaka IT Institute</title>
 
     @php
         $settingsService = app(\App\Services\SettingsService::class);
@@ -595,6 +595,16 @@
                     <p class="text-xs lg:text-sm text-gray-500 mt-1 hidden sm:block">@yield('page-description', '')</p>
                 </div>
                 <div class="flex items-center space-x-2 lg:space-x-4">
+                    @php($courseMode = session('course_mode', 'online'))
+                    <form method="POST" action="{{ route('dashboard.course-mode') }}" class="flex rounded-full bg-gray-100 p-1" aria-label="Course delivery mode">
+                        @csrf
+                        <button name="mode" value="online" class="rounded-full px-3 py-1.5 text-xs font-semibold {{ $courseMode === 'online' ? 'bg-green-700 text-white shadow' : 'text-gray-600' }}">
+                            <i class="fa-solid fa-wifi mr-1"></i> Online
+                        </button>
+                        <button name="mode" value="offline" class="rounded-full px-3 py-1.5 text-xs font-semibold {{ $courseMode === 'offline' ? 'bg-black text-white shadow' : 'text-gray-600' }}">
+                            <i class="fa-solid fa-building mr-1"></i> Offline
+                        </button>
+                    </form>
                     @php
                         $unreadPaymentNotifications = auth()->check()
                             ? \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->latest()->take(5)->get()

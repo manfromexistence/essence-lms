@@ -12,6 +12,8 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         $query = Course::query();
+        $mode = $request->session()->get('course_mode', 'online');
+        $query->where('delivery_mode', $mode);
 
         $query->when($request->filled('search'), function ($q) use ($request) {
             $search = $request->search;
@@ -50,6 +52,9 @@ class CourseController extends Controller
             'duration' => 'nullable|integer|min:1',
             'duration_unit' => 'nullable|in:hours,days,weeks,months',
             'status' => 'required|in:active,inactive,draft',
+            'delivery_mode' => 'required|in:online,offline',
+            'online_details' => 'nullable|string|max:5000',
+            'offline_details' => 'nullable|string|max:5000',
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20480',
             'image_url' => 'nullable|url|max:500',
             'start_date' => 'nullable|date',
@@ -97,6 +102,9 @@ class CourseController extends Controller
             'duration' => 'nullable|integer|min:1',
             'duration_unit' => 'nullable|in:hours,days,weeks,months',
             'status' => 'required|in:active,inactive,draft',
+            'delivery_mode' => 'required|in:online,offline',
+            'online_details' => 'nullable|string|max:5000',
+            'offline_details' => 'nullable|string|max:5000',
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20480',
             'image_url' => 'nullable|url|max:500',
             'start_date' => 'nullable|date',
