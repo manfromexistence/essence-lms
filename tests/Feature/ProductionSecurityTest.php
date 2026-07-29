@@ -15,7 +15,17 @@ class ProductionSecurityTest extends TestCase
     {
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('images/brand/dhaka-it-institute-favicon.png?v=20260729', false);
+            ->assertSee('images/brand/dhaka-it-institute-favicon.png?v=20260729', false)
+            ->assertSee('data-hero-slider', false)
+            ->assertSee('images.unsplash.com/photo-', false);
+    }
+
+    public function test_courses_page_uses_professional_image_fallbacks(): void
+    {
+        $this->get('/courses')
+            ->assertSuccessful()
+            ->assertSee('images.unsplash.com/photo-', false)
+            ->assertDontSee('via.placeholder.com', false);
     }
 
     public function test_dhaka_it_favicon_assets_are_present(): void

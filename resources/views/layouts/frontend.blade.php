@@ -54,6 +54,33 @@
 
         body {
             font-family: 'Noto Sans Bengali', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translate3d(0, 24px, 0) scale(.985);
+            transition:
+                opacity .6s ease-out,
+                transform .8s cubic-bezier(.16, 1, .3, 1);
+            transition-delay: var(--reveal-delay, 0ms);
+            will-change: opacity, transform;
+        }
+
+        .reveal-on-scroll.is-visible {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .reveal-on-scroll,
+            .reveal-on-scroll.is-visible {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
+            .ticker { animation: none; }
         }
 
         /* HERO / branding utilities (consistent, accessible color combinations) */
@@ -166,6 +193,37 @@
     </main>
 
     <x-footer />
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const revealTargets = document.querySelectorAll(
+                'main > section:not(:first-child), main > div > section, main section .course-card'
+            );
+
+            revealTargets.forEach((element, index) => {
+                element.classList.add('reveal-on-scroll');
+                element.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 55}ms`);
+            });
+
+            if (reduceMotion || !('IntersectionObserver' in window)) {
+                revealTargets.forEach((element) => element.classList.add('is-visible'));
+                return;
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                });
+            }, {
+                rootMargin: '0px 0px -8% 0px',
+                threshold: 0.08,
+            });
+
+            revealTargets.forEach((element) => observer.observe(element));
+        });
+    </script>
     @stack('scripts')
 </body>
 

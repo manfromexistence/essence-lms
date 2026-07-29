@@ -12,6 +12,10 @@ class Course extends Model
 {
     use HasFactory;
 
+    protected $appends = [
+        'image_url',
+    ];
+
     protected $fillable = [
         'name',
         'code',
@@ -45,6 +49,41 @@ class Course extends Model
         'objectives' => 'array',
         'syllabus' => 'array',
     ];
+
+    /**
+     * Return a display-ready course image, with a professional IT fallback.
+     */
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image) {
+            if (filter_var($this->image, FILTER_VALIDATE_URL)) {
+                return $this->image;
+            }
+
+            return asset('storage/' . ltrim($this->image, '/'));
+        }
+
+        $searchableText = strtolower(implode(' ', array_filter([
+            $this->name,
+            $this->category,
+            $this->code,
+        ])));
+
+        $fallbacks = [
+            'office' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82',
+            'marketing' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=82',
+            'design' => 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=82',
+            'development' => 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=82',
+        ];
+
+        foreach ($fallbacks as $keyword => $url) {
+            if (str_contains($searchableText, $keyword)) {
+                return $url;
+            }
+        }
+
+        return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
+    }
 
     /**
      * Get the batches for the course.

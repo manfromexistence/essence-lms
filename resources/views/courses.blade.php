@@ -17,7 +17,7 @@
             <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-6">{{ $page ? $page->getContent('page_title', 'Explore Our Courses') : 'Explore Our Courses' }}</h1>
             <p class="text-xl text-emerald-50 max-w-2xl mx-auto">{{ $page ? $page->getContent('page_subtitle', 'Enhance your skills with our expert-led programs.') : 'Enhance your skills with our expert-led programs.' }}</p>
         </div>
-    </div>
+    </section>
 
     <section class="py-12 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4">
@@ -59,19 +59,10 @@
                         $price = $course->price > 0 ? '৳' . number_format($course->price, 0) : 'ফ্রি';
                     @endphp
                     <div class="course-card bg-white rounded-xl shadow-md overflow-hidden transition-all cursor-pointer" onclick="openCourseModal({{ $course->id }})">
-                        @if($course->image)
-                            @if(str_starts_with($course->image, 'http'))
-                                <img src="{{ $course->image }}" alt="{{ $course->name }}" class="w-full h-48 object-cover">
-                            @else
-                                <img src="{{ asset('storage/' . $course->image) }}" alt="{{ $course->name }}" class="w-full h-48 object-cover">
-                            @endif
-                        @else
-                            <div class="h-48 bg-gradient-to-br from-{{ $color }}-400 to-{{ $color }}-600 flex items-center justify-center p-6 text-white">
-                                <svg class="w-16 h-16 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                </svg>
-                            </div>
-                        @endif
+                        <img src="{{ $course->image_url }}" alt="{{ $course->name }}"
+                            loading="lazy" decoding="async"
+                            onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';"
+                            class="w-full h-48 object-cover">
                         <div class="p-5">
                             <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{{ $course->name }}</h3>
                             <p class="text-sm text-gray-500 mb-2 uppercase">{{ $category }}</p>
@@ -176,11 +167,8 @@
                 enrollButton = `<p class="text-center text-gray-500 py-3">শুধুমাত্র শিক্ষার্থীরা কোর্সে ভর্তি হতে পারবেন</p>`;
             }
 
-            const imageHtml = course.image 
-                ? (course.image.startsWith('http') 
-                    ? `<img src="${course.image}" alt="${course.name}" class="w-full h-64 object-cover rounded-lg mb-6">`
-                    : `<img src="/storage/${course.image}" alt="${course.name}" class="w-full h-64 object-cover rounded-lg mb-6">`)
-                : '';
+            const imageUrl = course.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
+            const imageHtml = `<img src="${imageUrl}" alt="${course.name}" class="w-full h-64 object-cover rounded-lg mb-6">`;
 
             const content = `
                 ${imageHtml}

@@ -41,7 +41,10 @@
                 <a href="{{ route('contact') }}"
                     class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('contact') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">যোগাযোগ</a>
-                <a href="{{ route('admission.create') }}" class="ml-2 rounded-md bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">Admission</a>
+                <a href="{{ route('admission.create') }}"
+                    class="ml-2 inline-flex min-h-10 items-center justify-center rounded-md bg-black px-4 py-2 text-center text-sm font-semibold leading-none text-white transition hover:bg-green-800">
+                    Admission
+                </a>
             </nav>
 
             <!-- Desktop Auth Button -->
@@ -96,6 +99,10 @@
                 <a href="{{ route('contact') }}"
                     class="px-4 py-3 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('contact') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">যোগাযোগ</a>
+                <a href="{{ route('admission.create') }}"
+                    class="inline-flex min-h-11 items-center justify-center rounded-md bg-black px-4 py-3 text-center text-md font-semibold leading-none text-white transition hover:bg-green-800">
+                    Admission
+                </a>
                 
                 <!-- Mobile Auth Button -->
                 @auth

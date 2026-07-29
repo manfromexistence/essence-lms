@@ -6,11 +6,27 @@
     <style>
         .slide {
             display: none;
-            animation: fadeIn 0.5s;
+            animation: fadeIn 0.55s ease-out;
+            transition: transform .28s cubic-bezier(.22, 1, .36, 1);
+            will-change: transform, opacity;
         }
 
         .slide.active {
             display: block;
+        }
+
+        [data-hero-slider] {
+            cursor: grab;
+            touch-action: pan-y pinch-zoom;
+            user-select: none;
+        }
+
+        [data-hero-slider].is-dragging {
+            cursor: grabbing;
+        }
+
+        [data-hero-slider].is-dragging .slide.active {
+            transition: none;
         }
 
         @keyframes fadeIn {
@@ -28,7 +44,8 @@
 @section('content')
     <!-- Hero Slider -->
     <section class="bg-white py-6">
-        <div class="hero-inner relative h-[500px] lg:h-[700px] w-full max-w-[95%] 2xl:max-w-[90rem] mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl isolate transform translate-z-0">
+        <div id="heroCarousel" data-hero-slider tabindex="0" aria-label="Featured programs carousel"
+            class="hero-inner relative h-[500px] lg:h-[700px] w-full max-w-[95%] 2xl:max-w-[90rem] mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl isolate transform translate-z-0">
             <!-- Slide 1 -->
             <div class="slide active absolute inset-0 w-full h-full">
                 <img src="{{ $page ? $page->getContent('slide1_image', 'https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=1172&auto=format&fit=crop') : 'https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=1172&auto=format&fit=crop' }}" alt="Students"
@@ -153,22 +170,10 @@
                         <x-ui.carousel-item class="basis-full md:basis-1/2 lg:basis-1/3 select-none">
                             <div onclick="openCourseModal(this)" data-course="{{ htmlspecialchars(json_encode($course), ENT_QUOTES, 'UTF-8') }}" class="cursor-pointer bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 mx-2 h-full">
                                 <div class="relative h-48 bg-linear-to-br {{ $gradient }}">
-                                    @if($course->image)
-                                        @if(str_starts_with($course->image, 'http'))
-                                            <img src="{{ $course->image }}" alt="{{ $course->name }}" class="w-full h-full object-cover pointer-events-none">
-                                        @else
-                                            <img src="{{ asset('storage/' . $course->image) }}" alt="{{ $course->name }}" class="w-full h-full object-cover pointer-events-none">
-                                        @endif
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center">
-                                            <div class="text-center">
-                                                <svg class="w-16 h-16 mx-auto text-white opacity-75 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                                </svg>
-                                                <p class="text-white text-sm font-semibold">{{ $course->name }}</p>
-                                            </div>
-                                        </div>
-                                    @endif
+                                    <img src="{{ $course->image_url }}" alt="{{ $course->name }}"
+                                        loading="lazy" decoding="async"
+                                        onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';"
+                                        class="w-full h-full object-cover pointer-events-none">
                                     <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
                                         <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
                                             <svg class="w-8 h-8 text-{{ $color }}-600 ml-1" fill="currentColor" viewBox="0 0 20 20">
@@ -634,7 +639,110 @@
         function prevSlide() { currentSlide = (currentSlide - 1 + slides.length) % slides.length; showSlide(currentSlide); }
         function goToSlide(index) { currentSlide = index; showSlide(currentSlide); }
         
-        let slideInterval = setInterval(nextSlide, 5000);
+        const heroCarousel = document.getElementById('heroCarousel');
+        let slideInterval;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragOffsetX = 0;
+        let dragging = false;
+        let horizontalDrag = false;
+
+        function startAutoplay() {
+            clearInterval(slideInterval);
+            if (!document.hidden && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                slideInterval = setInterval(nextSlide, 5000);
+            }
+        }
+
+        function stopAutoplay() {
+            clearInterval(slideInterval);
+        }
+
+        function resetActiveSlidePosition() {
+            const activeSlide = slides[currentSlide];
+            if (!activeSlide) return;
+            activeSlide.style.transform = '';
+            activeSlide.style.opacity = '';
+        }
+
+        if (heroCarousel) {
+            heroCarousel.addEventListener('pointerdown', (event) => {
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+                dragStartX = event.clientX;
+                dragStartY = event.clientY;
+                dragOffsetX = 0;
+                dragging = true;
+                horizontalDrag = false;
+                stopAutoplay();
+            });
+
+            heroCarousel.addEventListener('pointermove', (event) => {
+                if (!dragging) return;
+                const deltaX = event.clientX - dragStartX;
+                const deltaY = event.clientY - dragStartY;
+
+                if (!horizontalDrag && Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) return;
+                if (!horizontalDrag && Math.abs(deltaY) > Math.abs(deltaX)) {
+                    dragging = false;
+                    startAutoplay();
+                    return;
+                }
+
+                horizontalDrag = true;
+                dragOffsetX = deltaX;
+                heroCarousel.classList.add('is-dragging');
+                if (heroCarousel.setPointerCapture) heroCarousel.setPointerCapture(event.pointerId);
+
+                const activeSlide = slides[currentSlide];
+                if (activeSlide) {
+                    activeSlide.style.transform = `translate3d(${deltaX * 0.22}px, 0, 0)`;
+                    activeSlide.style.opacity = `${Math.max(.72, 1 - Math.abs(deltaX) / 700)}`;
+                }
+                if (event.cancelable) event.preventDefault();
+            });
+
+            const finishDrag = (event) => {
+                if (!dragging && !horizontalDrag) return;
+                const shouldNavigate = horizontalDrag && Math.abs(dragOffsetX) >= Math.min(72, heroCarousel.clientWidth * .12);
+                resetActiveSlidePosition();
+                heroCarousel.classList.remove('is-dragging');
+
+                if (shouldNavigate) {
+                    dragOffsetX < 0 ? nextSlide() : prevSlide();
+                }
+
+                dragging = false;
+                horizontalDrag = false;
+                dragOffsetX = 0;
+                startAutoplay();
+            };
+
+            heroCarousel.addEventListener('pointerup', finishDrag);
+            heroCarousel.addEventListener('pointercancel', finishDrag);
+            heroCarousel.addEventListener('mouseenter', stopAutoplay);
+            heroCarousel.addEventListener('mouseleave', () => {
+                if (!dragging) startAutoplay();
+            });
+            heroCarousel.addEventListener('focusin', stopAutoplay);
+            heroCarousel.addEventListener('focusout', startAutoplay);
+            heroCarousel.addEventListener('keydown', (event) => {
+                if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    prevSlide();
+                    startAutoplay();
+                } else if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    nextSlide();
+                    startAutoplay();
+                }
+            });
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            document.hidden ? stopAutoplay() : startAutoplay();
+        });
+
+        startAutoplay();
 
         function openCourseModal(element) {
             try {
@@ -655,13 +763,7 @@
                 document.getElementById('modal-title').innerText = course.name || 'Course';
                 document.getElementById('modal-description').innerText = course.description || 'No description available.';
                 
-                let imageUrl = '';
-                if (course.image) {
-                    imageUrl = course.image.startsWith('http') ? course.image : `/storage/${course.image}`;
-                } else {
-                    // Placeholder if no image
-                    imageUrl = 'https://via.placeholder.com/640x360?text=No+Image';
-                }
+                const imageUrl = course.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
                 document.getElementById('modal-image').src = imageUrl;
 
                 if (course.videos_count) {

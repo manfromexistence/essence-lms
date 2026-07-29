@@ -6,6 +6,9 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 
 ### Added
 
+- Mouse-drag, touch-swipe, keyboard navigation, pause-on-interaction, and scroll-safe gestures for the homepage hero carousel.
+- Lightweight spring-style reveal animations across public pages with `prefers-reduced-motion` accessibility support.
+- Professional IT-themed Unsplash fallbacks for courses without uploaded artwork, including modal previews and broken-image recovery.
 - Dhaka IT Institute branding with the green and black visual theme.
 - Online/offline course mode controls and mode-aware student course browsing.
 - Public admission form matching the institute's paper admission workflow.
@@ -46,10 +49,12 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 - Composer audit: zero known advisories as of 2026-07-29.
 - npm production audit: zero known advisories as of 2026-07-29.
 - Payment evidence and premium learning assets are no longer public URLs.
-- Automated release suite: 13 tests and 32 assertions passing as of 2026-07-29.
+- Automated release suite: 14 tests and 37 assertions passing as of 2026-07-29.
 
 ### Fixed
 
+- Centered the Admission header action on desktop and added the same prominent action to mobile navigation.
+- Corrected malformed course-page section markup that could cause inconsistent browser layouts.
 - Fixed invalid compiled Blade PHP in the shared admin header that caused every authenticated Render dashboard page to return HTTP 500.
 - Replaced every legacy Talent IT browser icon with a cache-versioned Dhaka IT Institute favicon, including ICO, 16px, 32px, and Apple touch variants.
 - Made the database favicon setting and application fallback use the branded icon so a fresh deployment cannot restore the legacy favicon.
