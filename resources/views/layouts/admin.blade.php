@@ -242,7 +242,7 @@
                 @php
                     $settingsService = app(\App\Services\SettingsService::class);
                     $logoUrl = $settingsService->getLogo();
-                    $institutionName = $settingsService->get('institution_name', 'Alpha LMS');
+                    $institutionName = $settingsService->get('institution_name', 'Dhaka IT Institute');
                 @endphp
                 <img src="{{ $logoUrl }}" alt="{{ $institutionName }}" class="h-10 w-auto object-contain">
                 

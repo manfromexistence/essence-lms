@@ -77,7 +77,8 @@ class PaymentController extends Controller
         }
 
         // Store screenshot
-        $screenshotPath = $request->file('screenshot')->store('payment-screenshots', 'public');
+        $privateDisk = config('filesystems.private');
+        $screenshotPath = $request->file('screenshot')->store('payment-proofs', $privateDisk);
 
         // Create payment record with pending status
         $payment = Payment::create([
@@ -166,7 +167,7 @@ class PaymentController extends Controller
                 })->first();
 
             $payment->update([
-                'status' => Payment::STATUS_APPROVED,
+                'status' => Payment::STATUS_COMPLETED,
                 'reviewed_at' => now(),
                 'reviewed_by' => Auth::id(),
                 'admin_notes' => $request->input('admin_notes'),
@@ -261,7 +262,7 @@ class PaymentController extends Controller
         foreach ($paymentsByCourse as $courseId => $coursePayments) {
             $course = $coursePayments->first()->course;
             $totalFee = $course->price ?? 0;
-            $amountDeposited = $coursePayments->where('status', Payment::STATUS_APPROVED)->sum('amount');
+            $amountDeposited = $coursePayments->whereIn('status', Payment::settledStatuses())->sum('amount');
             $pendingAmount = $coursePayments->where('status', Payment::STATUS_PENDING)->sum('amount');
 
             $enrollments[] = [
@@ -276,7 +277,7 @@ class PaymentController extends Controller
         // Calculate summary
         $totalCourses = count($enrollments);
         $totalFees = collect($enrollments)->sum('total_fee');
-        $totalPaid = $payments->where('status', Payment::STATUS_APPROVED)->sum('amount');
+        $totalPaid = $payments->whereIn('status', Payment::settledStatuses())->sum('amount');
         $totalPending = $payments->where('status', Payment::STATUS_PENDING)->sum('amount');
 
         return view('student.payment-dashboard', compact(
@@ -287,5 +288,19 @@ class PaymentController extends Controller
             'totalPaid',
             'totalPending'
         ));
+    }
+
+    public function proof(Payment $payment)
+    {
+        $student = Auth::user()->student;
+        abort_unless(Auth::user()->isAdmin() || ($student && $payment->student_id === $student->id), 403);
+        $disk = Storage::disk(config('filesystems.private'));
+        abort_unless($payment->screenshot_path && $disk->exists($payment->screenshot_path), 404);
+
+        return $disk->response(
+            $payment->screenshot_path,
+            basename($payment->screenshot_path),
+            ['Cache-Control' => 'private, no-store']
+        );
     }
 }

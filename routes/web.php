@@ -11,15 +11,8 @@ use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\TestUploadController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdmissionController;
-
-// Test Upload Routes (for debugging)
-Route::get('/test-upload', [TestUploadController::class, 'index'])->name('test-upload.index');
-Route::post('/test-upload', [TestUploadController::class, 'submit'])->name('test-upload.submit');
-Route::get('/test-upload-simple', [TestUploadController::class, 'simple'])->name('test-upload-simple.index');
-Route::post('/test-upload-simple', [TestUploadController::class, 'simpleSubmit'])->name('test-upload-simple.submit');
 
 Route::get('/', [HomeController::class, 'index']);
 
@@ -41,9 +34,18 @@ Route::get('/announcements/{announcement}', [HomeController::class, 'showAnnounc
 
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
+Route::middleware('guest')->group(function () {
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.update');
+});
+Route::middleware('auth')->group(function () {
+    Route::get('/change-password', [AuthController::class, 'showChangePassword'])->name('password.change');
+    Route::put('/change-password', [AuthController::class, 'changePassword'])->middleware('throttle:5,1')->name('password.change.update');
+});
 
 // Unauthorized Access Route
 Route::get('/unauthorized', function () {
@@ -59,13 +61,15 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard.course-mode');
     // Main Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::match(['get', 'post'], '/dashboard/config', [DashboardController::class, 'config'])->name('dashboard.config');
-    Route::get('/dashboard/chart-data/{type}', [DashboardController::class, 'chartData'])->name('dashboard.chart-data');
+    Route::middleware('role:super-admin')->group(function () {
+        Route::match(['get', 'post'], '/dashboard/config', [DashboardController::class, 'config'])->name('dashboard.config');
+        Route::get('/dashboard/chart-data/{type}', [DashboardController::class, 'chartData'])->name('dashboard.chart-data');
+    });
 
     // Admin Panel Routes
     Route::middleware('role:admin,super-admin')->prefix('dashboard')->name('dashboard.')->group(function () {
         // User Management
-        Route::resource('users', UserController::class);
+        Route::resource('users', UserController::class)->middleware('role:super-admin');
 
         // Ajax Routes for Student-Batch Dependency
         Route::get('students/get-batches/{courseId}', [AdminStudentController::class, 'getBatches'])->name('students.get-batches');
@@ -95,7 +99,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('teachers', AdminTeacherController::class);
 
         // Role Management
-        Route::resource('roles', RoleController::class)->only(['index', 'show', 'edit', 'update']);
+        Route::resource('roles', RoleController::class)->only(['index', 'show', 'edit', 'update'])->middleware('role:super-admin');
 
         // Course Management - Specific routes MUST come before resource routes
         Route::get('courses/routine', [CourseController::class, 'routine'])->name('courses.routine');
@@ -299,7 +303,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Teacher Portal Routes
-    Route::prefix('teacher')->name('teacher.')->group(function () {
+    Route::middleware('role:teacher')->prefix('teacher')->name('teacher.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\TeacherController::class, 'dashboard'])->name('dashboard');
         Route::get('/batches', [\App\Http\Controllers\TeacherController::class, 'batches'])->name('batches');
         Route::get('/batches/{batch}/students', [\App\Http\Controllers\TeacherController::class, 'students'])->name('batches.students');
@@ -310,7 +314,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Student Portal Routes
-    Route::prefix('student')->name('student.')->group(function () {
+    Route::middleware('role:student')->prefix('student')->name('student.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\StudentPortalController::class, 'dashboard'])->name('dashboard');
         
         // Materials
@@ -348,10 +352,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/courses/{course}/enroll', [\App\Http\Controllers\StudentPortalController::class, 'enroll'])->name('course.enroll');
         Route::get('/courses/{course}/watch', [\App\Http\Controllers\StudentPortalController::class, 'watchCourse'])->name('course.watch');
         Route::get('/courses/{course}/watch/{video}', [\App\Http\Controllers\StudentPortalController::class, 'watchCourse'])->name('course.video');
+        Route::get('/courses/{course}/watch/{video}/stream', [\App\Http\Controllers\StudentPortalController::class, 'streamVideo'])->name('course.video.stream');
         Route::post('/courses/{course}/watch/{video}/complete', [\App\Http\Controllers\StudentPortalController::class, 'completeVideo'])->name('course.video.complete');
         Route::get('/payment/form/{course}', [\App\Http\Controllers\PaymentController::class, 'showForm'])->name('payment.form');
         Route::post('/payment/submit', [\App\Http\Controllers\PaymentController::class, 'submit'])->name('payment.submit');
         Route::get('/payment/dashboard', [\App\Http\Controllers\PaymentController::class, 'dashboard'])->name('payment.dashboard');
+        Route::get('/payment/{payment}/proof', [\App\Http\Controllers\PaymentController::class, 'proof'])->name('payment.proof');
     });
 });
 
@@ -359,6 +365,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin,super-admin'])->prefix('admin')->name('payment.')->group(function () {
     Route::get('/payment-review', [\App\Http\Controllers\PaymentController::class, 'reviewList'])->name('review.list');
     Route::get('/payment-review/{payment}', [\App\Http\Controllers\PaymentController::class, 'reviewDetail'])->name('review.detail');
+    Route::get('/payment-review/{payment}/proof', [\App\Http\Controllers\PaymentController::class, 'proof'])->name('proof');
     Route::post('/payment-review/{payment}/approve', [\App\Http\Controllers\PaymentController::class, 'approve'])->name('approve');
     Route::post('/payment-review/{payment}/reject', [\App\Http\Controllers\PaymentController::class, 'reject'])->name('reject');
 });

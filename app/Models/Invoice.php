@@ -60,7 +60,7 @@ class Invoice extends Model
     public function getRemainingAmount(): float
     {
         $totalPaid = $this->payments()
-            ->where('status', 'completed')
+            ->whereIn('status', Payment::settledStatuses())
             ->sum('amount');
 
         return max(0, $this->amount - $totalPaid);

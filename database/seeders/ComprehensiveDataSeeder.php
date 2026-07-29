@@ -51,7 +51,7 @@ class ComprehensiveDataSeeder extends Seeder
         Setting::updateOrCreate(
             ['key' => 'footer_text'],
             [
-                'value' => 'Developed by Alphainno',
+                'value' => 'Dhaka IT Institute — Let’s Build Your Dream',
                 'group' => 'general',
                 'type' => 'string',
             ]
@@ -60,7 +60,7 @@ class ComprehensiveDataSeeder extends Seeder
         Setting::updateOrCreate(
             ['key' => 'footer_copyright'],
             [
-                'value' => '© ' . date('Y') . ' All rights reserved. Developed by Alphainno',
+                'value' => '© ' . date('Y') . ' Dhaka IT Institute. All rights reserved.',
                 'group' => 'general',
                 'type' => 'string',
             ]

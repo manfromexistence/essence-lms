@@ -47,7 +47,9 @@ class CourseVideo extends Model
             return "https://www.facebook.com/plugins/video.php?href=" . urlencode($this->external_id);
         } else {
             // Local upload
-            return $this->video_path ? asset('storage/' . $this->video_path) : null;
+            return $this->video_path
+                ? route('student.course.video.stream', [$this->course_id, $this->id])
+                : null;
         }
     }
 
@@ -65,4 +67,3 @@ class CourseVideo extends Model
         return asset('images/video-placeholder.png');
     }
 }
-

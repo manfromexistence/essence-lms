@@ -7,7 +7,7 @@
     <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
         <div class="max-w-xl overflow-hidden w-full md:w-auto">
             <div class="ticker">
-                <span>মাধ্যমিক শিক্ষা বোর্ড জামালপুরের অধীনস্থ প্রতিষ্ঠান এবং একটি বেসরকারি শিক্ষা প্রতিষ্ঠান।</span>
+                <span>মিরপুর-১০, ঢাকায় অনলাইন ও অফলাইন IT এবং freelancing training.</span>
                 @if(Request::is('/'))
                     <span class="mx-4">★</span>
                     <span>২০২৬ সালের এসএসসি পরীক্ষার্থীদের জন্য বিশেষ নোটিশ।</span>
@@ -16,7 +16,7 @@
                     <span class="mx-4">★</span>
                 @endif
                 <!-- Duplicate content for seamless loop -->
-                <span>মাধ্যমিক শিক্ষা বোর্ড জামালপুরের অধীনস্থ প্রতিষ্ঠান এবং একটি বেসরকারি শিক্ষা প্রতিষ্ঠান।</span>
+                <span>মিরপুর-১০, ঢাকায় অনলাইন ও অফলাইন IT এবং freelancing training.</span>
                 @if(Request::is('/'))
                     <span class="mx-4">★</span>
                     <span>২০২৬ সালের এসএসসি পরীক্ষার্থীদের জন্য বিশেষ নোটিশ।</span>

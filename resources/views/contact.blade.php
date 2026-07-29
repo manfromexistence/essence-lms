@@ -1,6 +1,6 @@
 @extends('layouts.frontend')
 
-@section('title', ($page ? $page->getContent('page_title', 'যোগাযোগ করুন') : 'যোগাযোগ করুন') . ' - Alphainno Lms')
+@section('title', ($page ? $page->getContent('page_title', 'যোগাযোগ করুন') : 'যোগাযোগ করুন') . ' - Dhaka IT Institute')
 
 @section('content')
     <!-- Page Header -->
@@ -63,7 +63,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-bold text-gray-800 mb-2">ঠিকানা</h3>
-                            <p class="text-gray-600">{{ $page ? $page->getContent('address', 'এক্সওয়াইজেডস স্কুল এন্ড কলেজ, জামালপুর সদর, জামালপুর, বাংলাদেশ') : 'এক্সওয়াইজেডস স্কুল এন্ড কলেজ, জামালপুর সদর, জামালপুর, বাংলাদেশ' }}</p>
+                            <p class="text-gray-600">{{ $page ? $page->getContent('address', 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216') : 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216' }}</p>
                         </div>
 
                         <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-primary">

@@ -35,7 +35,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(12)->mixedCase()->numbers()->symbols()],
             'role' => 'required|exists:roles,id',
         ]);
 
@@ -79,11 +79,15 @@ class UserController extends Controller
         ]);
 
         if ($request->filled('password')) {
-            $request->validate(['password' => 'min:8|confirmed']);
+            $request->validate(['password' => ['confirmed', \Illuminate\Validation\Rules\Password::min(12)->mixedCase()->numbers()->symbols()]]);
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        $user->roles()->sync([$request->role]);
+        $targetRole = Role::findOrFail($request->role);
+        if ($user->isSuperAdmin() && $targetRole->slug !== 'super-admin' && $this->superAdminCount() <= 1) {
+            return back()->with('error', 'The last super administrator cannot be demoted.');
+        }
+        $user->roles()->sync([$targetRole->id]);
 
         return redirect()->route('dashboard.users.index')
             ->with('success', 'User updated successfully.');
@@ -91,10 +95,21 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        if ($user->is(auth()->user())) {
+            return back()->with('error', 'You cannot delete your own account.');
+        }
+        if ($user->isSuperAdmin() && $this->superAdminCount() <= 1) {
+            return back()->with('error', 'The last super administrator cannot be deleted.');
+        }
         $user->roles()->detach();
         $user->delete();
 
         return redirect()->route('dashboard.users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    private function superAdminCount(): int
+    {
+        return User::whereHas('roles', fn ($query) => $query->where('slug', 'super-admin'))->count();
     }
 }

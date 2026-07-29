@@ -192,7 +192,7 @@ class InvoiceService
         try {
             DB::transaction(function () use ($invoice, $payment) {
                 $totalPaid = Payment::where('student_id', $invoice->student_id)
-                    ->where('status', 'completed')
+                    ->whereIn('status', \App\Models\Payment::settledStatuses())
                     ->sum('amount');
 
                 if ($totalPaid >= $invoice->amount) {
@@ -473,7 +473,7 @@ class InvoiceService
     {
         try {
             $totalPaid = Payment::where('student_id', $invoice->student_id)
-                ->where('status', 'completed')
+                ->whereIn('status', \App\Models\Payment::settledStatuses())
                 ->sum('amount');
 
             return max(0, $invoice->amount - $totalPaid);

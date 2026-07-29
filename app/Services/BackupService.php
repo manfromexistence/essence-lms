@@ -58,6 +58,10 @@ class BackupService
 
     public function restoreBackup(string $filename): bool
     {
+        if (app()->isProduction() && !config('database.allow_restore', false)) {
+            throw new \RuntimeException('Production restore is disabled. Set ALLOW_DATABASE_RESTORE=true only during an approved maintenance window.');
+        }
+        $this->validateFilename($filename);
         $path = $this->backupPath . '/' . $filename;
 
         if (!Storage::disk('local')->exists($path)) {
@@ -115,12 +119,14 @@ class BackupService
 
     public function deleteBackup(string $filename): bool
     {
+        $this->validateFilename($filename);
         $path = $this->backupPath . '/' . $filename;
         return Storage::disk('local')->delete($path);
     }
 
     public function downloadBackup(string $filename)
     {
+        $this->validateFilename($filename);
         $path = $this->backupPath . '/' . $filename;
 
         if (!Storage::disk('local')->exists($path)) {
@@ -128,5 +134,12 @@ class BackupService
         }
 
         return Storage::disk('local')->download($path, $filename);
+    }
+
+    private function validateFilename(string $filename): void
+    {
+        if (!preg_match('/\Abackup-\d{4}-\d{2}-\d{2}-\d{6}\.(sql|sqlite)\z/', $filename)) {
+            throw new \InvalidArgumentException('Invalid backup filename.');
+        }
     }
 }

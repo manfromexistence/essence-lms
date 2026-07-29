@@ -74,7 +74,7 @@
                    name="{{ $name }}_file" 
                    id="{{ $name }}-file" 
                    class="hidden" 
-                   accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml,image/webp,image/x-icon,.ico"
+                   accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,image/x-icon,.ico"
                    onchange="handleImageUpload(this, '{{ $name }}')">
         </div>
     </div>

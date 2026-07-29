@@ -208,7 +208,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             @if($payment->screenshot_path)
-                                <a href="{{ Storage::url($payment->screenshot_path) }}" 
+                                <a href="{{ route('student.payment.proof', $payment) }}"
                                     target="_blank" 
                                     class="text-blue-600 hover:text-blue-800">
                                     View

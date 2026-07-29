@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class TeacherController extends Controller
 {
@@ -50,8 +52,11 @@ class TeacherController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make('password'), // Default password
+            'password' => Hash::make(Str::password(32)),
+            'is_active' => true,
+            'must_change_password' => true,
         ]);
+        Password::sendResetLink(['email' => $user->email]);
 
         // Assign teacher role
         $teacherRole = Role::where('slug', 'teacher')->first();

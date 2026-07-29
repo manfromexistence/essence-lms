@@ -14,6 +14,7 @@ use App\Services\StudentService;
 use App\Services\StudentIdGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -90,6 +91,8 @@ class StudentController extends Controller
                 'name' => $request->input('name') ?: $validated['name_bn'],
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
+                'is_active' => true,
+                'must_change_password' => true,
             ]);
 
             if ($studentRole = Role::where('slug', 'student')->first()) {
@@ -102,11 +105,10 @@ class StudentController extends Controller
             $this->studentService->create($validated);
         });
 
-        // Store password temporarily in session for display (will be cleared after showing)
-        session()->flash('generated_password', $password);
+        Password::sendResetLink(['email' => $validated['email']]);
 
         return redirect()->route('dashboard.students.index')
-            ->with('success', 'Student created successfully. Please save the temporary password shown below.');
+            ->with('success', 'Student created successfully. A secure password setup link was sent by email.');
     }
 
     /**
@@ -288,7 +290,15 @@ class StudentController extends Controller
         ]);
 
         $student = Student::findOrFail($request->student_id);
-        $student->update(['batch_id' => $request->batch_id]);
+        $wasInactive = !$student->user?->is_active;
+        $student->update([
+            'batch_id' => $request->batch_id,
+            'admission_status' => $request->batch_id ? 'approved' : 'pending',
+        ]);
+        $student->user?->update(['is_active' => (bool) $request->batch_id]);
+        if ($request->batch_id && $wasInactive && $student->user) {
+            Password::sendResetLink(['email' => $student->user->email]);
+        }
 
         return redirect()->route('dashboard.students.batch-assignment')
             ->with('success', 'Student batch assignment updated successfully.');
@@ -305,8 +315,18 @@ class StudentController extends Controller
             'batch_id' => 'nullable|exists:batches,id',
         ]);
 
+        $usersToInvite = User::whereHas('student', fn ($query) => $query->whereIn('id', $request->student_ids))
+            ->where('is_active', false)->get();
         Student::whereIn('id', $request->student_ids)
-            ->update(['batch_id' => $request->batch_id]);
+            ->update([
+                'batch_id' => $request->batch_id,
+                'admission_status' => $request->batch_id ? 'approved' : 'pending',
+            ]);
+        User::whereHas('student', fn ($query) => $query->whereIn('id', $request->student_ids))
+            ->update(['is_active' => (bool) $request->batch_id]);
+        if ($request->batch_id) {
+            $usersToInvite->each(fn (User $user) => Password::sendResetLink(['email' => $user->email]));
+        }
 
         $count = count($request->student_ids);
         return redirect()->route('dashboard.students.batch-assignment')

@@ -5,13 +5,13 @@
                 @php
                     $settingsService = app(\App\Services\SettingsService::class);
                     $logoUrl = $settingsService->getLogo();
-                    $institutionName = $settingsService->get('institution_name', 'Alpha LMS');
+                    $institutionName = $settingsService->get('institution_name', 'Dhaka IT Institute');
                 @endphp
                 <div class="flex items-center gap-3 mb-4">
                     <img src="{{ $logoUrl }}" alt="{{ $institutionName }}" class="h-8 md:h-10 w-auto object-contain">
                 </div>
                 <p class="text-primary text-sm leading-relaxed mb-4">
-                    এক্সওয়াইজেডস স্কুল এন্ড কলেজ - মানসম্মত শিক্ষা এবং নৈতিক মূল্যবোধ সৃষ্টিতে আমরা প্রতিশ্রুতিবদ্ধ।
+                    প্র্যাকটিক্যাল IT, web development, digital marketing ও freelancing training—অনলাইন এবং অফলাইন।
                 </p>
                 <div class="flex gap-3">
                     <a href="#"
@@ -62,9 +62,9 @@
             <div>
                 <h3 class="text-base md:text-lg font-bold mb-4 text-primary">যোগাযোগ</h3>
                 <ul class="space-y-2 md:space-y-3 text-sm text-primary">
-                    <li>ঠিকানা: জামালপুর সদর, জামালপুর</li>
-                    <li>ফোন: +880 1XXX-XXXXXX</li>
-                    <li>ইমেইল: info@xyzschool.edu.bd</li>
+                    <li>ঠিকানা: House #5, Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216</li>
+                    <li>ফোন: +880 1682-715576</li>
+                    <li>ইমেইল: dhakaitinstitute@gmail.com</li>
                 </ul>
             </div>
         </div>
@@ -72,8 +72,8 @@
 
     <div class="border-t border-primary">
         <div class="max-w-7xl mx-auto px-4 py-4 md:py-6 text-center">
-            <p class="text-primary text-xs md:text-sm">© ২০২৬ এক্সওয়াইজেডস স্কুল এন্ড কলেজ। সর্বস্বত্ব সংরক্ষিত।</p>
-            <p class="text-primary text-xs md:text-sm mt-1">{{ \App\Models\Setting::getValue('footer_text', 'Developed by Alphainno') }}</p>
+            <p class="text-primary text-xs md:text-sm">© {{ date('Y') }} Dhaka IT Institute। সর্বস্বত্ব সংরক্ষিত।</p>
+            <p class="text-primary text-xs md:text-sm mt-1">{{ \App\Models\Setting::getValue('footer_text', 'Dhaka IT Institute — Let’s Build Your Dream') }}</p>
         </div>
     </div>
 </footer>

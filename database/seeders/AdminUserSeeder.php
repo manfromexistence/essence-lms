@@ -11,9 +11,27 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $email = env('INITIAL_ADMIN_EMAIL');
+            $password = env('INITIAL_ADMIN_PASSWORD');
+            if (!$email || !$password || strlen($password) < 16) {
+                $this->command?->warn('Skipping initial admin: set INITIAL_ADMIN_EMAIL and a 16+ character INITIAL_ADMIN_PASSWORD.');
+                return;
+            }
+
+            $superAdmin = User::firstOrCreate(
+                ['email' => $email],
+                ['name' => 'System Owner', 'password' => Hash::make($password), 'email_verified_at' => now()]
+            );
+            if ($role = Role::where('slug', 'super-admin')->first()) {
+                $superAdmin->roles()->syncWithoutDetaching([$role->id]);
+            }
+            return;
+        }
+
         // Create Super Admin user
         $superAdmin = User::updateOrCreate(
-            ['email' => 'superadmin@alpha.com'],
+            ['email' => 'owner@dhakaitinstitute.test'],
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
@@ -42,17 +60,17 @@ class AdminUserSeeder extends Seeder
             $admin->roles()->sync([$superAdminRole->id]);
         }
 
-        // Also create admin@alpha.com for backward compatibility
+        // Create a local-only secondary administrator account
         $adminAlpha = User::updateOrCreate(
-            ['email' => 'admin@alpha.com'],
+            ['email' => 'admin@dhakaitinstitute.test'],
             [
-                'name' => 'Alpha Admin',
+                'name' => 'Dhaka IT Admin',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
 
-        // Assign Super Admin role to admin@alpha.com as well
+        // Assign Super Admin role to the local administrator
         if ($superAdminRole) {
             $adminAlpha->roles()->syncWithoutDetaching([$superAdminRole->id]);
         }
@@ -73,11 +91,11 @@ class AdminUserSeeder extends Seeder
             $teacher->roles()->syncWithoutDetaching([$teacherRole->id]);
         }
 
-        // Also create teacher@alpha.com for backward compatibility
+        // Create a local-only teacher account
         $teacherAlpha = User::updateOrCreate(
-            ['email' => 'teacher@alpha.com'],
+            ['email' => 'teacher@dhakaitinstitute.test'],
             [
-                'name' => 'Demo Teacher Alpha',
+                'name' => 'Dhaka IT Demo Teacher',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
@@ -103,11 +121,11 @@ class AdminUserSeeder extends Seeder
             $student->roles()->syncWithoutDetaching([$studentRole->id]);
         }
 
-        // Also create student@alpha.com for backward compatibility
+        // Create a local-only student account
         $studentAlpha = User::updateOrCreate(
-            ['email' => 'student@alpha.com'],
+            ['email' => 'student@dhakaitinstitute.test'],
             [
-                'name' => 'Demo Student Alpha',
+                'name' => 'Dhaka IT Demo Student',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]

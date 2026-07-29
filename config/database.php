@@ -4,6 +4,8 @@ use Illuminate\Support\Str;
 
 return [
 
+    'allow_restore' => env('ALLOW_DATABASE_RESTORE', false),
+
     /*
     |--------------------------------------------------------------------------
     | Default Database Connection Name

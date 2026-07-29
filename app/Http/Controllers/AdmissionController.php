@@ -37,6 +37,8 @@ class AdmissionController extends Controller
                 'name' => ($validated['name'] ?? null) ?: $validated['name_bn'],
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
+                'is_active' => false,
+                'must_change_password' => true,
             ]);
             if ($role = Role::where('slug', 'student')->first()) {
                 $user->roles()->attach($role);
@@ -49,9 +51,9 @@ class AdmissionController extends Controller
             $this->studentService->create($validated);
         });
 
-        return redirect()->route('login')->with([
-            'success' => 'Admission submitted. The office will review your application.',
-            'generated_password' => $password,
-        ]);
+        return redirect()->route('login')->with(
+            'success',
+            'Admission submitted. Your account will be activated after office approval.'
+        );
     }
 }

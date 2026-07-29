@@ -35,10 +35,10 @@ class SettingsController extends Controller
             // Institution Settings
             'institution_name' => 'nullable|string|max:255',
             'institution_logo' => 'nullable|string|max:500',
-            'institution_logo_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:30720', // 30MB
+            'institution_logo_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'institution_logo_url' => 'nullable|url|max:500',
             'institution_favicon' => 'nullable|string|max:500',
-            'institution_favicon_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp,ico|max:30720', // 30MB
+            'institution_favicon_file' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,ico|max:2048',
             'institution_favicon_url' => 'nullable|url|max:500',
             'institution_address' => 'nullable|string|max:1000',
             'institution_phone' => 'nullable|string|max:20',
@@ -71,10 +71,10 @@ class SettingsController extends Controller
             'theme_secondary_foreground' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
         ], [
             'institution_logo_file.image' => 'The logo must be an image file.',
-            'institution_logo_file.mimes' => 'The logo must be a file of type: jpeg, png, jpg, gif, svg, webp.',
+            'institution_logo_file.mimes' => 'The logo must be a file of type: jpeg, png, jpg, gif, or webp.',
             'institution_logo_file.max' => 'The logo file size must not exceed 30MB.',
             'institution_favicon_file.image' => 'The favicon must be an image file.',
-            'institution_favicon_file.mimes' => 'The favicon must be a file of type: jpeg, png, jpg, gif, svg, webp, ico.',
+            'institution_favicon_file.mimes' => 'The favicon must be a file of type: jpeg, png, jpg, gif, webp, or ico.',
             'institution_favicon_file.max' => 'The favicon file size must not exceed 30MB.',
         ]);
 

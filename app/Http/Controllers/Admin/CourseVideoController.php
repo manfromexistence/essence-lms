@@ -68,7 +68,7 @@ class CourseVideoController extends Controller
         }
 
         if ($request->video_type === 'upload' && $request->hasFile('video_file')) {
-            $videoData['video_path'] = $request->file('video_file')->store('courses/videos', 'public');
+            $videoData['video_path'] = $request->file('video_file')->store('courses/videos', config('filesystems.private'));
         }
 
         if ($request->hasFile('thumbnail_file')) {
@@ -83,11 +83,13 @@ class CourseVideoController extends Controller
 
     public function edit(Course $course, CourseVideo $video)
     {
+        abort_unless($video->course_id === $course->id, 404);
         return view('dashboard.courses.videos.edit', compact('video', 'course'));
     }
 
     public function update(Request $request, Course $course, CourseVideo $video)
     {
+        abort_unless($video->course_id === $course->id, 404);
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -132,9 +134,9 @@ class CourseVideoController extends Controller
         if ($request->video_type === 'upload' && $request->hasFile('video_file')) {
             // Delete old file
             if ($video->video_path) {
-                Storage::disk('public')->delete($video->video_path);
+                Storage::disk(config('filesystems.private'))->delete($video->video_path);
             }
-            $updateData['video_path'] = $request->file('video_file')->store('courses/videos', 'public');
+            $updateData['video_path'] = $request->file('video_file')->store('courses/videos', config('filesystems.private'));
             $updateData['external_id'] = null;
         }
 
@@ -155,9 +157,10 @@ class CourseVideoController extends Controller
 
     public function destroy(Course $course, CourseVideo $video)
     {
+        abort_unless($video->course_id === $course->id, 404);
         // Delete files
         if ($video->video_path) {
-            Storage::disk('public')->delete($video->video_path);
+            Storage::disk(config('filesystems.private'))->delete($video->video_path);
         }
         if ($video->thumbnail) {
             Storage::disk('public')->delete($video->thumbnail);

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unauthorized Access - Alpha LMS</title>
+    <title>Unauthorized Access - Dhaka IT Institute</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap"
@@ -64,7 +64,7 @@
 
         <!-- Footer -->
         <p class="text-center text-gray-500 text-sm mt-6">
-            &copy; {{ date('Y') }} Alpha LMS. All rights reserved.
+            &copy; {{ date('Y') }} Dhaka IT Institute. All rights reserved.
         </p>
     </div>
 </body>

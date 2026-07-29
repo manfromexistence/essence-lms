@@ -147,7 +147,7 @@ class PageController extends Controller
     {
         return [
             // Hero Slider
-            'slide1_title' => 'স্বাগতম এক্সওয়াইজেডস স্কুল এন্ড',
+            'slide1_title' => 'Dhaka IT Institute-এ স্বাগতম',
             'slide1_subtitle' => 'কলেজে এর পক্ষ থেকে!',
             'slide1_image' => 'https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=1172&auto=format&fit=crop',
             'slide2_title' => 'শিক্ষার আলোয় আলোকিত',
@@ -158,7 +158,7 @@ class PageController extends Controller
             'slide3_image' => 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1920',
             // Banner Section
             'banner_image' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800',
-            'banner_title' => 'Alphainno',
+            'banner_title' => 'Dhaka IT Institute',
             'banner_title_highlight' => 'এর সাথেই শিখাছে',
             'banner_subtitle' => 'সবাই, জিতছে সবাই',
             'banner_description' => 'এখন তুমি যেখানেই থাকো, ম্যাচার কথা না কিছু! কারণ সবাই শিখাছে আর জিতছে দেশের সবচেয়ে বিশ্বস্ত ডিজিটাল লার্নিং প্ল্যাটফর্ম শিখোতে।',
@@ -172,8 +172,8 @@ class PageController extends Controller
             // About Section
             'about_section_image' => 'https://images.unsplash.com/photo-1562774053-701939374585?w=600',
             'about_section_title' => 'প্রতিষ্ঠান সম্পর্কে',
-            'about_section_text1' => 'এক্সওয়াইজেডস স্কুল এন্ড কলেজ বাংলাদেশের একটি অগ্রগামী শিক্ষা প্রতিষ্ঠান...',
-            'about_section_text2' => 'প্রতিষ্ঠানটি ১৯৮৮ সালে প্রতিষ্ঠিত হয়। আমাদের লক্ষ্য মানসম্মত শিক্ষা প্রদান করা...',
+            'about_section_text1' => 'Dhaka IT Institute মিরপুর-১০-এ অবস্থিত একটি প্র্যাকটিক্যাল IT ও freelancing training center।',
+            'about_section_text2' => 'আমাদের লক্ষ্য শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।',
             'about_section_button' => 'বিস্তারিত পড়ুন',
             // Notice Section
             'notice_title' => 'নোটিশ বোর্ড',
@@ -188,17 +188,17 @@ class PageController extends Controller
             'page_title' => 'প্রতিষ্ঠান পরিচিতি',
             'about_image' => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80',
             'about_title' => 'প্রতিষ্ঠান সম্পর্কে',
-            'about_text' => 'এক্সওয়াইজেডস স্কুল এন্ড কলেজ জামালপুর জেলার অন্যতম প্রধান শিক্ষা প্রতিষ্ঠান। প্রতিষ্ঠানটি ১৯৮৮ সালে প্রতিষ্ঠিত হয়। আমাদের লক্ষ্য মানসম্মত শিক্ষা প্রদান করা এবং শিক্ষার্থীদের সর্বাঙ্গীণ উন্নয়ন নিশ্চিত করা।',
+            'about_text' => 'Dhaka IT Institute একটি বেসরকারি IT ও freelancing training center, যেখানে অনলাইন ও অফলাইন প্র্যাকটিক্যাল প্রশিক্ষণ দেওয়া হয়।',
             'stats_students' => '৫২০',
             'stats_teachers' => '২০',
             'stats_staff' => '৮',
             'stats_rooms' => '১৫',
             'stats_buildings' => '৬',
             'mission_title' => 'প্রতিষ্ঠানের মিশন',
-            'mission_text' => 'এক্সওয়াইজেডস স্কুল এন্ড কলেজের মিশন হল শিক্ষার্থীদের একটি উচ্চমানের শিক্ষা প্রদান করা এবং তাদের নৈতিক, মানসিক ও শারীরিক বিকাশ নিশ্চিত করা। আমরা বিশ্বাস করি যে প্রতিটি শিক্ষার্থী অনন্য এবং তাদের সম্ভাবনা বিকশিত করার জন্য একটি সহায়ক পরিবেশ প্রয়োজন।',
+            'mission_text' => 'শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow, client communication এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।',
             'vision_image' => 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&q=80',
             'vision_title' => 'প্রতিষ্ঠানের ভিশন',
-            'vision_text' => 'এক্সওয়াইজেডস স্কুল এন্ড কলেজের ভিশন হল একটি বিশ্বমানের শিক্ষা প্রতিষ্ঠান হিসাবে গড়ে তোলা যেখানে শিক্ষার্থীরা জ্ঞান, দক্ষতা এবং মূল্যবোধ অর্জন করে সমাজের জন্য দায়িত্বশীল নাগরিক হিসেবে গড়ে উঠবে।',
+            'vision_text' => 'প্র্যাকটিক্যাল IT দক্ষতা ও পেশাদার মানসিকতার মাধ্যমে কর্মসংস্থান এবং freelancing-এর জন্য আত্মবিশ্বাসী মানুষ তৈরি করা।',
         ];
     }
 
@@ -208,7 +208,7 @@ class PageController extends Controller
             'page_title' => 'যোগাযোগ করুন',
             'page_subtitle' => 'আমাদের সাথে যোগাযোগ করার বিভিন্ন মাধ্যম',
             'form_title' => 'বার্তা পাঠান',
-            'address' => 'এক্সওয়াইজেডস স্কুল এন্ড কলেজ, জামালপুর সদর, জামালপুর, বাংলাদেশ',
+            'address' => 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216',
             'phone' => '+880 1XXX-XXXXXX',
             'email' => 'info@example.com',
             'map_embed' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d116347.16843475968!2d89.9238384!3d24.9193214',

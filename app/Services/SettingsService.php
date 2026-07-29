@@ -95,22 +95,22 @@ class SettingsService
             'type' => 'string',
         ],
         'institution_address' => [
-            'value' => 'House #62, Road #4, Block #B, Section #12, Pallabi, Mirpur, Dhaka',
+            'value' => 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216. Behind Dhaka WASA.',
             'group' => 'institution',
             'type' => 'text',
         ],
         'institution_phone' => [
-            'value' => '',
+            'value' => '+8801682715576',
             'group' => 'institution',
             'type' => 'string',
         ],
         'institution_email' => [
-            'value' => '',
+            'value' => 'dhakaitinstitute@gmail.com',
             'group' => 'institution',
             'type' => 'string',
         ],
         'institution_website' => [
-            'value' => '',
+            'value' => 'https://dhakaitinstitute.com',
             'group' => 'institution',
             'type' => 'string',
         ],

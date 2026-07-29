@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha LMS - শেখার নতুন যাত্রা | বাংলাদেশের শিক্ষার্থীদের জন্য</title>
+    <title>Dhaka IT Institute - Practical IT & Freelancing Training</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -94,7 +94,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-bd-green">Alpha LMS</h1>
+                        <h1 class="text-xl sm:text-2xl font-bold text-bd-green">Dhaka IT Institute</h1>
                         <p class="text-xs sm:text-sm text-emerald-600 bengali-text hidden sm:block">শেখার নতুন যাত্রা</p>
                     </div>
                 </div>
@@ -153,15 +153,15 @@
                     <!-- Stats -->
                     <div class="grid grid-cols-3 gap-4 sm:gap-6 pt-8 opacity-0 fade-in-up delay-400">
                         <div class="text-center">
-                            <div class="text-2xl sm:text-3xl font-bold text-bd-green">১০,০০০+</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-bd-green">প্র্যাকটিক্যাল</div>
                             <div class="text-sm sm:text-base text-gray-600 bengali-text">শিক্ষার্থী</div>
                         </div>
                         <div class="text-center border-x border-gray-200">
-                            <div class="text-2xl sm:text-3xl font-bold text-bd-green">৫০০+</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-bd-green">অনলাইন</div>
                             <div class="text-sm sm:text-base text-gray-600 bengali-text">কোর্স</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-2xl sm:text-3xl font-bold text-bd-green">১০০+</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-bd-green">অফলাইন</div>
                             <div class="text-sm sm:text-base text-gray-600 bengali-text">শিক্ষক</div>
                         </div>
                     </div>
@@ -195,7 +195,7 @@
     <section id="features" class="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div class="container mx-auto">
             <div class="text-center mb-12 sm:mb-16">
-                <h3 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 bengali-text">কেন Alpha LMS?</h3>
+                <h3 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 bengali-text">কেন Dhaka IT Institute?</h3>
                 <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto bengali-text">
                     আধুনিক প্রযুক্তি এবং বাংলাদেশী সংস্কৃতির নিখুঁত সমন্বয়
                 </p>
@@ -295,7 +295,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                             </svg>
                         </div>
-                        <h5 class="text-xl font-bold">Alpha LMS</h5>
+                        <h5 class="text-xl font-bold">Dhaka IT Institute</h5>
                     </div>
                     <p class="text-gray-400 bengali-text">বাংলাদেশের শিক্ষার্থীদের জন্য সেরা অনলাইন লার্নিং প্ল্যাটফর্ম</p>
                 </div>
@@ -331,7 +331,7 @@
             </div>
             
             <div class="border-t border-gray-800 pt-8 text-center text-gray-400">
-                <p class="bengali-text">&copy; ২০২৬ Alpha LMS. সর্বস্বত্ব সংরক্ষিত।</p>
+                <p class="bengali-text">&copy; {{ date('Y') }} Dhaka IT Institute. সর্বস্বত্ব সংরক্ষিত।</p>
             </div>
         </div>
     </footer>

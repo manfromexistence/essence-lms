@@ -96,6 +96,11 @@ class Payment extends Model
     const STATUS_FAILED = 'failed';
     const STATUS_REFUNDED = 'refunded';
 
+    public static function settledStatuses(): array
+    {
+        return [self::STATUS_COMPLETED, self::STATUS_APPROVED];
+    }
+
     /**
      * Check if the payment is completed.
      *
@@ -103,7 +108,7 @@ class Payment extends Model
      */
     public function isCompleted(): bool
     {
-        return $this->status === 'completed';
+        return in_array($this->status, self::settledStatuses(), true);
     }
 
     /**
@@ -123,7 +128,7 @@ class Payment extends Model
      */
     public function isApproved(): bool
     {
-        return $this->status === 'approved';
+        return in_array($this->status, self::settledStatuses(), true);
     }
 
     /**
@@ -208,7 +213,7 @@ class Payment extends Model
      */
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->whereIn('status', self::settledStatuses());
     }
 
     /**

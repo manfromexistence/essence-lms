@@ -1,6 +1,6 @@
 @extends('layouts.frontend')
 
-@section('title', 'Alphainno Lms - স্বাগতম')
+@section('title', 'Dhaka IT Institute - Practical IT & Freelancing Training')
 
 @push('styles')
     <style>
@@ -35,7 +35,7 @@
                     class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
                 <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
-                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-xl leading-tight">{{ $page ? $page->getContent('slide1_title', 'স্বাগতম এক্সওয়াইজেডস স্কুল এন্ড') : 'স্বাগতম এক্সওয়াইজেডস স্কুল এন্ড' }}</h2>
+                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-xl leading-tight">{{ $page ? $page->getContent('slide1_title', 'Dhaka IT Institute-এ স্বাগতম') : 'Dhaka IT Institute-এ স্বাগতম' }}</h2>
                     <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-lg">{{ $page ? $page->getContent('slide1_subtitle', 'কলেজে এর পক্ষ থেকে!') : 'কলেজে এর পক্ষ থেকে!' }}</h3>
                 </div>
             </div>
@@ -100,7 +100,7 @@
                     <div class="p-8 md:p-12">
                         <div class="mb-6">
                             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                                {{ $page ? $page->getContent('banner_title', 'Alphainno') : 'Alphainno' }}<span class="text-primary">{{ $page ? $page->getContent('banner_title_highlight', 'এর সাথেই শিখাছে') : 'এর সাথেই শিখাছে' }}</span>
+                                {{ $page ? $page->getContent('banner_title', 'Dhaka IT Institute') : 'Dhaka IT Institute' }} <span class="text-primary">{{ $page ? $page->getContent('banner_title_highlight', '— Let’s Build Your Dream') : '— Let’s Build Your Dream' }}</span>
                             </h2>
                             <h3 class="text-2xl md:text-3xl font-bold text-primary mb-4">
                                 {{ $page ? $page->getContent('banner_subtitle', 'সবাই, জিতছে সবাই') : 'সবাই, জিতছে সবাই' }}
@@ -448,8 +448,8 @@
                         <div class="flex flex-col">
                             <div class="flex-1">
                                 <h2 class="text-2xl font-bold text-gray-800 mb-4">{{ $page ? $page->getContent('about_section_title', 'প্রতিষ্ঠান সম্পর্কে') : 'প্রতিষ্ঠান সম্পর্কে' }}</h2>
-                                <p class="text-gray-600 leading-relaxed mb-4 text-sm">{{ $page ? $page->getContent('about_section_text1', 'এক্সওয়াইজেডস স্কুল এন্ড কলেজ বাংলাদেশের একটি অগ্রগামী শিক্ষা প্রতিষ্ঠান...') : 'এক্সওয়াইজেডস স্কুল এন্ড কলেজ বাংলাদেশের একটি অগ্রগামী শিক্ষা প্রতিষ্ঠান...' }}</p>
-                                <p class="text-gray-600 leading-relaxed mb-4 text-sm">{{ $page ? $page->getContent('about_section_text2', 'প্রতিষ্ঠানটি ১৯৮৮ সালে প্রতিষ্ঠিত হয়। আমাদের লক্ষ্য মানসম্মত শিক্ষা প্রদান করা...') : 'প্রতিষ্ঠানটি ১৯৮৮ সালে প্রতিষ্ঠিত হয়। আমাদের লক্ষ্য মানসম্মত শিক্ষা প্রদান করা...' }}</p>
+                                <p class="text-gray-600 leading-relaxed mb-4 text-sm">{{ $page ? $page->getContent('about_section_text1', 'Dhaka IT Institute মিরপুর-১০-এ অবস্থিত একটি প্র্যাকটিক্যাল IT ও freelancing training center।') : 'Dhaka IT Institute মিরপুর-১০-এ অবস্থিত একটি প্র্যাকটিক্যাল IT ও freelancing training center।' }}</p>
+                                <p class="text-gray-600 leading-relaxed mb-4 text-sm">{{ $page ? $page->getContent('about_section_text2', 'আমাদের লক্ষ্য শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।') : 'আমাদের লক্ষ্য শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।' }}</p>
                             </div>
                             <a href="{{ route('about') }}"
                                 class="block w-full text-center bg-primary text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary transition mt-4">

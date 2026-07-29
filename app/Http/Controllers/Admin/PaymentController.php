@@ -49,9 +49,9 @@ class PaymentController extends Controller
         $batches = Batch::orderBy('name')->get();
 
         // Calculate totals for display
-        $totalRevenue = Payment::where('status', 'completed')->sum('amount');
+        $totalRevenue = Payment::completed()->sum('amount');
         $currentMonth = now();
-        $monthlyRevenue = Payment::where('status', 'completed')
+        $monthlyRevenue = Payment::completed()
             ->whereBetween('created_at', [$currentMonth->copy()->startOfMonth(), $currentMonth->copy()->endOfMonth()])
             ->sum('amount');
         $pendingAmount = Payment::where('status', 'pending')->sum('amount');

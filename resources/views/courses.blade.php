@@ -1,6 +1,6 @@
 @extends('layouts.frontend')
 
-@section('title', ($page ? $page->getContent('page_title', 'কোর্সসমূহ') : 'কোর্সসমূহ') . ' - Alphainno Lms')
+@section('title', ($page ? $page->getContent('page_title', 'কোর্সসমূহ') : 'কোর্সসমূহ') . ' - Dhaka IT Institute')
 
 @push('styles')
     <style>
@@ -12,7 +12,7 @@
 
 @section('content')
     <div>
-            <section class="hero hero--solid hero--dark">
+    <section class="hero hero--solid hero--dark">
         <div class="hero-inner max-w-7xl mx-auto text-center">
             <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-6">{{ $page ? $page->getContent('page_title', 'Explore Our Courses') : 'Explore Our Courses' }}</h1>
             <p class="text-xl text-emerald-50 max-w-2xl mx-auto">{{ $page ? $page->getContent('page_subtitle', 'Enhance your skills with our expert-led programs.') : 'Enhance your skills with our expert-led programs.' }}</p>
@@ -117,6 +117,13 @@
             @endif
         </div>
     </section>
+
+    <div class="max-w-7xl mx-auto px-4 pt-6">
+        <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Course fees, syllabus and batch schedules may change. Please confirm the latest details with Dhaka IT Institute at
+            <a class="font-semibold underline" href="tel:+8801682715576">01682715576</a>.
+        </div>
+    </div>
 
     </div>
     <!-- Course Details Modal -->

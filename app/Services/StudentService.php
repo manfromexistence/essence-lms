@@ -206,7 +206,7 @@ class StudentService
      */
     public function updatePaymentAmounts(Student $student): Student
     {
-        $totalPaid = $student->payments()->where('status', 'completed')->sum('amount');
+        $totalPaid = $student->payments()->whereIn('status', \App\Models\Payment::settledStatuses())->sum('amount');
         $student->update([
             'paid_amount' => $totalPaid,
             'due_amount' => $student->total_amount - $totalPaid,

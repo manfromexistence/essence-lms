@@ -414,7 +414,7 @@
                 @php
                     $settingsService = app(\App\Services\SettingsService::class);
                     $logoUrl = $settingsService->getLogo();
-                    $institutionName = $settingsService->get('institution_name', 'Alpha LMS');
+                    $institutionName = $settingsService->get('institution_name', 'Dhaka IT Institute');
                 @endphp
                 <div class="logo-section">
                     <img src="{{ $logoUrl }}" alt="{{ $institutionName }}" style="max-width: 60px; max-height: 60px; object-fit: contain;">
@@ -657,7 +657,7 @@
     <div class="footer">
         <div class="footer-content">
             <div class="footer-left">
-                Alpha LMS - Student Report
+                Dhaka IT Institute - Student Report
             </div>
             <div class="footer-center">
                 Confidential - For Internal Use Only

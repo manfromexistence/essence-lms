@@ -198,7 +198,7 @@ class PaymentService
     {
         try {
             $totalPaid = $student->payments()
-                ->where('status', 'completed')
+                ->whereIn('status', Payment::settledStatuses())
                 ->sum('amount');
 
             $student->update([
@@ -233,7 +233,7 @@ class PaymentService
     {
         try {
             $totalPaid = $student->payments()
-                ->where('status', 'completed')
+                ->whereIn('status', Payment::settledStatuses())
                 ->sum('amount');
 
             return max(0, $student->total_amount - $totalPaid);
@@ -402,11 +402,11 @@ class PaymentService
 
             // Calculate statistics
             $totalDue = $studentQuery->sum('due_amount');
-            $totalCollected = $payments->where('status', 'completed')->sum('amount');
+            $totalCollected = $payments->whereIn('status', Payment::settledStatuses())->sum('amount');
             $totalPending = $payments->where('status', 'pending')->sum('amount');
             
             // Payment method breakdown
-            $byMethod = $payments->where('status', 'completed')
+            $byMethod = $payments->whereIn('status', Payment::settledStatuses())
                 ->groupBy('payment_method')
                 ->map(fn($group) => [
                     'count' => $group->count(),
@@ -414,7 +414,7 @@ class PaymentService
                 ]);
 
             // Count statistics
-            $completedCount = $payments->where('status', 'completed')->count();
+            $completedCount = $payments->whereIn('status', Payment::settledStatuses())->count();
             $pendingCount = $payments->where('status', 'pending')->count();
             $studentsWithDues = $studentQuery->where('due_amount', '>', 0)->count();
 
@@ -485,11 +485,11 @@ class PaymentService
             $payments = $query->get();
 
             return [
-                'total_amount' => $payments->where('status', 'completed')->sum('amount'),
-                'total_count' => $payments->where('status', 'completed')->count(),
+                'total_amount' => $payments->whereIn('status', Payment::settledStatuses())->sum('amount'),
+                'total_count' => $payments->whereIn('status', Payment::settledStatuses())->count(),
                 'pending_amount' => $payments->where('status', 'pending')->sum('amount'),
                 'pending_count' => $payments->where('status', 'pending')->count(),
-                'by_method' => $payments->where('status', 'completed')
+                'by_method' => $payments->whereIn('status', Payment::settledStatuses())
                     ->groupBy('payment_method')
                     ->map(fn($group) => [
                         'count' => $group->count(),
@@ -761,8 +761,8 @@ class PaymentService
 
             return [
                 'date' => $date->toDateString(),
-                'total_amount' => $payments->where('status', 'completed')->sum('amount'),
-                'total_count' => $payments->where('status', 'completed')->count(),
+                'total_amount' => $payments->whereIn('status', Payment::settledStatuses())->sum('amount'),
+                'total_count' => $payments->whereIn('status', Payment::settledStatuses())->count(),
                 'payments' => $payments,
             ];
         } catch (QueryException $e) {

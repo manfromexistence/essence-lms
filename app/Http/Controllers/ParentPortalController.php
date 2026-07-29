@@ -148,7 +148,7 @@ class ParentPortalController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
             
-            $totalPaid = $payments->where('status', 'completed')->sum('amount');
+            $totalPaid = $payments->whereIn('status', Payment::settledStatuses())->sum('amount');
             $totalFee = $student->batch?->course?->price ?? 0;
             $pendingAmount = max(0, $totalFee - $totalPaid);
             
@@ -194,7 +194,7 @@ class ParentPortalController extends Controller
     private function getPendingFees(Student $student): float
     {
         $totalPaid = Payment::where('student_id', $student->id)
-            ->where('status', 'completed')
+            ->whereIn('status', Payment::settledStatuses())
             ->sum('amount');
         
         $totalFee = $student->batch?->course?->price ?? 0;

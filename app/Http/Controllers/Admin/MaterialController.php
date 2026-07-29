@@ -27,14 +27,14 @@ class MaterialController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:pdf,video,document,link,image',
-            'file' => 'required_unless:type,link|file|max:51200',
+            'file' => 'required_unless:type,link|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip|max:51200',
             'file_path' => 'required_if:type,link|nullable|url',
         ]);
 
         $order = $course->materials()->max('order') + 1;
 
         if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('materials/' . $course->id, 'public');
+            $path = $request->file('file')->store('materials/' . $course->id, config('filesystems.private'));
             $validated['file_path'] = $path;
         }
 
@@ -52,24 +52,26 @@ class MaterialController extends Controller
 
     public function edit(Course $course, CourseMaterial $material)
     {
+        abort_unless($material->course_id === $course->id, 404);
         return view('dashboard.materials.edit', compact('course', 'material'));
     }
 
     public function update(Request $request, Course $course, CourseMaterial $material)
     {
+        abort_unless($material->course_id === $course->id, 404);
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:pdf,video,document,link,image',
-            'file' => 'nullable|file|max:51200',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip|max:51200',
             'file_path' => 'required_if:type,link|nullable|url',
         ]);
 
         if ($request->hasFile('file')) {
-            if ($material->file_path && Storage::disk('public')->exists($material->file_path)) {
-                Storage::disk('public')->delete($material->file_path);
+            if ($material->file_path && Storage::disk(config('filesystems.private'))->exists($material->file_path)) {
+                Storage::disk(config('filesystems.private'))->delete($material->file_path);
             }
-            $path = $request->file('file')->store('materials/' . $course->id, 'public');
+            $path = $request->file('file')->store('materials/' . $course->id, config('filesystems.private'));
             $validated['file_path'] = $path;
         } elseif ($validated['type'] === 'link') {
             $material->file_path = $validated['file_path'];
@@ -88,8 +90,9 @@ class MaterialController extends Controller
 
     public function destroy(Course $course, CourseMaterial $material)
     {
-        if ($material->file_path && Storage::disk('public')->exists($material->file_path)) {
-            Storage::disk('public')->delete($material->file_path);
+        abort_unless($material->course_id === $course->id, 404);
+        if ($material->file_path && Storage::disk(config('filesystems.private'))->exists($material->file_path)) {
+            Storage::disk(config('filesystems.private'))->delete($material->file_path);
         }
 
         $material->delete();
@@ -106,7 +109,9 @@ class MaterialController extends Controller
         ]);
 
         foreach ($request->order as $index => $materialId) {
-            CourseMaterial::where('id', $materialId)->update(['order' => $index + 1]);
+            CourseMaterial::where('id', $materialId)
+                ->where('course_id', $course->id)
+                ->update(['order' => $index + 1]);
         }
 
         return response()->json(['success' => true]);

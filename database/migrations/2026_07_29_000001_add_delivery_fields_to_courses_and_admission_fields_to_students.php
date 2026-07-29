@@ -27,7 +27,7 @@ return new class extends Migration {
         foreach ([
             ['key' => 'institution_name', 'value' => 'Dhaka IT Institute', 'group' => 'institution', 'type' => 'string'],
             ['key' => 'institution_logo', 'value' => 'images/brand/dhaka-it-institute-logo.png', 'group' => 'institution', 'type' => 'string'],
-            ['key' => 'institution_address', 'value' => 'House #62, Road #4, Block #B, Section #12, Pallabi, Mirpur, Dhaka', 'group' => 'institution', 'type' => 'text'],
+            ['key' => 'institution_address', 'value' => 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216. Behind Dhaka WASA.', 'group' => 'institution', 'type' => 'text'],
             ['key' => 'theme_primary_color', 'value' => '#168536', 'group' => 'theme', 'type' => 'string'],
             ['key' => 'theme_secondary_color', 'value' => '#171717', 'group' => 'theme', 'type' => 'string'],
         ] as $setting) {

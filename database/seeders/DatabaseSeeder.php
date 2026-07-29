@@ -14,7 +14,17 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Note: Model events are enabled to allow registration number generation
-        
+
+        if (app()->environment('production')) {
+            $this->call([
+                RoleSeeder::class,
+                PermissionSeeder::class,
+                AdminUserSeeder::class,
+            ]);
+
+            return;
+        }
+
         $this->call([
             RoleSeeder::class,
             PermissionSeeder::class,

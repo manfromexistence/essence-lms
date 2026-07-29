@@ -88,7 +88,7 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
                 });
             } elseif ($status === 'completed' || $status === 'graduated') {
                 $query->whereHas('batch', function ($q) {
-                    $q->where('status', 'completed');
+                    $q->whereIn('status', \App\Models\Payment::settledStatuses());
                 });
             }
         }
@@ -213,7 +213,7 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
         $totalPaid = 0;
         if ($student->payments && $student->payments->count() > 0) {
             $totalPaid = $student->payments
-                ->where('status', 'completed')
+                ->whereIn('status', \App\Models\Payment::settledStatuses())
                 ->sum('amount');
         } else {
             $totalPaid = $student->paid_amount ?? 0;

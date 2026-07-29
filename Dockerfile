@@ -1,8 +1,8 @@
 FROM php:8.3-apache AS build
 
 RUN apt-get update && apt-get install -y \
-    git curl libicu-dev libpng-dev libonig-dev libxml2-dev libzip-dev unzip nodejs npm \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl
+    git curl libicu-dev libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev unzip nodejs npm \
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip intl
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -15,8 +15,8 @@ RUN npm install && npm run build
 FROM php:8.3-apache
 
 RUN apt-get update && apt-get install -y \
-    libicu-dev libpng-dev libonig-dev libxml2-dev libzip-dev unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
+    libicu-dev libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev unzip \
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip intl \
     && a2enmod rewrite
 
 COPY --from=build /app /var/www/html
@@ -31,4 +31,4 @@ COPY docker-apache-config.conf /etc/apache2/sites-available/000-default.conf
 WORKDIR /var/www/html
 EXPOSE 80
 
-CMD php artisan migrate --force --seed && apache2-foreground
+CMD php artisan migrate --force && php artisan optimize && apache2-foreground

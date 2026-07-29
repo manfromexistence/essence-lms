@@ -103,10 +103,6 @@
             @if(session('success'))
                 <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
                     <p>{{ session('success') }}</p>
-                    @if(session('generated_password'))
-                        <p class="mt-2 font-semibold">Temporary password: <code class="rounded bg-white px-2 py-1">{{ session('generated_password') }}</code></p>
-                        <p class="mt-1 text-xs">Save it now. It is displayed only once.</p>
-                    @endif
                 </div>
             @endif
 
@@ -167,6 +163,7 @@
                     <x-ui.checkbox name="remember" id="remember-me">
                         Remember me
                     </x-ui.checkbox>
+                    <a href="{{ route('password.request') }}" class="text-sm text-primary hover:underline">Forgot password?</a>
                 </div>
 
                 <!-- Submit Button -->
@@ -184,12 +181,6 @@
             </div>
         </div>
 
-        <!-- Demo Credentials -->
-        <!-- <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-sm text-blue-800 font-semibold mb-2">Demo Credentials:</p>
-            <p class="text-sm text-blue-700">Email: <span class="font-mono bg-blue-100 px-2 py-1 rounded">alpha@gmail.com</span></p>
-            <p class="text-sm text-blue-700">Password: <span class="font-mono bg-blue-100 px-2 py-1 rounded">password</span></p>
-        </div> -->
     </div>
 
     <script>

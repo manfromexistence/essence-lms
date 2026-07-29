@@ -130,7 +130,8 @@ class TeacherController extends Controller
 
         $attendance = [];
         if ($selectedBatchId) {
-            $batch = Batch::with('students')->find($selectedBatchId);
+            abort_unless($teacher->batches()->whereKey($selectedBatchId)->exists(), 403);
+            $batch = Batch::with('students')->findOrFail($selectedBatchId);
             $attendance = Attendance::where('batch_id', $selectedBatchId)
                 ->where('date', $date)
                 ->get()
@@ -161,6 +162,7 @@ class TeacherController extends Controller
             'batch_id' => 'required|exists:batches,id',
             'date' => 'required|date',
             'attendance' => 'required|array',
+            'attendance.*' => 'required|in:present,absent,late,excused',
         ]);
 
         $batch = Batch::find($request->batch_id);
@@ -170,6 +172,9 @@ class TeacherController extends Controller
         }
 
         foreach ($request->attendance as $studentId => $status) {
+            if (!$batch->students()->whereKey($studentId)->exists()) {
+                abort(422, 'Attendance contains a student outside the selected batch.');
+            }
             Attendance::updateOrCreate(
                 [
                     'student_id' => $studentId,

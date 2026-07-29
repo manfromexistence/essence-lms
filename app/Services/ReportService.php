@@ -181,7 +181,7 @@ class ReportService
                 $payments = $query->orderBy('payment_date', 'desc')->get();
 
                 // Calculate summary
-                $completed = $payments->where('status', 'completed');
+                $completed = $payments->whereIn('status', Payment::settledStatuses());
                 $summary = [
                     'total_amount' => $completed->sum('amount'),
                     'total_count' => $completed->count(),
@@ -561,7 +561,7 @@ class ReportService
                 case 'completed':
                     // Students in completed batches
                     $query->whereHas('batch', function ($q) {
-                        $q->where('status', 'completed');
+                        $q->whereIn('status', Payment::settledStatuses());
                     });
                     break;
                 case 'inactive':
@@ -655,7 +655,7 @@ class ReportService
 
         // Payment summary
         $payments = $student->payments ?? collect();
-        $completedPayments = $payments->where('status', 'completed');
+        $completedPayments = $payments->whereIn('status', Payment::settledStatuses());
         
         $studentData['payment_summary'] = [
             'total_amount' => (float) $student->total_amount,

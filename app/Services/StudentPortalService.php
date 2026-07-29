@@ -38,7 +38,7 @@ class StudentPortalService
     public function getPaymentSummary(Student $student): array
     {
         $totalFee = $student->batch?->course?->fee ?? 0;
-        $paidAmount = $student->payments()->where('status', 'completed')->sum('amount');
+        $paidAmount = $student->payments()->whereIn('status', Payment::settledStatuses())->sum('amount');
         $dueAmount = max(0, $totalFee - $paidAmount);
 
         return [

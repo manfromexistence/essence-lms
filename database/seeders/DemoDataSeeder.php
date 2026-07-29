@@ -39,10 +39,10 @@ class DemoDataSeeder extends Seeder
     private function createSettings(): void
     {
         $settings = [
-            ['key' => 'institution_name', 'value' => 'Alphainno LMS', 'group' => 'institution', 'type' => 'string'],
-            ['key' => 'institution_address', 'value' => 'Dhaka, Bangladesh', 'group' => 'institution', 'type' => 'string'],
-            ['key' => 'institution_phone', 'value' => '+880 1700 000000', 'group' => 'institution', 'type' => 'string'],
-            ['key' => 'institution_email', 'value' => 'info@alphainno.com', 'group' => 'institution', 'type' => 'string'],
+            ['key' => 'institution_name', 'value' => 'Dhaka IT Institute', 'group' => 'institution', 'type' => 'string'],
+            ['key' => 'institution_address', 'value' => 'House #5, Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216', 'group' => 'institution', 'type' => 'string'],
+            ['key' => 'institution_phone', 'value' => '+8801682715576', 'group' => 'institution', 'type' => 'string'],
+            ['key' => 'institution_email', 'value' => 'dhakaitinstitute@gmail.com', 'group' => 'institution', 'type' => 'string'],
             ['key' => 'student_id_format', 'value' => 'STU-{YEAR}-{SEQ:4}', 'group' => 'student', 'type' => 'string'],
             ['key' => 'attendance_threshold', 'value' => '75', 'group' => 'attendance', 'type' => 'integer'],
             ['key' => 'sms_gateway', 'value' => 'bulk_sms_bd', 'group' => 'sms', 'type' => 'string'],

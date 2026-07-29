@@ -3,218 +3,90 @@
 namespace Database\Seeders;
 
 use App\Models\Course;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CourseSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        Course::whereIn('code', ['WEB001', 'DS001', 'DM001', 'MOB001', 'GD001'])
+            ->orWhere('code', 'like', 'STD-CLS-%')
+            ->update(['status' => 'inactive']);
+
         $courses = [
             [
-                'name' => 'Complete Web Development Bootcamp',
-                'code' => 'WEB001',
-                'description' => 'Learn full-stack web development from scratch with HTML, CSS, JavaScript, PHP, and Laravel.',
-                'price' => 15000.00,
-                'duration' => 6,
+                'name' => 'Advanced Microsoft Office',
+                'code' => 'DIT-MSO-01',
+                'description' => 'Practical Microsoft Word, Excel and PowerPoint training with office documents, reports, presentations, Canva and productivity tools.',
+                'price' => 5000,
+                'duration' => 2,
                 'duration_unit' => 'months',
-                'status' => 'active',
-                'class' => '10',
-                'image' => 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=400&h=250&fit=crop',
-                'start_date' => now()->addDays(7),
-                'end_date' => now()->addMonths(6),
-                'max_students' => 30,
-                'category' => 'Programming',
+                'delivery_mode' => 'offline',
+                'category' => 'Office Productivity',
                 'level' => 'beginner',
-                'prerequisites' => ['Basic computer knowledge'],
-                'objectives' => [
-                    'Build responsive websites',
-                    'Master frontend technologies',
-                    'Learn backend development',
-                    'Deploy applications'
-                ],
-                'syllabus' => [
-                    'HTML & CSS Fundamentals',
-                    'JavaScript & DOM Manipulation',
-                    'PHP & Laravel Framework',
-                    'Database Design & MySQL',
-                    'Project Development'
-                ]
+                'prerequisites' => ['Access to a computer or laptop'],
+                'objectives' => ['Create professional office documents', 'Work confidently with spreadsheets', 'Build effective presentations'],
+                'syllabus' => ['Microsoft Word', 'Microsoft Excel', 'Microsoft PowerPoint', 'Canva and productivity tools', 'Practical office projects'],
+                'image' => 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&auto=format&fit=crop',
             ],
             [
-                'name' => 'Data Science with Python',
-                'code' => 'DS001',
-                'description' => 'Master data analysis, machine learning, and statistical modeling with Python.',
-                'price' => 20000.00,
-                'duration' => 8,
-                'duration_unit' => 'months',
-                'status' => 'active',
-                'class' => '11',
-                'image' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
-                'start_date' => now()->addDays(14),
-                'end_date' => now()->addMonths(8),
-                'max_students' => 25,
-                'category' => 'Data Science',
-                'level' => 'intermediate',
-                'prerequisites' => ['Python programming', 'Basic statistics'],
-                'objectives' => [
-                    'Data analysis and visualization',
-                    'Machine learning algorithms',
-                    'Statistical modeling',
-                    'Big data processing'
-                ],
-                'syllabus' => [
-                    'Python for Data Science',
-                    'NumPy & Pandas',
-                    'Data Visualization',
-                    'Machine Learning',
-                    'Deep Learning Basics'
-                ]
-            ],
-            [
-                'name' => 'Digital Marketing Mastery',
-                'code' => 'DM001',
-                'description' => 'Complete guide to digital marketing including SEO, SEM, social media, and analytics.',
-                'price' => 12000.00,
-                'duration' => 4,
-                'duration_unit' => 'months',
-                'status' => 'active',
-                'class' => '9',
-                'image' => 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=250&fit=crop',
-                'start_date' => now()->addDays(21),
-                'end_date' => now()->addMonths(4),
-                'max_students' => 40,
-                'category' => 'Marketing',
-                'level' => 'beginner',
-                'prerequisites' => ['Basic internet knowledge'],
-                'objectives' => [
-                    'SEO and SEM strategies',
-                    'Social media marketing',
-                    'Content marketing',
-                    'Analytics and reporting'
-                ],
-                'syllabus' => [
-                    'Digital Marketing Fundamentals',
-                    'Search Engine Optimization',
-                    'Social Media Marketing',
-                    'Google Ads & Analytics',
-                    'Content Strategy'
-                ]
-            ],
-            [
-                'name' => 'Mobile App Development with Flutter',
-                'code' => 'MOB001',
-                'description' => 'Build cross-platform mobile applications using Flutter and Dart.',
-                'price' => 18000.00,
+                'name' => 'Professional Web Design & Freelancing',
+                'code' => 'DIT-WD-01',
+                'description' => 'Project-based website design using WordPress, Elementor, HTML, CSS and responsive design, combined with practical freelancing marketplace guidance.',
+                'price' => 20000,
                 'duration' => 5,
                 'duration_unit' => 'months',
-                'status' => 'active',
-                'class' => '12',
-                'image' => 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=250&fit=crop',
-                'start_date' => now()->addDays(28),
-                'end_date' => now()->addMonths(5),
-                'max_students' => 20,
-                'category' => 'Mobile Development',
-                'level' => 'intermediate',
-                'prerequisites' => ['Programming basics', 'Object-oriented concepts'],
-                'objectives' => [
-                    'Flutter framework mastery',
-                    'Cross-platform development',
-                    'UI/UX design principles',
-                    'App deployment'
-                ],
-                'syllabus' => [
-                    'Dart Programming',
-                    'Flutter Widgets',
-                    'State Management',
-                    'Firebase Integration',
-                    'App Store Deployment'
-                ]
+                'delivery_mode' => 'offline',
+                'category' => 'Web Design',
+                'level' => 'beginner',
+                'prerequisites' => ['Basic computer and internet skills', 'Access to a computer or laptop'],
+                'objectives' => ['Build responsive business websites', 'Create WordPress and ecommerce sites', 'Prepare a practical portfolio', 'Understand marketplace workflows'],
+                'syllabus' => ['HTML and CSS', 'Responsive design', 'WordPress and Elementor', 'Ecommerce websites', 'Website security and optimization', 'Freelancing fundamentals'],
+                'image' => 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=800&auto=format&fit=crop',
             ],
             [
-                'name' => 'Graphic Design Fundamentals',
-                'code' => 'GD001',
-                'description' => 'Learn professional graphic design using Adobe Creative Suite.',
-                'price' => 10000.00,
-                'duration' => 3,
+                'name' => 'Facebook Marketing & Ecommerce',
+                'code' => 'DIT-FBM-01',
+                'description' => 'Practical Facebook marketing, content planning, advertising fundamentals and ecommerce website workflows for business and freelancing.',
+                'price' => 10000,
+                'duration' => 6,
                 'duration_unit' => 'months',
-                'status' => 'active',
-                'class' => '8',
-                'image' => 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=400&h=250&fit=crop',
-                'start_date' => now()->addDays(35),
-                'end_date' => now()->addMonths(3),
-                'max_students' => 25,
-                'category' => 'Design',
+                'delivery_mode' => 'online',
+                'category' => 'Digital Marketing',
                 'level' => 'beginner',
-                'prerequisites' => ['Basic computer skills'],
-                'objectives' => [
-                    'Adobe Creative Suite proficiency',
-                    'Design principles and theory',
-                    'Brand identity creation',
-                    'Print and digital design'
-                ],
-                'syllabus' => [
-                    'Design Theory & Principles',
-                    'Adobe Photoshop',
-                    'Adobe Illustrator',
-                    'Adobe InDesign',
-                    'Portfolio Development'
-                ]
-            ]
+                'prerequisites' => ['Basic internet and social media knowledge'],
+                'objectives' => ['Plan Facebook marketing campaigns', 'Create useful marketing content', 'Understand ad and ecommerce workflows'],
+                'syllabus' => ['Facebook page management', 'Content strategy', 'Advertising fundamentals', 'Audience and reporting', 'Ecommerce workflow', 'Client communication'],
+                'image' => 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop',
+            ],
+            [
+                'name' => 'Full Stack Web Development',
+                'code' => 'DIT-FSWD-01',
+                'description' => 'A long-form, project-based web development path covering modern frontend development, PHP, Laravel, databases, deployment and professional workflows.',
+                'price' => 60000,
+                'duration' => 12,
+                'duration_unit' => 'months',
+                'delivery_mode' => 'online',
+                'category' => 'Web Development',
+                'level' => 'intermediate',
+                'prerequisites' => ['Basic computer skills', 'Commitment to regular practice', 'Access to a computer and internet'],
+                'objectives' => ['Build production-oriented web applications', 'Work with databases and APIs', 'Deploy portfolio projects', 'Prepare for freelance and junior development work'],
+                'syllabus' => ['HTML, CSS and JavaScript', 'Modern frontend fundamentals', 'PHP and object-oriented programming', 'Laravel', 'SQL and database design', 'APIs, testing and deployment', 'Freelancing and client workflow'],
+                'image' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop',
+            ],
         ];
-
-        // Unsplash images for education/learning themes
-        $educationImages = [
-            'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=250&fit=crop', // Books and apple
-            'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=400&h=250&fit=crop', // Student studying
-            'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&h=250&fit=crop', // Classroom
-            'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=250&fit=crop', // University campus
-            'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&h=250&fit=crop', // Books stack
-            'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=250&fit=crop', // Student with laptop
-            'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&h=250&fit=crop', // Graduation
-            'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=250&fit=crop', // Notebook and pen
-            'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=400&h=250&fit=crop', // Books open
-            'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=250&fit=crop', // Team learning
-            'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop', // Group study
-            'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&h=250&fit=crop', // Library
-        ];
-
-        // Create standard courses for all classes 1-12 to ensure coverage
-        foreach (range(1, 12) as $class) {
-            // Check if we already added a course for this class above (just for variety)
-            $exists = false;
-            foreach($courses as $c) {
-                if(isset($c['class']) && $c['class'] == $class) $exists = true;
-            }
-            
-            if(!$exists) {
-                $courses[] = [
-                    'name' => "Standard Curriculum - Class $class",
-                    'code' => "STD-CLS-$class",
-                    'description' => "Standard academic curriculum for Class $class students.",
-                    'price' => 5000 + ($class * 500),
-                    'duration' => 12,
-                    'duration_unit' => 'months',
-                    'status' => 'active',
-                    'class' => (string)$class,
-                    'image' => $educationImages[($class - 1) % count($educationImages)],
-                    'start_date' => now(),
-                    'end_date' => now()->addYear(),
-                    'max_students' => 50,
-                    'category' => 'Academic',
-                    'level' => 'beginner',
-                    'prerequisites' => [],
-                    'objectives' => ["Complete Class $class syllabus"],
-                    'syllabus' => ["Subject 1", "Subject 2", "Subject 3"]
-                ];
-            }
-        }
 
         foreach ($courses as $course) {
-            Course::updateOrCreate(['code' => $course['code']], $course);
+            Course::updateOrCreate(
+                ['code' => $course['code']],
+                $course + [
+                    'status' => 'active',
+                    'class' => null,
+                    'start_date' => now()->addWeek(),
+                    'end_date' => now()->addMonths($course['duration']),
+                    'max_students' => 30,
+                ]
+            );
         }
     }
 }
