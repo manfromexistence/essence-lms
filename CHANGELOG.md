@@ -32,6 +32,7 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 - Added parent-child ownership checks to nested course videos/materials and teacher attendance operations.
 - Disabled automatic demo credential seeding in production.
 - Prevented every demo/content seeder from running through `DatabaseSeeder` in production.
+- Production startup now seeds only required roles, permissions, and the configured initial owner after migrations.
 - Disabled debug mode and removed secrets from committed environment templates.
 - Removed unsafe public upload-test routes and GET logout.
 - Restricted uploaded branding and course-material file types.
