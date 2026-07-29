@@ -90,7 +90,7 @@ class SettingsService
             'type' => 'string',
         ],
         'institution_favicon' => [
-            'value' => '',
+            'value' => 'images/brand/dhaka-it-institute-favicon.png',
             'group' => 'institution',
             'type' => 'string',
         ],
@@ -410,15 +410,20 @@ class SettingsService
      */
     public function getFavicon(): string
     {
-        $favicon = $this->get('institution_favicon', '');
+        $favicon = $this->get('institution_favicon', 'images/brand/dhaka-it-institute-favicon.png');
         
         if (empty($favicon)) {
-            return asset('favicon.ico');
+            return asset('images/brand/dhaka-it-institute-favicon.png') . '?v=20260729';
         }
         
         // If it's a full URL, return as is
         if (str_starts_with($favicon, 'http://') || str_starts_with($favicon, 'https://')) {
             return $favicon;
+        }
+
+        // Brand assets live directly under public/, while uploaded icons use storage/.
+        if (str_starts_with($favicon, 'images/')) {
+            return asset($favicon) . '?v=20260729';
         }
         
         // If it's a storage path, convert to asset URL

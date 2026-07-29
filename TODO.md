@@ -5,7 +5,7 @@ This file contains work that requires the client's infrastructure, credentials, 
 ## Current engineering status
 
 - Repository-controlled production hardening: **100% complete for this release scope**
-- Automated release checks: **11 tests / 25 assertions passing**
+- Automated release checks: **13 tests / 32 assertions passing**
 - Known dependency advisories: **0 Composer / 0 npm production**
 - Public-launch acceptance: pending the client/infrastructure items below
 

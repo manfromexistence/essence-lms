@@ -10,7 +10,8 @@
         $settingsService = app(\App\Services\SettingsService::class);
         $faviconUrl = $settingsService->getFavicon();
     @endphp
-    <link rel="icon" type="image/x-icon" href="{{ $faviconUrl }}">
+    <link rel="icon" href="{{ $faviconUrl }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=20260729">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

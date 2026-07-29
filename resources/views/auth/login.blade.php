@@ -8,7 +8,8 @@
         $settingsService = app(\App\Services\SettingsService::class);
         $faviconUrl = $settingsService->getFavicon();
     @endphp
-    <link rel="icon" type="image/x-icon" href="{{ $faviconUrl }}">
+    <link rel="icon" href="{{ $faviconUrl }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=20260729">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @php

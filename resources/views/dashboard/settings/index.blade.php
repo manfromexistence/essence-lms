@@ -103,10 +103,12 @@
                     <div class="md:col-span-2">
                         @php
                             $currentFavicon = $settings['institution']['institution_favicon']['value'] ?? '';
-                            // If empty, use the default favicon URL for preview
-                            $faviconPreview = empty($currentFavicon) ? asset('favicon.ico') : $currentFavicon;
+                            // If empty, use the current branded favicon for preview.
+                            $faviconPreview = empty($currentFavicon)
+                                ? app(\App\Services\SettingsService::class)->getFavicon()
+                                : $currentFavicon;
                             $faviconHelperText = empty($currentFavicon)
-                                ? 'Currently using default favicon.ico. Upload a file to replace it. Recommended size: 32x32px or 64x64px. Supports ICO, PNG, SVG'
+                                ? 'Currently using the Dhaka IT Institute favicon. Upload a file to replace it. Recommended size: 32x32px or 64x64px. Supports ICO, PNG, SVG'
                                 : 'Recommended size: 32x32px or 64x64px. Supports ICO, PNG, SVG';
                         @endphp
                         <x-ui.image-input 

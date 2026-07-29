@@ -13,7 +13,18 @@ class ProductionSecurityTest extends TestCase
 
     public function test_application_home_page_boots(): void
     {
-        $this->get('/')->assertSuccessful();
+        $this->get('/')
+            ->assertSuccessful()
+            ->assertSee('images/brand/dhaka-it-institute-favicon.png?v=20260729', false);
+    }
+
+    public function test_dhaka_it_favicon_assets_are_present(): void
+    {
+        $this->assertFileExists(public_path('images/brand/dhaka-it-institute-favicon.png'));
+        $this->assertFileExists(public_path('favicon.ico'));
+        $this->assertFileExists(public_path('favicon-32x32.png'));
+        $this->assertFileExists(public_path('favicon-16x16.png'));
+        $this->assertFileExists(public_path('apple-touch-icon.png'));
     }
 
     public function test_debug_upload_routes_are_not_exposed(): void
