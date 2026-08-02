@@ -12,16 +12,30 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Http\Request;
 
 class AdmissionController extends Controller
 {
     public function __construct(protected StudentService $studentService) {}
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        $selectedMode = in_array($request->input('mode'), ['online', 'offline'], true)
+            ? $request->input('mode')
+            : 'offline';
+        $lockedMode = null;
         $courses = Course::active()->orderBy('delivery_mode')->orderBy('name')->get();
 
-        return view('admission.create', compact('courses'));
+        return view('admission.create', compact('courses', 'selectedMode', 'lockedMode'));
+    }
+
+    public function createOffline(): View
+    {
+        $selectedMode = 'offline';
+        $lockedMode = 'offline';
+        $courses = Course::active()->where('delivery_mode', 'offline')->orderBy('name')->get();
+
+        return view('admission.create', compact('courses', 'selectedMode', 'lockedMode'));
     }
 
     public function store(StoreStudentRequest $request): RedirectResponse

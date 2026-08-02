@@ -27,6 +27,7 @@ Route::get('/students', [HomeController::class, 'students'])->name('students');
 Route::get('/results', [HomeController::class, 'results'])->name('results');
 
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
+Route::get('/admission/offline', [AdmissionController::class, 'createOffline'])->name('admission.offline');
 Route::get('/admission', [AdmissionController::class, 'create'])->name('admission.create');
 Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');
 

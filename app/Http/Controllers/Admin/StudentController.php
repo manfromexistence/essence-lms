@@ -32,34 +32,56 @@ class StudentController extends Controller
      */
     public function index(Request $request): View
     {
+        $request->validate([
+            'search' => 'nullable|string|max:255',
+            'search_field' => 'nullable|in:all,name,number,batch,area,blood_group',
+            'mode' => 'nullable|in:online,offline',
+            'batch_id' => 'nullable|integer|exists:batches,id',
+            'year' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
+            'class' => 'nullable|string|max:50',
+            'sort' => 'nullable|in:created_at,name_bn,phone,blood_group,admission_mode,status',
+            'direction' => 'nullable|in:asc,desc',
+        ]);
+
         $filters = [
             'search' => $request->input('search'),
+            'search_field' => $request->input('search_field', 'all'),
+            'mode' => $request->input('mode'),
             'year' => $request->input('year'),
             'batch_id' => $request->input('batch_id'),
             'class' => $request->input('class'),
             'with_dues' => $request->boolean('with_dues'),
             'featured' => $request->boolean('featured'),
-            'sort_by' => $request->input('sort_by', 'created_at'),
-            'sort_dir' => $request->input('sort_dir', 'desc'),
+            'sort_by' => $request->input('sort', 'created_at'),
+            'sort_dir' => $request->input('direction', 'desc'),
         ];
 
         $students = $this->studentService->getPaginated($filters, 15);
-        $batches = Batch::select('id', 'name')->get();
+        $batches = Batch::select('id', 'name', 'code')->orderBy('name')->get();
         $years = range(date('Y'), date('Y') - 5);
         $classes = range(1, 12);
+        $studentCounts = [
+            'all' => Student::count(),
+            'online' => Student::where('admission_mode', 'online')->count(),
+            'offline' => Student::where('admission_mode', 'offline')->count(),
+        ];
 
-        return view('dashboard.students.index', compact('students', 'batches', 'years', 'classes', 'filters'));
+        return view('dashboard.students.index', compact('students', 'batches', 'years', 'classes', 'filters', 'studentCounts'));
     }
 
     /**
      * Show the form for creating a new student.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
         $batches = Batch::select('id', 'name', 'code', 'course_id', 'schedule')->get();
+        $courses = Course::active()->orderBy('delivery_mode')->orderBy('name')->get();
         $classes = range(1, 12);
+        $defaultMode = in_array($request->input('mode'), ['online', 'offline'], true)
+            ? $request->input('mode')
+            : 'offline';
 
-        return view('dashboard.students.create', compact('batches', 'classes'));
+        return view('dashboard.students.create', compact('batches', 'courses', 'classes', 'defaultMode'));
     }
 
     /**
@@ -68,6 +90,23 @@ class StudentController extends Controller
     public function store(StoreStudentRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+
+        $course = !empty($validated['course_id']) ? Course::findOrFail($validated['course_id']) : null;
+        if ($course && $course->delivery_mode !== $validated['admission_mode']) {
+            return back()->withInput()->withErrors([
+                'course_id' => 'The selected course does not match the chosen online/offline mode.',
+            ]);
+        }
+
+        if (!empty($validated['batch_id'])) {
+            $batch = Batch::with('course')->findOrFail($validated['batch_id']);
+            if ($course && $batch->course_id !== $course->id) {
+                return back()->withInput()->withErrors(['batch_id' => 'The selected batch does not belong to this course.']);
+            }
+            if ($batch->course && $batch->course->delivery_mode !== $validated['admission_mode']) {
+                return back()->withInput()->withErrors(['batch_id' => 'The selected batch does not match the chosen online/offline mode.']);
+            }
+        }
 
         // Generate secure random password
         $password = \Illuminate\Support\Str::random(12);

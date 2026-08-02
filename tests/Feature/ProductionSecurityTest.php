@@ -15,7 +15,8 @@ class ProductionSecurityTest extends TestCase
     {
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('images/brand/dhaka-it-institute-favicon.png?v=20260729', false)
+            ->assertSee('images/brand/dhaka-it-institute-favicon.png?v=20260802', false)
+            ->assertSee('images/brand/dhaka-it-institute-logo.png?v=20260802', false)
             ->assertSee('data-hero-slider', false)
             ->assertSee('images.unsplash.com/photo-', false);
     }

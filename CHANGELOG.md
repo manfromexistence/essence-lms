@@ -2,10 +2,14 @@
 
 All notable changes to the Dhaka IT Institute LMS are documented here.
 
-## [Unreleased] - 2026-07-29
+## [Unreleased] - 2026-08-02
 
 ### Added
 
+- Dedicated offline student admission form and a validated offline application submission workflow.
+- Separate “All Students” and “Add New Student” dashboard navigation entries.
+- Student search by name, phone/registration number, batch, present/permanent area, and blood group.
+- Online/offline student dropdown filtering, batch filtering, mode totals, and mode/area/blood-group table columns.
 - Mouse-drag, touch-swipe, keyboard navigation, pause-on-interaction, and scroll-safe gestures for the homepage hero carousel.
 - Lightweight spring-style reveal animations across public pages with `prefers-reduced-motion` accessibility support.
 - Professional IT-themed Unsplash fallbacks for courses without uploaded artwork, including modal previews and broken-image recovery.
@@ -28,6 +32,10 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 
 ### Changed
 
+- Corrected the Dhaka IT Institute monogram across the header logo and every favicon: the complete “d” (curve and right stem) is black and the lower-right panel is white.
+- Cache-versioned both logo and favicon assets so deployed browsers refresh the corrected branding immediately.
+- Reworked admin student registration so online/offline mode filters institute courses directly; school class and immediate batch assignment are optional.
+- Added the admin role to student-management navigation while keeping student records restricted to admin and super-admin routes.
 - Updated Laravel and all Composer dependencies to supported patched versions.
 - Unified successful course payments on `completed`, while retaining legacy `approved` compatibility.
 - Limited user/role management and system configuration to super administrators.
@@ -49,10 +57,12 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 - Composer audit: zero known advisories as of 2026-07-29.
 - npm production audit: zero known advisories as of 2026-07-29.
 - Payment evidence and premium learning assets are no longer public URLs.
-- Automated release suite: 14 tests and 37 assertions passing as of 2026-07-29.
+- Automated release suite: 19 tests and 81 assertions passing as of 2026-08-02.
 
 ### Fixed
 
+- Fixed the missing Carbon import in the student ID generator that caused automatic registration-number generation and admission submission to return HTTP 500.
+- Fixed dynamically hidden online/offline course options appearing inside the reusable custom select menu.
 - Centered the Admission header action on desktop and added the same prominent action to mobile navigation.
 - Corrected malformed course-page section markup that could cause inconsistent browser layouts.
 - Fixed invalid compiled Blade PHP in the shared admin header that caused every authenticated Render dashboard page to return HTTP 500.

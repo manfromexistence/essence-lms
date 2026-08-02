@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Student;
 use App\Models\Batch;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -131,6 +132,10 @@ class StudentService
     {
         $query = Student::with(['batch', 'user']);
 
+        if (!empty($filters['mode']) && in_array($filters['mode'], ['online', 'offline'], true)) {
+            $query->where('admission_mode', $filters['mode']);
+        }
+
         // Filter by year
         if (!empty($filters['year'])) {
             $query->enrolledInYear($filters['year']);
@@ -148,16 +153,11 @@ class StudentService
 
         // Filter by search term
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('name_bn', 'like', "%{$search}%")
-                  ->orWhere('registration_no', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uQ) use ($search) {
-                      $uQ->where('name', 'like', "%{$search}%")
-                         ->orWhere('email', 'like', "%{$search}%");
-                  });
-            });
+            $this->applySearch(
+                $query,
+                trim((string) $filters['search']),
+                $filters['search_field'] ?? 'all'
+            );
         }
 
         // Filter by dues
@@ -171,11 +171,60 @@ class StudentService
         }
 
         // Sorting
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortDir = $filters['sort_dir'] ?? 'desc';
+        $allowedSorts = ['created_at', 'name_bn', 'phone', 'blood_group', 'admission_mode', 'status'];
+        $sortBy = in_array($filters['sort_by'] ?? null, $allowedSorts, true)
+            ? $filters['sort_by']
+            : 'created_at';
+        $sortDir = ($filters['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortDir);
 
-        return $query->paginate($perPage);
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    private function applySearch(Builder $query, string $search, string $field): void
+    {
+        $field = in_array($field, ['all', 'name', 'number', 'batch', 'area', 'blood_group'], true)
+            ? $field
+            : 'all';
+
+        $query->where(function ($studentQuery) use ($search, $field) {
+            if (in_array($field, ['all', 'name'], true)) {
+                $studentQuery->orWhere('name_bn', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($userQuery) => $userQuery
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%"));
+            }
+
+            if (in_array($field, ['all', 'number'], true)) {
+                $studentQuery->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('registration_no', 'like', "%{$search}%")
+                    ->orWhere('guardian_phone', 'like', "%{$search}%")
+                    ->orWhere('father_phone', 'like', "%{$search}%")
+                    ->orWhere('mother_phone', 'like', "%{$search}%");
+            }
+
+            if (in_array($field, ['all', 'batch'], true)) {
+                $studentQuery->orWhereHas('batch', fn ($batchQuery) => $batchQuery
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%"));
+            }
+
+            if (in_array($field, ['all', 'area'], true)) {
+                $studentQuery->orWhere('present_village', 'like', "%{$search}%")
+                    ->orWhere('present_po', 'like', "%{$search}%")
+                    ->orWhere('present_ps', 'like', "%{$search}%")
+                    ->orWhere('present_dist', 'like', "%{$search}%")
+                    ->orWhere('present_holding', 'like', "%{$search}%")
+                    ->orWhere('permanent_village', 'like', "%{$search}%")
+                    ->orWhere('permanent_po', 'like', "%{$search}%")
+                    ->orWhere('permanent_ps', 'like', "%{$search}%")
+                    ->orWhere('permanent_dist', 'like', "%{$search}%");
+            }
+
+            if (in_array($field, ['all', 'blood_group'], true)) {
+                $studentQuery->orWhere('blood_group', 'like', "%{$search}%");
+            }
+        });
     }
 
     /**

@@ -399,7 +399,7 @@ class SettingsService
         
         // If it's a storage path, convert to asset URL
         if (str_starts_with($logo, 'images/')) {
-            return asset($logo);
+            return asset($logo) . '?v=20260802';
         }
 
         return asset('storage/' . $logo);
@@ -413,7 +413,7 @@ class SettingsService
         $favicon = $this->get('institution_favicon', 'images/brand/dhaka-it-institute-favicon.png');
         
         if (empty($favicon)) {
-            return asset('images/brand/dhaka-it-institute-favicon.png') . '?v=20260729';
+            return asset('images/brand/dhaka-it-institute-favicon.png') . '?v=20260802';
         }
         
         // If it's a full URL, return as is
@@ -423,7 +423,7 @@ class SettingsService
 
         // Brand assets live directly under public/, while uploaded icons use storage/.
         if (str_starts_with($favicon, 'images/')) {
-            return asset($favicon) . '?v=20260729';
+            return asset($favicon) . '?v=20260802';
         }
         
         // If it's a storage path, convert to asset URL

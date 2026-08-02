@@ -11,7 +11,7 @@
         $faviconUrl = $settingsService->getFavicon();
     @endphp
     <link rel="icon" href="{{ $faviconUrl }}">
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=20260729">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=20260802">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     

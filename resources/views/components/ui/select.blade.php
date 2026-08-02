@@ -117,7 +117,7 @@
             let hasSelection = false;
             
             Array.from(nativeSelect.options).forEach(option => {
-                if (option.value === "" && option.disabled) return;
+                if (option.hidden || (option.value === "" && option.disabled)) return;
 
                 const li = document.createElement('li');
                 li.className = 'px-4 py-2 hover:bg-primary/10 cursor-pointer text-sm text-gray-700 hover:text-primary transition-colors';

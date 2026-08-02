@@ -6,8 +6,13 @@
 <section class="bg-gray-50 py-10">
     <div class="mx-auto max-w-5xl px-4">
         <div class="mb-7 text-center">
-            <h1 class="text-3xl font-extrabold text-gray-900">Student Admission Form</h1>
+            <h1 class="text-3xl font-extrabold text-gray-900">{{ $lockedMode === 'offline' ? 'Offline Student Admission Form' : 'Student Admission Form' }}</h1>
             <p class="mt-2 text-gray-600">Dhaka IT Institute — Let’s Build Your Dream</p>
+            @if($lockedMode === 'offline')
+                <p class="mx-auto mt-3 max-w-2xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    Complete this form for an in-person course. The office will review the application and confirm the batch and payment details.
+                </p>
+            @endif
         </div>
 
         <form action="{{ route('admission.store') }}" method="POST" class="space-y-6 rounded-2xl bg-white p-6 shadow-lg md:p-9">
@@ -82,12 +87,19 @@
             <fieldset class="border-t pt-6">
                 <legend class="mb-4 text-lg font-bold text-green-800">Course selection</legend>
                 <div class="grid gap-4 md:grid-cols-2">
-                    <x-ui.select name="admission_mode" id="admission_mode" label="Class Mode" required :selected="old('admission_mode', 'offline')">
-                        <option value="online">Online</option><option value="offline">Offline</option>
-                    </x-ui.select>
+                    @if($lockedMode)
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-gray-700">Class Mode</label>
+                            <input type="hidden" name="admission_mode" id="admission_mode" value="{{ $lockedMode }}">
+                            <div class="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3 font-semibold text-amber-900">Offline</div>
+                        </div>
+                    @else
+                        <x-ui.select name="admission_mode" id="admission_mode" label="Class Mode" required
+                            :options="['online' => 'Online', 'offline' => 'Offline']" :selected="old('admission_mode', $selectedMode)" />
+                    @endif
                     <x-ui.select name="course_id" id="course_id" label="Course" required :selected="old('course_id')">
                         <option value="">Select course</option>
-                        @foreach($courses as $course)<option value="{{ $course->id }}" data-mode="{{ $course->delivery_mode }}">{{ $course->name }} — {{ ucfirst($course->delivery_mode) }} — ৳{{ number_format($course->price) }}</option>@endforeach
+                        @foreach($courses as $course)<option value="{{ $course->id }}" data-mode="{{ $course->delivery_mode }}" @selected((string) old('course_id') === (string) $course->id)>{{ $course->name }} — {{ ucfirst($course->delivery_mode) }} — ৳{{ number_format($course->price) }}</option>@endforeach
                     </x-ui.select>
                 </div>
             </fieldset>
@@ -106,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filter = () => Array.from(course.options).forEach(option => {
         if (option.value) option.hidden = option.dataset.mode !== mode.value;
     });
-    mode.addEventListener('change', () => { course.value = ''; filter(); });
+    mode.addEventListener('change', () => { course.value = ''; filter(); if (typeof renderOptions === 'function') renderOptions('course_id'); });
     filter();
 });
 </script>

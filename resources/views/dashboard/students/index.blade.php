@@ -5,11 +5,22 @@
 @section('page-description', 'Manage all students enrolled in the system')
 
 @section('content')
-
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        @foreach([
+            ['label' => 'All Students', 'value' => $studentCounts['all'], 'color' => 'blue'],
+            ['label' => 'Online Students', 'value' => $studentCounts['online'], 'color' => 'emerald'],
+            ['label' => 'Offline Students', 'value' => $studentCounts['offline'], 'color' => 'amber'],
+        ] as $stat)
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-gray-500">{{ $stat['label'] }}</p>
+                <p class="mt-2 text-3xl font-bold text-gray-900">{{ number_format($stat['value']) }}</p>
+            </div>
+        @endforeach
+    </div>
 
     <div class="bg-white rounded-xl shadow-md border border-gray-100">
         <!-- Header -->
-        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="px-6 py-4 border-b border-gray-200 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center space-x-4">
                 <h2 class="text-lg font-semibold text-gray-900">All Students</h2>
                 <span
@@ -17,28 +28,76 @@
                     {{ $students->total() ?? $students->count() }} Total
                 </span>
             </div>
-            <a href="{{ route('dashboard.students.create') }}"
-                class="inline-flex items-center px-4 py-2 bg-bd-green text-white rounded-lg hover:bg-bd-green-dark transition-colors font-medium text-sm shadow-sm">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Student
-            </a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admission.offline') }}" target="_blank" rel="noopener"
+                    class="inline-flex items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-100">
+                    Offline Admission Form
+                </a>
+                <a href="{{ route('dashboard.students.create', ['mode' => 'offline']) }}"
+                    class="inline-flex items-center px-4 py-2 bg-bd-green text-white rounded-lg hover:bg-bd-green-dark transition-colors font-medium text-sm shadow-sm">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add New Student
+                </a>
+            </div>
         </div>
+
+        <form action="{{ route('dashboard.students.index') }}" method="GET" class="border-b border-gray-200 bg-gray-50/70 p-5">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+                <div class="xl:col-span-2">
+                    <label for="student-search" class="mb-1.5 block text-sm font-semibold text-gray-700">Search students</label>
+                    <input id="student-search" name="search" value="{{ $filters['search'] }}" type="search"
+                        placeholder="Enter name, number, batch, area or blood group"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-bd-green focus:ring-bd-green">
+                </div>
+                <div>
+                    <label for="search-field" class="mb-1.5 block text-sm font-semibold text-gray-700">Search field</label>
+                    <select id="search-field" name="search_field" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-bd-green focus:ring-bd-green">
+                        @foreach(['all' => 'All fields', 'name' => 'Name', 'number' => 'Phone / ID number', 'batch' => 'Batch', 'area' => 'Area', 'blood_group' => 'Blood group'] as $value => $label)
+                            <option value="{{ $value }}" @selected(($filters['search_field'] ?? 'all') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="student-mode" class="mb-1.5 block text-sm font-semibold text-gray-700">Student type</label>
+                    <select id="student-mode" name="mode" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-bd-green focus:ring-bd-green">
+                        <option value="">Online & offline</option>
+                        <option value="online" @selected(($filters['mode'] ?? '') === 'online')>Online students</option>
+                        <option value="offline" @selected(($filters['mode'] ?? '') === 'offline')>Offline students</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="student-batch" class="mb-1.5 block text-sm font-semibold text-gray-700">Batch</label>
+                    <select id="student-batch" name="batch_id" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-bd-green focus:ring-bd-green">
+                        <option value="">All batches</option>
+                        @foreach($batches as $batch)
+                            <option value="{{ $batch->id }}" @selected((string) ($filters['batch_id'] ?? '') === (string) $batch->id)>{{ $batch->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="inline-flex flex-1 items-center justify-center rounded-lg bg-bd-green px-4 py-2.5 text-sm font-semibold text-white hover:bg-bd-green-dark">Search</button>
+                    <a href="{{ route('dashboard.students.index') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100">Reset</a>
+                </div>
+            </div>
+        </form>
 
         @php
             $headers = [
                 ['key' => 'student', 'label' => 'Student'],
                 ['key' => 'contact', 'label' => 'Contact'],
-                ['key' => 'class', 'label' => 'Class'],
+                ['key' => 'admission_mode', 'label' => 'Type'],
                 ['key' => 'batch', 'label' => 'Batch'],
+                ['key' => 'area', 'label' => 'Area'],
+                ['key' => 'blood_group', 'label' => 'Blood Group'],
                 ['key' => 'status', 'label' => 'Status'],
                 ['key' => 'enrolled', 'label' => 'Enrolled'],
                 ['key' => 'actions', 'label' => 'Actions'],
             ];
         @endphp
 
-        <x-ui.data-table id="student-table" :headers="$headers" :rows="$students" :route="route('dashboard.students.index')">
+        <x-ui.data-table id="student-table" :headers="$headers" :rows="$students" :route="route('dashboard.students.index')" :searchable="false">
             @forelse($students as $student)
                 <tr class="hover:bg-gray-50 transition-colors">
                     <!-- Student -->
@@ -70,11 +129,11 @@
                         <div class="text-sm text-gray-500">{{ $student->phone ?? 'No phone' }}</div>
                     </td>
 
-                    <!-- Class -->
+                    <!-- Online / Offline -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span
-                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {{ $student->class ? 'Class ' . $student->class : 'N/A' }}
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $student->admission_mode === 'online' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800' }}">
+                            {{ ucfirst($student->admission_mode ?? 'offline') }}
                         </span>
                     </td>
 
@@ -84,6 +143,16 @@
                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             {{ $student->batch->name ?? 'Unassigned' }}
                         </span>
+                    </td>
+
+                    <!-- Area -->
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        {{ collect([$student->present_village, $student->present_ps, $student->present_dist])->filter()->join(', ') ?: 'Not provided' }}
+                    </td>
+
+                    <!-- Blood Group -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
+                        {{ $student->blood_group ?: 'N/A' }}
                     </td>
 
                     <!-- Status -->
@@ -136,7 +205,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                         <div class="flex flex-col items-center justify-center">
                             <svg class="h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">

@@ -225,30 +225,34 @@
         <!-- 5. Course & Batch Information -->
         <div class="bg-white rounded-xl shadow-md border-gray-200 border mb-6">
             <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Academic Information</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Course & Admission Information</h3>
+                <p class="mt-1 text-sm text-gray-500">Choose online or offline first; only matching courses will be available.</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <x-ui.select name="admission_mode" label="Class Mode" required persist>
-                    <option value="online">Online</option>
-                    <option value="offline">Offline</option>
-                </x-ui.select>
+                <x-ui.select name="admission_mode" label="Student Type / Class Mode" required persist
+                    :options="['online' => 'Online Student', 'offline' => 'Offline Student']"
+                    :selected="old('admission_mode', $defaultMode)" />
                 <!-- Class -->
-                <x-ui.select name="class" label="Select Class" required persist>
-                    <option value="">Select Class</option>
+                <x-ui.select name="class" label="School Class (Optional)" persist>
+                    <option value="">Not applicable</option>
                     @foreach($classes as $c)
-                        <option value="{{ $c }}">Class {{ $c }}</option>
+                        <option value="{{ $c }}" @selected((string) old('class') === (string) $c)>Class {{ $c }}</option>
                     @endforeach
                 </x-ui.select>
 
                 <!-- Course -->
                 <x-ui.select name="course_id" label="Select Course" persist>
                     <option value="">Select Course</option>
-                    <!-- Populated by JS -->
+                    @foreach($courses as $course)
+                        <option value="{{ $course->id }}" data-mode="{{ $course->delivery_mode }}" @selected((string) old('course_id') === (string) $course->id)>
+                            {{ $course->name }} — {{ ucfirst($course->delivery_mode) }}
+                        </option>
+                    @endforeach
                 </x-ui.select>
 
                 <!-- Batch -->
-                <x-ui.select name="batch_id" label="Select Batch" required persist>
-                    <option value="">Select Batch</option>
+                <x-ui.select name="batch_id" label="Batch (Optional)" persist>
+                    <option value="">Assign later</option>
                     <!-- Populated by JS -->
                 </x-ui.select>
 
@@ -307,6 +311,7 @@
             // Elements
             const els = {
                 class: document.getElementById('class'),
+                mode: document.getElementById('admission_mode'),
                 course: document.getElementById('course_id'),
                 batch: document.getElementById('batch_id'),
                 day: document.getElementById('class_days'),
@@ -325,25 +330,28 @@
                 class_time: '{{ old("class_time", "") }}',
             };
 
-            // 1. Class Change -> Fetch Courses
-            els.class.addEventListener('change', function() {
-                const classVal = this.value;
-                resetSelect(els.course, 'Select Course');
+            // 1. Online/offline mode controls the available institute courses.
+            function filterCourses(resetSelection = false) {
+                Array.from(els.course.options).forEach(option => {
+                    if (!option.value) return;
+                    option.hidden = option.dataset.mode !== els.mode.value;
+                    option.disabled = option.hidden;
+                });
+
+                const selectedOption = els.course.options[els.course.selectedIndex];
+                if (resetSelection || (selectedOption && selectedOption.hidden)) {
+                    els.course.value = '';
+                }
+
                 resetSelect(els.batch, 'Select Batch');
                 resetSelect(els.day, 'Select Days');
                 resetSelect(els.time, 'Select Time');
                 currentBatches = [];
 
-                if (classVal) {
-                    const baseUrl = "{{ url('/dashboard/students') }}";
-                    fetch(`${baseUrl}/get-courses/${classVal}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            populateSelect(els.course, data, oldValues.course_id);
-                        })
-                        .catch(err => console.error(err));
-                }
-            });
+                updateUI(els.course);
+            }
+
+            els.mode.addEventListener('change', () => filterCourses(true));
 
             // 2. Course Change -> Fetch Batches
             els.course.addEventListener('change', function() {
@@ -449,7 +457,7 @@
                     let hasSelection = false;
                     
                     Array.from(nativeSelect.options).forEach(option => {
-                        if (option.value === "" && option.disabled) return;
+                        if (option.hidden || (option.value === "" && option.disabled)) return;
 
                         const li = document.createElement('li');
                         li.className = 'px-4 py-2 hover:bg-emerald-50 cursor-pointer text-sm text-gray-700 hover:text-bd-green transition-colors';
@@ -504,11 +512,14 @@
                 paidInput.addEventListener('input', calculateDue);
             }
 
-            // === INITIALIZATION: Trigger chain if class has a value ===
-            // This handles restoration after validation failure (old() values) or from localStorage
-            if (els.class.value) {
-                // Trigger the chain to populate courses, then batches, etc.
-                els.class.dispatchEvent(new Event('change'));
+            // Initialize course visibility, then restore the course/batch chain.
+            filterCourses(false);
+            if (oldValues.course_id && Array.from(els.course.options).some(option => option.value == oldValues.course_id && !option.hidden)) {
+                els.course.value = oldValues.course_id;
+                updateUI(els.course);
+            }
+            if (els.course.value) {
+                els.course.dispatchEvent(new Event('change'));
             }
         });
     </script>

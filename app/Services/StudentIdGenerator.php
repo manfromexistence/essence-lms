@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Batch;
 use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class StudentIdGenerator

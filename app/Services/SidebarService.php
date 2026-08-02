@@ -10,6 +10,7 @@ class SidebarService
      * Role constants for menu access control.
      */
     public const ROLE_SUPER_ADMIN = 'super-admin';
+    public const ROLE_ADMIN = 'admin';
     public const ROLE_TEACHER = 'teacher';
     public const ROLE_STUDENT = 'student';
     public const ROLE_PARENT = 'parent';
@@ -23,6 +24,7 @@ class SidebarService
     {
         return [
             self::ROLE_SUPER_ADMIN,
+            self::ROLE_ADMIN,
             self::ROLE_TEACHER,
             self::ROLE_STUDENT,
             self::ROLE_PARENT,
@@ -123,37 +125,43 @@ class SidebarService
                 'title' => 'Students',
                 'icon' => 'students',
                 'route' => null,
-                'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_TEACHER],
+                'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
                 'children' => [
                     [
-                        'title' => 'Add/Edit Student Profile',
+                        'title' => 'All Students',
                         'icon' => 'user',
                         'route' => 'dashboard.students.index',
-                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_TEACHER],
+                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
+                    ],
+                    [
+                        'title' => 'Add New Student',
+                        'icon' => 'user',
+                        'route' => 'dashboard.students.create',
+                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
                     ],
                     [
                         'title' => 'Digital Admission Form',
                         'icon' => 'document',
                         'route' => 'dashboard.students.admission-form',
-                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_TEACHER],
+                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
                     ],
                     [
                         'title' => 'Batch & Class Assignment',
                         'icon' => 'users',
                         'route' => 'dashboard.students.batch-assignment',
-                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_TEACHER],
+                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
                     ],
                     [
                         'title' => 'Attendance Tracking',
                         'icon' => 'clipboard-check',
                         'route' => 'dashboard.students.attendance',
-                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_TEACHER],
+                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
                     ],
                     [
                         'title' => 'SMS Notification',
                         'icon' => 'chat',
                         'route' => 'dashboard.students.sms',
-                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_TEACHER],
+                        'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
                     ],
                     [
                         'title' => 'Exam Routine',
