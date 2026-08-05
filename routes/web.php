@@ -27,6 +27,11 @@ Route::get('/students', [HomeController::class, 'students'])->name('students');
 Route::get('/results', [HomeController::class, 'results'])->name('results');
 
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
+Route::get('/services', [HomeController::class, 'services'])->name('services');
+Route::get('/team', [HomeController::class, 'team'])->name('team');
+Route::get('/courses/{course}/demo', [HomeController::class, 'courseDemo'])->name('courses.demo');
+Route::get('/courses/{course}/demo/{video}/stream', [HomeController::class, 'streamCourseDemo'])->name('courses.demo.stream');
+Route::get('/certificates/verify/{code?}', [\App\Http\Controllers\CertificateController::class, 'verify'])->name('certificates.verify');
 Route::get('/admission/offline', [AdmissionController::class, 'createOffline'])->name('admission.offline');
 Route::get('/admission', [AdmissionController::class, 'create'])->name('admission.create');
 Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');
@@ -269,6 +274,10 @@ Route::middleware('auth')->group(function () {
         Route::get('payments/student/{student}/history', [AdminPaymentController::class, 'history'])->name('payments.history');
         Route::resource('payments', AdminPaymentController::class);
 
+        Route::get('certificates', [\App\Http\Controllers\Admin\CertificateController::class, 'index'])->name('certificates.index');
+        Route::post('certificates', [\App\Http\Controllers\Admin\CertificateController::class, 'store'])->name('certificates.store');
+        Route::post('certificates/{certificate}/revoke', [\App\Http\Controllers\Admin\CertificateController::class, 'revoke'])->name('certificates.revoke');
+
         // Settings (Super Admin Only)
         Route::middleware('role:super-admin')->group(function () {
             Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -355,6 +364,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/courses/{course}/watch/{video}', [\App\Http\Controllers\StudentPortalController::class, 'watchCourse'])->name('course.video');
         Route::get('/courses/{course}/watch/{video}/stream', [\App\Http\Controllers\StudentPortalController::class, 'streamVideo'])->name('course.video.stream');
         Route::post('/courses/{course}/watch/{video}/complete', [\App\Http\Controllers\StudentPortalController::class, 'completeVideo'])->name('course.video.complete');
+        Route::get('/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('certificates.index');
+        Route::get('/certificates/{certificate}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
         Route::get('/payment/form/{course}', [\App\Http\Controllers\PaymentController::class, 'showForm'])->name('payment.form');
         Route::post('/payment/submit', [\App\Http\Controllers\PaymentController::class, 'submit'])->name('payment.submit');
         Route::get('/payment/dashboard', [\App\Http\Controllers\PaymentController::class, 'dashboard'])->name('payment.dashboard');

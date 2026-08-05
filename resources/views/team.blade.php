@@ -1,0 +1,52 @@
+@extends('layouts.frontend')
+
+@section('title', 'Our Team - Dhaka IT Institute')
+
+@section('content')
+<section class="bg-black py-20 text-white">
+    <div class="mx-auto max-w-7xl px-4 text-center">
+        <p class="font-semibold uppercase tracking-[0.25em] text-green-400">People behind your progress</p>
+        <h1 class="mt-4 text-4xl font-black md:text-6xl">Meet our training team</h1>
+        <p class="mx-auto mt-5 max-w-2xl text-lg text-gray-300">Practical instructors and support professionals committed to skills, projects and career readiness.</p>
+    </div>
+</section>
+
+<section class="bg-gray-50 py-16">
+    <div class="mx-auto max-w-7xl px-4">
+        @if($team->isNotEmpty())
+            <div class="grid gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                @foreach($team as $member)
+                    @php
+                        $name = $member->user?->name ?? 'Dhaka IT Institute Trainer';
+                        $photo = $member->profile_image ? asset('storage/' . $member->profile_image) : 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=168536&color=fff&size=512';
+                    @endphp
+                    <article class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                        <img src="{{ $photo }}" alt="{{ $name }}" class="h-72 w-full object-cover">
+                        <div class="p-6">
+                            <h2 class="text-xl font-bold text-gray-900">{{ $name }}</h2>
+                            <p class="mt-1 font-semibold text-green-700">{{ $member->department ?: ($member->category?->name ?? 'Professional Instructor') }}</p>
+                            @if($member->subjects)
+                                <p class="mt-3 text-sm leading-6 text-gray-600">{{ collect($member->subjects)->take(3)->join(' • ') }}</p>
+                            @endif
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        @else
+            <div class="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach([
+                    ['name' => 'Lead Web Development Instructor', 'role' => 'Web Development & Freelancing', 'icon' => 'fa-code'],
+                    ['name' => 'Digital Skills Instructor', 'role' => 'Office Applications & Design', 'icon' => 'fa-laptop'],
+                    ['name' => 'Student Success Team', 'role' => 'Admission, Support & Career Guidance', 'icon' => 'fa-headset'],
+                ] as $member)
+                    <article class="rounded-2xl border border-gray-100 bg-white p-7 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-green-100 text-4xl text-green-800"><i class="fa-solid {{ $member['icon'] }}"></i></div>
+                        <h2 class="mt-5 text-xl font-bold text-gray-900">{{ $member['name'] }}</h2>
+                        <p class="mt-2 font-semibold text-green-700">{{ $member['role'] }}</p>
+                    </article>
+                @endforeach
+            </div>
+        @endif
+    </div>
+</section>
+@endsection

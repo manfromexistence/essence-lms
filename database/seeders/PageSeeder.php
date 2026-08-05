@@ -149,6 +149,20 @@ class PageSeeder extends Seeder
                     'scholarship_label' => 'বৃত্তি প্রাপ্ত',
                 ],
             ],
+            [
+                'title' => 'Services',
+                'slug' => 'services',
+                'meta_title' => 'IT Training and Digital Services | Dhaka IT Institute',
+                'meta_description' => 'Professional IT training, freelancing mentorship, website development, digital marketing, domain and hosting services.',
+                'content' => [],
+            ],
+            [
+                'title' => 'Our Team',
+                'slug' => 'team',
+                'meta_title' => 'Our Training Team | Dhaka IT Institute',
+                'meta_description' => 'Meet the practical instructors and support team at Dhaka IT Institute.',
+                'content' => [],
+            ],
         ];
 
         foreach ($pages as $page) {

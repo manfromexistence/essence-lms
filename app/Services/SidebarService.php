@@ -111,6 +111,11 @@ class SidebarService
      */
     protected function getFullMenuStructure(): array
     {
+        // The legacy school/academic menu remains below for reference, but this
+        // installation intentionally exposes only course-business workflows.
+        return $this->getCourseSellingMenuStructure();
+
+        /** @noinspection PhpUnreachableStatementInspection */
         return [
             // Dashboard - accessible to all authenticated users
             [
@@ -741,6 +746,54 @@ class SidebarService
                 'route' => 'dashboard.children.fees',
                 'roles' => [self::ROLE_PARENT],
             ],
+        ];
+    }
+
+    private function getCourseSellingMenuStructure(): array
+    {
+        $admins = [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN];
+
+        return [
+            ['title' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'dashboard', 'roles' => self::getAllRoles()],
+            [
+                'title' => 'Students', 'icon' => 'students', 'route' => null, 'roles' => $admins,
+                'children' => [
+                    ['title' => 'All Students', 'icon' => 'user', 'route' => 'dashboard.students.index', 'roles' => $admins],
+                    ['title' => 'Add New Student', 'icon' => 'plus', 'route' => 'dashboard.students.create', 'roles' => $admins],
+                    ['title' => 'Admission Applications', 'icon' => 'document', 'route' => 'dashboard.students.admission-form', 'roles' => $admins],
+                ],
+            ],
+            [
+                'title' => 'Courses', 'icon' => 'courses', 'route' => null,
+                'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER],
+                'children' => [
+                    ['title' => 'Courses & Modules', 'icon' => 'collection', 'route' => 'dashboard.courses.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+                    ['title' => 'Videos & Demo Classes', 'icon' => 'video', 'route' => 'dashboard.courses.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+                    ['title' => 'Learning Materials', 'icon' => 'document', 'route' => 'dashboard.courses.materials', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+                ],
+            ],
+            [
+                'title' => 'Payments', 'icon' => 'payments', 'route' => null, 'roles' => $admins,
+                'children' => [
+                    ['title' => 'Payment Dashboard', 'icon' => 'chart-bar', 'route' => 'dashboard.payments.index', 'roles' => $admins],
+                    ['title' => 'bKash Reviews', 'icon' => 'clipboard-check', 'route' => 'payment.review.list', 'roles' => $admins],
+                    ['title' => 'Invoices & Receipts', 'icon' => 'document-text', 'route' => 'dashboard.payments.invoices', 'roles' => $admins],
+                ],
+            ],
+            ['title' => 'Certificates', 'icon' => 'academic-cap', 'route' => 'dashboard.certificates.index', 'roles' => $admins],
+            ['title' => 'Announcements', 'icon' => 'announcement', 'route' => 'dashboard.announcements.index', 'roles' => $admins],
+            [
+                'title' => 'Website Content', 'icon' => 'globe', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
+                'children' => [
+                    ['title' => 'All Pages', 'icon' => 'document', 'route' => 'dashboard.cms.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+                    ['title' => 'Services Page', 'icon' => 'briefcase', 'route' => 'dashboard.cms.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+                    ['title' => 'Team Page', 'icon' => 'users', 'route' => 'dashboard.cms.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+                ],
+            ],
+            ['title' => 'Users & Roles', 'icon' => 'users', 'route' => 'dashboard.users.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            ['title' => 'Settings', 'icon' => 'settings', 'route' => 'dashboard.settings.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            ['title' => 'My Courses', 'icon' => 'courses', 'route' => 'student.courses', 'roles' => [self::ROLE_STUDENT]],
+            ['title' => 'My Certificates', 'icon' => 'academic-cap', 'route' => 'student.certificates.index', 'roles' => [self::ROLE_STUDENT]],
         ];
     }
 

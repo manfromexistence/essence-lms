@@ -16,6 +16,7 @@ use App\Models\VideoView;
 use App\Services\StudentPortalService;
 use App\Services\ExamTakingService;
 use App\Services\MarkSheetService;
+use App\Services\CertificateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +27,8 @@ class StudentPortalController extends Controller
     public function __construct(
         protected StudentPortalService $portalService,
         protected ExamTakingService $examService,
-        protected MarkSheetService $markSheetService
+        protected MarkSheetService $markSheetService,
+        protected CertificateService $certificateService
     ) {}
 
     /**
@@ -923,9 +925,12 @@ class StudentPortalController extends Controller
                 ->orWhere(fn ($q) => $q->where('order', $video->order)->where('id', '>', $video->id));
         })->orderBy('order')->orderBy('id')->first();
 
+        $certificate = $next ? null : $this->certificateService->issueForCompletedCourse($student, $course);
+
         return response()->json([
             'completed' => true,
             'next_url' => $next ? route('student.course.video', [$course, $next]) : null,
+            'certificate_url' => $certificate ? route('student.certificates.show', $certificate) : null,
         ]);
     }
 

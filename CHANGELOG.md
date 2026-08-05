@@ -2,10 +2,13 @@
 
 All notable changes to the Dhaka IT Institute LMS are documented here.
 
-## [Unreleased] - 2026-08-02
+## [Unreleased] - 2026-08-05
 
 ### Added
 
+- Automatic, verifiable course-completion certificates with student access, printable certificate layout, public verification, and admin issuance/revocation management.
+- Public Services and Team pages with responsive professional cards and course-business content.
+- Public course demo-class pages for videos marked as free previews, including authorized streaming for uploaded preview videos.
 - Dedicated offline student admission form and a validated offline application submission workflow.
 - Separate “All Students” and “Add New Student” dashboard navigation entries.
 - Student search by name, phone/registration number, batch, present/permanent area, and blood group.
@@ -32,6 +35,9 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 
 ### Changed
 
+- Replaced the active school-style dashboard navigation with a focused course-selling menu; legacy classes, academic exams, attendance, routines, parents, inventory, and unrelated modules remain hidden from navigation.
+- Shortened the public admission form to essential contact, address, learning-mode, and course fields.
+- Replaced school-oriented frontend navigation with Services, Team, and certificate verification links.
 - Corrected the Dhaka IT Institute monogram across the header logo and every favicon: the complete “d” (curve and right stem) is black and the lower-right panel is white.
 - Cache-versioned both logo and favicon assets so deployed browsers refresh the corrected branding immediately.
 - Reworked admin student registration so online/offline mode filters institute courses directly; school class and immediate batch assignment are optional.
@@ -57,10 +63,11 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 - Composer audit: zero known advisories as of 2026-07-29.
 - npm production audit: zero known advisories as of 2026-07-29.
 - Payment evidence and premium learning assets are no longer public URLs.
-- Automated release suite: 19 tests and 81 assertions passing as of 2026-08-02.
+- Automated release suite: 24 tests and 114 assertions passing as of 2026-08-05.
 
 ### Fixed
 
+- Fixed dashboard custom-select hover styles dimming the entire option, which made option text difficult to read.
 - Fixed the missing Carbon import in the student ID generator that caused automatic registration-number generation and admission submission to return HTTP 500.
 - Fixed dynamically hidden online/offline course options appearing inside the reusable custom select menu.
 - Centered the Admission header action on desktop and added the same prominent action to mobile navigation.

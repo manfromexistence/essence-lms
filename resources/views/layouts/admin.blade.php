@@ -111,8 +111,8 @@
         }
         
         .hover\:bg-primary\/10:hover {
-            background-color: var(--color-primary) !important;
-            opacity: 0.1;
+            background-color: color-mix(in srgb, var(--color-primary) 12%, white) !important;
+            opacity: 1;
         }
         
         .hover\:text-primary:hover {

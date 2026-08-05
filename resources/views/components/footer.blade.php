@@ -40,18 +40,18 @@
                             class="text-primary hover:opacity-80 transition-colors text-sm">পরিচিতি</a></li>
                     <li><a href="{{ route('courses') }}"
                             class="text-primary hover:opacity-80 transition-colors text-sm">কোর্স</a></li>
-                    <li><a href="{{ route('teachers') }}"
-                            class="text-primary hover:opacity-80 transition-colors text-sm">শিক্ষক</a></li>
-                    <li><a href="{{ route('students') }}"
-                            class="text-primary hover:opacity-80 transition-colors text-sm">শিক্ষার্থী</a></li>
+                    <li><a href="{{ route('services') }}"
+                            class="text-primary hover:opacity-80 transition-colors text-sm">সার্ভিসেস</a></li>
+                    <li><a href="{{ route('team') }}"
+                            class="text-primary hover:opacity-80 transition-colors text-sm">আমাদের টিম</a></li>
                 </ul>
             </div>
 
             <div>
                 <h3 class="text-base md:text-lg font-bold mb-4 text-primary">গুরুত্বপূর্ণ লিংক</h3>
                 <ul class="space-y-2 md:space-y-3">
-                    <li><a href="{{ route('results') }}"
-                            class="text-primary hover:opacity-80 transition-colors text-sm">পরীক্ষার ফলাফল</a></li>
+                    <li><a href="{{ route('certificates.verify') }}"
+                            class="text-primary hover:opacity-80 transition-colors text-sm">সার্টিফিকেট যাচাই</a></li>
                     <li><a href="{{ route('contact') }}"
                             class="text-primary hover:opacity-80 transition-colors text-sm">যোগাযোগ</a></li>
                     <li><a href="{{ route('login') }}"

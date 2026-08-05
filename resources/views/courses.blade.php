@@ -66,9 +66,6 @@
                         <div class="p-5">
                             <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{{ $course->name }}</h3>
                             <p class="text-sm text-gray-500 mb-2 uppercase">{{ $category }}</p>
-                            @if($course->class)
-                                <p class="text-xs text-gray-400 mb-3">শ্রেণী: {{ $course->class }}</p>
-                            @endif
                             <div class="flex items-center justify-between text-sm text-gray-600 mb-3 pb-3 border-b border-gray-100">
                                 <span class="flex items-center">
                                     <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,6 +154,10 @@
             
             const isAuthenticated = {{ auth()->check() ? 'true' : 'false' }};
             const isStudent = {{ auth()->check() && auth()->user()->hasRole('student') ? 'true' : 'false' }};
+            const demoVideo = course.videos?.find(video => video.is_preview);
+            const demoButton = demoVideo
+                ? `<a href="{{ url('/courses') }}/${course.id}/demo" class="mb-3 block w-full rounded-lg border-2 border-primary px-6 py-3 text-center font-semibold text-primary transition hover:bg-green-50">ফ্রি ডেমো ক্লাস দেখুন</a>`
+                : '';
             
             let enrollButton = '';
             if (!isAuthenticated) {
@@ -193,13 +194,6 @@
                     <p class="text-gray-600 leading-relaxed">${course.description || 'কোর্সের বিস্তারিত বিবরণ শীঘ্রই যুক্ত করা হবে।'}</p>
                 </div>
 
-                ${course.class ? `
-                <div class="mb-6">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-3">শ্রেণী</h4>
-                    <p class="text-gray-600">Class ${course.class}</p>
-                </div>
-                ` : ''}
-
                 ${course.duration ? `
                 <div class="mb-6">
                     <h4 class="text-lg font-semibold text-gray-900 mb-3">সময়কাল</h4>
@@ -208,6 +202,7 @@
                 ` : ''}
 
                 <div class="border-t border-gray-200 pt-6">
+                    ${demoButton}
                     ${enrollButton}
                 </div>
             `;

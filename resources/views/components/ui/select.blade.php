@@ -120,7 +120,7 @@
                 if (option.hidden || (option.value === "" && option.disabled)) return;
 
                 const li = document.createElement('li');
-                li.className = 'px-4 py-2 hover:bg-primary/10 cursor-pointer text-sm text-gray-700 hover:text-primary transition-colors';
+                li.className = 'px-4 py-2 cursor-pointer text-sm text-gray-800 transition-colors hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary';
                 li.textContent = option.textContent;
                 li.onclick = () => selectOption(name, option.value, option.textContent);
                 
