@@ -158,6 +158,9 @@
             const demoButton = demoVideo
                 ? `<a href="{{ url('/courses') }}/${course.id}/demo" class="mb-3 block w-full rounded-lg border-2 border-primary px-6 py-3 text-center font-semibold text-primary transition hover:bg-green-50">ফ্রি ডেমো ক্লাস দেখুন</a>`
                 : '';
+            const demoPlayer = demoVideo?.video_type === 'youtube' && demoVideo.external_id
+                ? `<div class="mb-6 overflow-hidden rounded-xl bg-black shadow-lg"><div class="aspect-video"><iframe class="h-full w-full" src="https://www.youtube-nocookie.com/embed/${demoVideo.external_id}?rel=0&modestbranding=1" title="${demoVideo.title || course.name}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><p class="px-4 py-3 text-sm text-white">ফ্রি ডেমো ক্লাস</p></div>`
+                : '';
             
             let enrollButton = '';
             if (!isAuthenticated) {
@@ -173,6 +176,7 @@
 
             const content = `
                 ${imageHtml}
+                ${demoPlayer}
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-blue-50 p-4 rounded-lg text-center">

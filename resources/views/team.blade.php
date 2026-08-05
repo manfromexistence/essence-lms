@@ -20,14 +20,15 @@
                         $name = $member->user?->name ?? 'Dhaka IT Institute Trainer';
                         $photo = $member->profile_image ? asset('storage/' . $member->profile_image) : 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=168536&color=fff&size=512';
                     @endphp
-                    <article class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-                        <img src="{{ $photo }}" alt="{{ $name }}" class="h-72 w-full object-cover">
+                    <article class="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="relative h-72 overflow-hidden bg-green-900"><img src="{{ $photo }}" alt="{{ $name }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent"></div></div>
                         <div class="p-6">
                             <h2 class="text-xl font-bold text-gray-900">{{ $name }}</h2>
                             <p class="mt-1 font-semibold text-green-700">{{ $member->department ?: ($member->category?->name ?? 'Professional Instructor') }}</p>
                             @if($member->subjects)
                                 <p class="mt-3 text-sm leading-6 text-gray-600">{{ collect($member->subjects)->take(3)->join(' • ') }}</p>
                             @endif
+                            <a href="{{ route('contact') }}" class="mt-5 inline-flex text-sm font-bold text-green-800 hover:text-black">Connect with our team →</a>
                         </div>
                     </article>
                 @endforeach
