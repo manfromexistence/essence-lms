@@ -274,6 +274,8 @@ Route::middleware('auth')->group(function () {
         Route::get('payments/student/{student}/history', [AdminPaymentController::class, 'history'])->name('payments.history');
         Route::resource('payments', AdminPaymentController::class);
 
+        Route::resource('services', \App\Http\Controllers\Admin\ServiceController::class)->except(['show']);
+
         Route::get('certificates', [\App\Http\Controllers\Admin\CertificateController::class, 'index'])->name('certificates.index');
         Route::post('certificates', [\App\Http\Controllers\Admin\CertificateController::class, 'store'])->name('certificates.store');
         Route::post('certificates/{certificate}/revoke', [\App\Http\Controllers\Admin\CertificateController::class, 'revoke'])->name('certificates.revoke');

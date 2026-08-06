@@ -783,6 +783,10 @@ class SidebarService
             ['title' => 'Certificates', 'icon' => 'academic-cap', 'route' => 'dashboard.certificates.index', 'roles' => $admins],
             ['title' => 'Announcements', 'icon' => 'announcement', 'route' => 'dashboard.announcements.index', 'roles' => $admins],
             [
+                'title' => 'Services & Store', 'icon' => 'briefcase', 'route' => 'dashboard.services.index', 'roles' => $admins,
+            ],
+            ['title' => 'Team Members', 'icon' => 'users', 'route' => 'dashboard.teachers.index', 'roles' => $admins],
+            [
                 'title' => 'Website Content', 'icon' => 'globe', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
                 'children' => [
                     ['title' => 'All Pages', 'icon' => 'document', 'route' => 'dashboard.cms.index', 'roles' => [self::ROLE_SUPER_ADMIN]],

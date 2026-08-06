@@ -44,6 +44,8 @@
                             class="text-primary hover:opacity-80 transition-colors text-sm">সার্ভিসেস</a></li>
                     <li><a href="{{ route('team') }}"
                             class="text-primary hover:opacity-80 transition-colors text-sm">আমাদের টিম</a></li>
+                    <li><a href="{{ route('teachers') }}"
+                            class="text-primary hover:opacity-80 transition-colors text-sm">শিক্ষকমণ্ডলী</a></li>
                 </ul>
             </div>
 

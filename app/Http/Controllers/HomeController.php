@@ -75,15 +75,7 @@ class HomeController extends Controller
     public function services()
     {
         $page = Page::findBySlug('services');
-
-        $services = $page?->getContent('services', []) ?: [
-            ['title' => 'Professional IT Training', 'icon' => 'fa-laptop-code', 'description' => 'Job-focused online and offline training in web development, office applications, design and digital marketing.'],
-            ['title' => 'Freelancing Mentorship', 'icon' => 'fa-briefcase', 'description' => 'Marketplace profile, portfolio, bidding, client communication and project-delivery guidance.'],
-            ['title' => 'Website Development', 'icon' => 'fa-globe', 'description' => 'Professional business, education, ecommerce and portfolio websites built for organizations and entrepreneurs.'],
-            ['title' => 'Digital Marketing', 'icon' => 'fa-bullhorn', 'description' => 'Facebook marketing, content planning, campaign setup, video creatives and practical growth support.'],
-            ['title' => 'Domain & Hosting', 'icon' => 'fa-server', 'description' => 'Domain registration, secure hosting, deployment, business email and ongoing technical maintenance.'],
-            ['title' => 'Lifetime Learning Support', 'icon' => 'fa-headset', 'description' => 'Course resources, practical feedback, career direction and post-course support for our learners.'],
-        ];
+        $services = \App\Models\Service::active()->ordered()->get();
 
         return view('services', compact('page', 'services'));
     }
@@ -93,7 +85,8 @@ class HomeController extends Controller
         $page = Page::findBySlug('team');
         $team = Teacher::with(['user', 'category'])
             ->where('status', 'active')
-            ->orderBy('department')
+            ->orderBy('display_order')
+            ->orderBy('id')
             ->get();
 
         return view('team', compact('page', 'team'));

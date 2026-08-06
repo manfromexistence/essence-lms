@@ -1,0 +1,18 @@
+- Uses card-based UI components (with avatars, images, action buttons like "buy"/"add to cart") for team members, services, and similar listings. Confidence: 0.85
+- Wants prototype/dummy frontend pages properly enhanced for UX/UI (made data-driven and polished, following the project's design system) rather than left as hardcoded placeholders. Confidence: 0.85# User Taste Preferences
+- Expects production-ready, professional codebase quality (strives for 100/100). Confidence: 0.95
+- Actively wants the agent to identify and list brutal flaws in existing projects before improving them. Confidence: 0.85
+- Requests project readiness status reported as a percentage out of 100. Confidence: 0.85
+- Wants CHANGELOG.md and TODO.md maintained in projects. Confidence: 0.85
+- Implements auto-advance navigation: when one item (e.g., course video, class) completes, automatically proceed to the next item wherever similar sequential logic exists. Confidence: 0.90
+- Prefers shorter, streamlined forms (e.g., student admission forms). Confidence: 0.75
+- Wants scroll-based animations, smooth/spring transitions on landing pages and throughout the site. Confidence: 0.85
+- Prefers draggable carousels that work on both desktop (mouse) and mobile (touch), handling page scrolls correctly. Confidence: 0.80
+- Uses Unsplash (or similar) images to fill missing image placeholders (e.g., course images on landing pages) for a professional look. Confidence: 0.85
+- Uses card-based UI components (with avatars, images, action buttons like "buy"/"add to cart") for team members, services, and similar listings. Confidence: 0.85
+- Wants button text and other UI elements properly centered/aligned. Confidence: 0.75
+- Prunes irrelevant academic/school features from LMS dashboards, keeping only course-selling-related items. Confidence: 0.75
+- Payment systems follow an admin-verification workflow: student submits transaction ID and details, admin reviews in a table, notifications communicate between parties, admin approves, then access is granted. Confidence: 0.90
+- Admin panels include multi-field search (name, number, batch, area, blood group) and dropdown/toggle filters (e.g., online vs. offline students, online/offline views). Confidence: 0.85
+- Rebrands existing projects with client-specific identity (name, theme colors, logo, favicons) everywhere — no remnants of previous brand. Confidence: 0.90
+- Deployments (Render, Vercel) must render all dashboard and frontend pages correctly — no broken/missing pages. Confidence: 0.85

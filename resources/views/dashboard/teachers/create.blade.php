@@ -67,9 +67,24 @@
                         <option value="Biology">Biology</option>
                     </x-ui.select>
 
+                    <x-ui.text-input name="designation" label="Designation / Title" placeholder="e.g., Senior Web Instructor" persist />
                     <x-ui.text-input name="salary" label="Monthly Salary (৳)" type="number" placeholder="0.00" persist />
                     <x-ui.text-input name="qualification" label="Highest Qualification" placeholder="e.g., M.Sc in Computer Science" persist />
                     <x-ui.text-input name="experience" label="Years of Experience" type="number" placeholder="0" persist />
+                    <x-ui.text-input name="display_order" label="Display Order" type="number" placeholder="0" helperText="Lower shows first on Team page" persist />
+                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700"><input type="checkbox" name="is_featured" value="1" class="rounded border-gray-300 text-bd-green focus:ring-bd-green" /> Featured on Team page</label>
+                </div>
+                <div class="p-6 pt-0">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Bio</label>
+                    <textarea name="bio" rows="3" placeholder="Short bio shown on team card & modal" class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-bd-green outline-none">{{ old('bio') }}</textarea>
+                </div>
+                <div class="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <x-ui.text-input name="social_links[facebook]" label="Facebook URL" placeholder="https://facebook.com/..." persist />
+                    <x-ui.text-input name="social_links[linkedin]" label="LinkedIn URL" placeholder="https://linkedin.com/in/..." persist />
+                    <x-ui.text-input name="social_links[twitter]" label="X / Twitter URL" placeholder="https://x.com/..." persist />
+                    <x-ui.text-input name="social_links[instagram]" label="Instagram URL" placeholder="https://instagram.com/..." persist />
+                    <x-ui.text-input name="social_links[github]" label="GitHub URL" placeholder="https://github.com/..." persist />
+                    <x-ui.text-input name="social_links[website]" label="Website URL" placeholder="https://..." persist />
                 </div>
             </div>
 

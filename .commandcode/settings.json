@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(cd /d G:\\Laravel\\lms && php -v 2>nul && echo \"---\" && php -r \"echo class_exists('Illuminate\\\\Support\\\\Str') ? 'Str OK' : 'NO Str';\" 2>nul || echo \"php not available\")",
+      "Shell(php -r require 'vendor/autoload.php';  = new Illuminate\\Filesystem\\Filesystem;  = new Illuminate\\View\\Compilers\\BladeCompiler(, sys_get_temp_dir()); ->compileString(file_get_contents('resources/views/team.blade.php')); ->compileString(file_get_contents('resources/views/teachers.blade.php')); echo 'Both Blade templates compiled OK'; 2 >& 1)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

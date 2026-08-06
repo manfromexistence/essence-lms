@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             StudentManagementSeeder::class,
             TeacherManagementSeeder::class,
             PageSeeder::class,
+            TeamAndServicesSeeder::class,
             
             // Comprehensive data seeder - populates all missing data
             ComprehensiveDataSeeder::class,

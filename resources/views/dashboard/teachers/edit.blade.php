@@ -68,14 +68,30 @@
                         <option value="Biology">Biology</option>
                     </x-ui.select>
 
+                    <x-ui.text-input name="designation" label="Designation / Title" placeholder="e.g., Senior Web Instructor" :value="old('designation', $teacher->designation)" />
                     <x-ui.text-input name="salary" label="Monthly Salary (৳)" type="number" placeholder="0.00" :value="old('salary', $teacher->salary)" />
                     <x-ui.text-input name="qualification" label="Highest Qualification" placeholder="e.g., M.Sc in Computer Science" :value="old('qualification', $teacher->qualification)" />
                     <x-ui.text-input name="experience" label="Years of Experience" type="number" placeholder="0" :value="old('experience', $teacher->experience)" />
+                    <x-ui.text-input name="display_order" label="Display Order" type="number" :value="old('display_order', $teacher->display_order)" helperText="Lower shows first" />
+                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700"><input type="checkbox" name="is_featured" value="1" @checked(old('is_featured', $teacher->is_featured)) class="rounded border-gray-300 text-bd-green focus:ring-bd-green" /> Featured</label>
 
                     <x-ui.select name="status" label="Status" :selected="old('status', $teacher->status)">
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                     </x-ui.select>
+                </div>
+                <div class="p-6 pt-0">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Bio</label>
+                    <textarea name="bio" rows="3" placeholder="Short bio" class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-bd-green outline-none">{{ old('bio', $teacher->bio) }}</textarea>
+                </div>
+                <div class="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @php $sl = $teacher->social_links ?? []; @endphp
+                    <x-ui.text-input name="social_links[facebook]" label="Facebook URL" :value="old('social_links.facebook', $sl['facebook'] ?? '')" placeholder="https://facebook.com/..." />
+                    <x-ui.text-input name="social_links[linkedin]" label="LinkedIn URL" :value="old('social_links.linkedin', $sl['linkedin'] ?? '')" placeholder="https://linkedin.com/in/..." />
+                    <x-ui.text-input name="social_links[twitter]" label="X / Twitter URL" :value="old('social_links.twitter', $sl['twitter'] ?? '')" placeholder="https://x.com/..." />
+                    <x-ui.text-input name="social_links[instagram]" label="Instagram URL" :value="old('social_links.instagram', $sl['instagram'] ?? '')" placeholder="https://instagram.com/..." />
+                    <x-ui.text-input name="social_links[github]" label="GitHub URL" :value="old('social_links.github', $sl['github'] ?? '')" placeholder="https://github.com/..." />
+                    <x-ui.text-input name="social_links[website]" label="Website URL" :value="old('social_links.website', $sl['website'] ?? '')" placeholder="https://..." />
                 </div>
             </div>
 
