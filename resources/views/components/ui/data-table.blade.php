@@ -68,8 +68,8 @@
                     <div class="px-2 py-1.5 text-sm font-semibold text-gray-900 border-b border-gray-100 mb-1">Toggle Columns</div>
                     @foreach($headers as $index => $header)
                         <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 rounded cursor-pointer group">
-                             <input type="checkbox" 
-                                   class="h-4 w-4 shrink-0 rounded-sm border border-gray-300 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 accent-primary cursor-pointer column-toggle"
+                             <input type="checkbox"
+                                   class="h-4 w-4 shrink-0 cursor-pointer appearance-none rounded border border-gray-300 bg-white transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 column-toggle"
                                    data-index="{{ $index }}"
                                    checked>
                             <span class="ml-2 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">{{ $header['label'] }}</span>

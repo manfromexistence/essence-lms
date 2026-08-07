@@ -101,11 +101,17 @@ class Student extends Model
     }
 
     /**
-     * Get the student's name (uses name_bn as fallback).
+     * Get the student's name (uses the linked user's name as fallback).
      */
     public function getNameAttribute(): string
     {
-        return $this->name_bn ?? 'Unknown Student';
+        if ($this->name_bn) {
+            return $this->name_bn;
+        }
+        if ($this->relationLoaded('user') && $this->user) {
+            return $this->user->name ?? 'Unknown Student';
+        }
+        return $this->user?->name ?? 'Unknown Student';
     }
 
     /**

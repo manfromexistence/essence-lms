@@ -1618,7 +1618,7 @@ class ReportService
             'by_exam' => $byExam->toArray(),
             'summary' => [
                 'total_results' => $totalResults,
-                'average_percentage' => round($averagePercentage, 2),
+                'average_percentage' => round($averagePercentage ?? 0, 2),
                 'pass_rate' => $passRate,
                 'pass_count' => $passCount,
                 'fail_count' => $failCount,

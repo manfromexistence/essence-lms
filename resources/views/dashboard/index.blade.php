@@ -59,64 +59,64 @@
 @if($role === 'super-admin')
     <!-- Admin Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+        <a href="{{ route('dashboard.students.index') }}" class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">মোট শিক্ষার্থী</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ number_format($statistics['total_students'] ?? 0) }}</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2 group-hover:text-blue-600 transition-colors">{{ number_format($statistics['total_students'] ?? 0) }}</p>
                     <p class="text-sm text-green-600 mt-2">{{ $statistics['new_admissions_this_month'] ?? 0 }} this month</p>
                 </div>
-                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                 </div>
             </div>
-        </div>
+        </a>
 
-        <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500">
+        <a href="{{ route('dashboard.teachers.index') }}" class="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">মোট শিক্ষক</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ number_format($statistics['total_teachers'] ?? 0) }}</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2 group-hover:text-emerald-600 transition-colors">{{ number_format($statistics['total_teachers'] ?? 0) }}</p>
                 </div>
-                <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                 </div>
             </div>
-        </div>
+        </a>
 
-        <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-amber-500">
+        <a href="{{ route('dashboard.payments.index') }}" class="bg-white rounded-xl shadow-md p-6 border-l-4 border-amber-500 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">এই মাসের আয়</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">৳{{ number_format($statistics['monthly_revenue'] ?? 0) }}</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2 group-hover:text-amber-600 transition-colors">৳{{ number_format($statistics['monthly_revenue'] ?? 0) }}</p>
                     <p class="text-sm text-red-600 mt-2">Due: ৳{{ number_format($statistics['total_due'] ?? 0) }}</p>
                 </div>
-                <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
             </div>
-        </div>
+        </a>
 
-        <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
+        <a href="{{ route('dashboard.batches.index') }}" class="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">আজকের উপস্থিতি</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $statistics['today_attendance_rate'] ?? 0 }}%</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2 group-hover:text-purple-600 transition-colors">{{ $statistics['today_attendance_rate'] ?? 0 }}%</p>
                     <p class="text-sm text-gray-500 mt-2">{{ $statistics['total_batches'] ?? 0 }} batches</p>
                 </div>
-                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Dashboard Charts Section -->

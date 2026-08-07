@@ -68,6 +68,7 @@ class CourseLmsDataSeeder extends Seeder
             $student = Student::firstOrCreate(
                 ['user_id' => $user->id],
                 [
+                    'name_bn' => $name,
                     'phone' => '017' . rand(10000000, 99999999),
                     'gender' => $genders[$i % 2],
                     'profile_image' => $studentImages[$i % count($studentImages)],
@@ -88,13 +89,15 @@ class CourseLmsDataSeeder extends Seeder
 
             // Payment (mostly completed, some pending)
             $status = $i % 5 === 0 ? Payment::STATUS_PENDING : Payment::STATUS_COMPLETED;
+            $paymentDate = now()->subDays(rand(3, 60))->toDateString();
             Payment::firstOrCreate(
                 ['student_id' => $student->id, 'course_id' => $course->id, 'transaction_id' => 'TRX' . Str::upper(Str::random(10))],
                 [
                     'amount' => $course->price,
                     'status' => $status,
                     'payment_method' => $paymentMethods[$i % count($paymentMethods)],
-                    'submitted_at' => now()->subDays(rand(3, 60)),
+                    'payment_date' => $paymentDate,
+                    'submitted_at' => $paymentDate . ' 12:00:00',
                     'reviewed_at' => $status === Payment::STATUS_COMPLETED ? now()->subDays(rand(1, 55)) : null,
                     'reviewed_by' => $status === Payment::STATUS_COMPLETED ? User::whereHas('roles', fn ($q) => $q->whereIn('slug', ['super-admin', 'admin']))->first()?->id : null,
                 ]
