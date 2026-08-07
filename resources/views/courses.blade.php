@@ -109,7 +109,7 @@
     <div class="max-w-7xl mx-auto px-4 pt-6">
         <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Course fees, syllabus and batch schedules may change. Please confirm the latest details with Dhaka IT Institute at
-            <a class="font-semibold underline" href="tel:+8801682715576">01682715576</a>.
+            <a class="font-semibold underline" href="tel:+880168271557">0168271557</a>.
         </div>
     </div>
 

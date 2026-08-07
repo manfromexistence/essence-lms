@@ -49,13 +49,13 @@
                 @auth
                     @if(Auth::user()->isStudent())
                         <a href="{{ route('student.courses') }}"
-                            class="ml-2 inline-flex min-h-10 items-center justify-center rounded-md bg-black px-4 py-2 text-center text-sm font-semibold leading-none text-white transition hover:bg-green-800">
+                            class="ml-2 inline-flex h-10 items-center justify-center rounded-md bg-black px-4 text-center text-sm font-semibold text-white transition hover:bg-green-800">
                             Enroll in Course
                         </a>
                     @endif
                 @else
                     <a href="{{ route('admission.create') }}"
-                        class="ml-2 inline-flex h-10 items-center justify-center rounded-md bg-black px-5 text-sm font-semibold leading-none text-white transition hover:bg-green-800">
+                        class="ml-2 inline-flex h-10 items-center justify-center rounded-md bg-black px-5 text-sm font-semibold text-white transition hover:bg-green-800">
                         Admission
                     </a>
                 @endauth
@@ -121,13 +121,13 @@
                 @auth
                     @if(Auth::user()->isStudent())
                         <a href="{{ route('student.courses') }}"
-                            class="inline-flex min-h-11 items-center justify-center rounded-md bg-black px-4 py-3 text-center text-md font-semibold leading-none text-white transition hover:bg-green-800">
+                            class="inline-flex h-11 items-center justify-center rounded-md bg-black px-4 text-center text-md font-semibold text-white transition hover:bg-green-800">
                             Enroll in Course
                         </a>
                     @endif
                 @else
                     <a href="{{ route('admission.create') }}"
-                        class="inline-flex h-11 items-center justify-center rounded-md bg-black px-5 text-center text-md font-semibold leading-none text-white transition hover:bg-green-800">
+                        class="inline-flex h-11 items-center justify-center rounded-md bg-black px-5 text-center text-md font-semibold text-white transition hover:bg-green-800">
                         Admission
                     </a>
                 @endauth

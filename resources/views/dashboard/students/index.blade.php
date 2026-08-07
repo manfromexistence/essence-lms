@@ -150,10 +150,16 @@
 
                     <!-- Status -->
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span
-                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                            {{ $student->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                            {{ ucfirst($student->status ?? 'Active') }}
+                        @php
+                            $admissionStatus = $student->admission_status ?? ($student->batch_id ? 'approved' : 'pending');
+                            $statusBadge = [
+                                'approved' => ['bg-green-100 text-green-800', 'Admitted'],
+                                'rejected' => ['bg-red-100 text-red-800', 'Rejected'],
+                                'pending' => ['bg-yellow-100 text-yellow-800', 'Pending'],
+                            ][$admissionStatus] ?? ['bg-gray-100 text-gray-800', ucfirst($admissionStatus)];
+                        @endphp
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusBadge[0] }}">
+                            {{ $statusBadge[1] }}
                         </span>
                     </td>
 

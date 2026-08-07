@@ -62,6 +62,7 @@ class AdmissionController extends Controller
             $validated['user_id'] = $user->id;
             $validated['course_name'] = $course?->name;
             $validated['admission_status'] = 'pending';
+            $validated['status'] = 'pending';
             $validated['applied_at'] = now();
             $this->studentService->create($validated);
         });

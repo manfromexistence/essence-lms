@@ -10,7 +10,7 @@ return new class extends Migration
         $settings = [
             'institution_name' => 'Dhaka IT Institute',
             'institution_address' => 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216. Behind Dhaka WASA.',
-            'institution_phone' => '+8801682715576',
+            'institution_phone' => '+880 1682-71557',
             'institution_email' => 'dhakaitinstitute@gmail.com',
             'institution_website' => 'https://dhakaitinstitute.com',
             'footer_text' => 'Dhaka IT Institute — Let’s Build Your Dream',

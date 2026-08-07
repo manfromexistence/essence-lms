@@ -41,7 +41,7 @@ class DemoDataSeeder extends Seeder
         $settings = [
             ['key' => 'institution_name', 'value' => 'Dhaka IT Institute', 'group' => 'institution', 'type' => 'string'],
             ['key' => 'institution_address', 'value' => 'House #5, Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216', 'group' => 'institution', 'type' => 'string'],
-            ['key' => 'institution_phone', 'value' => '+8801682715576', 'group' => 'institution', 'type' => 'string'],
+            ['key' => 'institution_phone', 'value' => '+880 1682-71557', 'group' => 'institution', 'type' => 'string'],
             ['key' => 'institution_email', 'value' => 'dhakaitinstitute@gmail.com', 'group' => 'institution', 'type' => 'string'],
             ['key' => 'student_id_format', 'value' => 'STU-{YEAR}-{SEQ:4}', 'group' => 'student', 'type' => 'string'],
             ['key' => 'attendance_threshold', 'value' => '75', 'group' => 'attendance', 'type' => 'integer'],

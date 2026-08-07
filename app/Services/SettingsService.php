@@ -117,7 +117,7 @@ class SettingsService
             'type' => 'text',
         ],
         'institution_phone' => [
-            'value' => '+8801682715576',
+            'value' => '+880 1682-71557',
             'group' => 'institution',
             'type' => 'string',
         ],

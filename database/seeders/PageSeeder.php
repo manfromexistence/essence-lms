@@ -77,7 +77,7 @@ class PageSeeder extends Seeder
                     'page_subtitle' => 'যেকোনো প্রয়োজনে আমাদের সাথে যোগাযোগ করুন',
                     'form_title' => 'বার্তা পাঠান',
                     'address' => 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216. Behind Dhaka WASA.',
-                    'phone' => '+880 1682-715576',
+                    'phone' => '+880 1682-71557',
                     'email' => 'dhakaitinstitute@gmail.com',
                     'map_embed' => 'https://www.google.com/maps?q=House%205%20Road%208%20Block%20C%20Section%2010%20Mirpur%2010%20Dhaka%201216&output=embed',
                 ],

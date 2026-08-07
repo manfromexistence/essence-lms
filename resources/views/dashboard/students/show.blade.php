@@ -119,11 +119,23 @@
                     </div>
                     <div>
                         <span class="block text-xs text-gray-500 uppercase">Course Name</span>
-                        <span class="block text-sm font-medium text-gray-900">{{ $student->course_name ?? 'N/A' }}</span>
+                        <span class="block text-sm font-medium text-gray-900">{{ $student->course_name ?? ($student->batch?->course?->name ?? 'N/A') }}</span>
                     </div>
                     <div>
-                        <span class="block text-xs text-gray-500 uppercase">Class</span>
-                        <span class="block text-sm font-medium text-gray-900">{{ $student->class ? 'Class ' . $student->class : 'N/A' }}</span>
+                        <span class="block text-xs text-gray-500 uppercase">Student Type</span>
+                        <span class="block text-sm font-medium text-gray-900">{{ ucfirst($student->admission_mode ?? 'offline') }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs text-gray-500 uppercase">Admission Status</span>
+                        @php
+                            $admissionStatus = $student->admission_status ?? ($student->batch_id ? 'approved' : 'pending');
+                            $statusBadge = [
+                                'approved' => ['bg-green-100 text-green-800', 'Admitted'],
+                                'rejected' => ['bg-red-100 text-red-800', 'Rejected'],
+                                'pending' => ['bg-yellow-100 text-yellow-800', 'Pending'],
+                            ][$admissionStatus] ?? ['bg-gray-100 text-gray-800', ucfirst($admissionStatus)];
+                        @endphp
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                     </div>
                     <div>
                         <span class="block text-xs text-gray-500 uppercase">Date of Birth</span>
@@ -138,13 +150,14 @@
                         <span class="block text-sm font-medium text-gray-900">{{ $student->blood_group ?? 'N/A' }}</span>
                     </div>
                     <div>
-                        <span class="block text-xs text-gray-500 uppercase">Religion</span>
-                        <span class="block text-sm font-medium text-gray-900">{{ $student->religion ?? 'N/A' }}</span>
+                        <span class="block text-xs text-gray-500 uppercase">Guardian Phone</span>
+                        <span class="block text-sm font-medium text-gray-900">{{ $student->guardian_phone ?? 'N/A' }}</span>
                     </div>
                 </div>
              </div>
 
-             <!-- Family Info -->
+             <!-- Family Info (only when present) -->
+             @if($student->father_name || $student->mother_name || $student->guardian_name)
              <div class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-md font-semibold text-gray-800">Family Information</h3>
@@ -166,6 +179,7 @@
                             <p class="text-sm"><span class="text-gray-500">Mobile:</span> {{ $student->mother_phone ?? 'N/A' }}</p>
                         </div>
                     </div>
+                    @if($student->guardian_name || $student->guardian_phone)
                     <div class="md:col-span-2 border-t pt-4">
                         <h4 class="text-sm font-bold text-gray-700 mb-2">Guardian</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,8 +187,10 @@
                              <p class="text-sm"><span class="text-gray-500">Mobile:</span> {{ $student->guardian_phone ?? 'N/A' }}</p>
                         </div>
                     </div>
+                    @endif
                 </div>
              </div>
+             @endif
 
              <!-- Addresses -->
              <div class="bg-white rounded-xl shadow-md overflow-hidden">
@@ -205,7 +221,8 @@
                 </div>
              </div>
 
-             <!-- Academic Info -->
+             <!-- Academic Info (only when present) -->
+             @if($student->ssc_institute || $student->hsc_institute || $student->undergrad_institute)
              <div class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-md font-semibold text-gray-800">Academic Qualification</h3>
@@ -247,6 +264,7 @@
                     </table>
                 </div>
              </div>
+             @endif
 
         </div>
     </div>

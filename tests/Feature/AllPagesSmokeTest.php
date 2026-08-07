@@ -86,6 +86,33 @@ class AllPagesSmokeTest extends TestCase
         $this->assertEmpty($failures, 'Dashboard pages failing: ' . implode(', ', $failures));
     }
 
+    public function test_all_public_frontend_pages_render(): void
+    {
+        $this->seed(\Database\Seeders\TeamAndServicesSeeder::class);
+
+        $pages = [
+            '/',
+            '/contact',
+            '/team',
+            '/services',
+            '/about',
+            '/courses',
+            '/login',
+            '/admission',
+            '/admission/offline',
+        ];
+
+        $failures = [];
+        foreach ($pages as $page) {
+            $response = $this->get($page);
+            if ($response->getStatusCode() !== 200) {
+                $failures[] = $page . ' -> ' . $response->getStatusCode();
+            }
+        }
+
+        $this->assertEmpty($failures, 'Public pages failing: ' . implode(', ', $failures));
+    }
+
     public function test_all_student_pages_render(): void
     {
         $studentRole = Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);

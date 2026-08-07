@@ -62,6 +62,20 @@
                 </div>
             </div>
         </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Rejected Admissions</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ $stats['rejected_admissions'] }}</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Filters -->
@@ -93,6 +107,7 @@
                         <option value="">All Status</option>
                         <option value="pending" {{ request('admission_status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="approved" {{ request('admission_status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="rejected" {{ request('admission_status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                         <option value="recent" {{ request('admission_status') == 'recent' ? 'selected' : '' }}>Recent (30 days)</option>
                     </select>
                 </div>
@@ -217,19 +232,21 @@
 
                     <!-- Admission Status -->
                     <td class="px-6 py-4 whitespace-nowrap">
+                        @php
+                            $admissionStatus = $student->admission_status ?? ($student->batch_id ? 'approved' : 'pending');
+                            $statusBadge = [
+                                'approved' => ['bg-green-100 text-green-800', 'Admitted'],
+                                'rejected' => ['bg-red-100 text-red-800', 'Rejected'],
+                                'pending' => ['bg-yellow-100 text-yellow-800', 'Pending'],
+                            ][$admissionStatus] ?? ['bg-gray-100 text-gray-800', ucfirst($admissionStatus)];
+                        @endphp
                         <div class="space-y-1">
-                            @if($student->batch_id)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                    Admitted
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    Pending
-                                </span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusBadge[0] }}">
+                                {{ $statusBadge[1] }}
+                            </span>
+                            @if($admissionStatus === 'approved' && !$student->batch_id)
+                                <div class="text-xs text-gray-500">No batch assigned yet</div>
                             @endif
-                            <div class="text-xs text-gray-500">
-                                Status: {{ ucfirst($student->status ?? 'Active') }}
-                            </div>
                         </div>
                     </td>
 
@@ -241,7 +258,7 @@
 
                     <!-- Actions -->
                     <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                        <div class="flex justify-start space-x-2">
+                        <div class="flex justify-start items-center space-x-3">
                             <a href="{{ route('dashboard.students.show', $student) }}"
                                 class="text-gray-500 hover:text-blue-600 transition-colors" title="View Details">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,13 +268,29 @@
                                         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
                             </a>
-                            @if(!$student->batch_id)
-                                <a href="{{ route('dashboard.students.batch-assignment') }}?student={{ $student->id }}"
-                                    class="text-gray-500 hover:text-green-600 transition-colors" title="Assign Batch">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                </a>
+                            @if($admissionStatus !== 'approved')
+                                <form method="POST" action="{{ route('dashboard.students.admission-status', $student) }}"
+                                    class="inline">
+                                    @csrf
+                                    <input type="hidden" name="admission_status" value="approved">
+                                    <button type="submit"
+                                        class="inline-flex items-center px-2.5 py-1 rounded-md bg-green-100 text-green-800 text-xs font-semibold hover:bg-green-200 transition-colors"
+                                        title="Approve admission">
+                                        Approve
+                                    </button>
+                                </form>
+                            @endif
+                            @if($admissionStatus !== 'rejected')
+                                <form method="POST" action="{{ route('dashboard.students.admission-status', $student) }}"
+                                    class="inline">
+                                    @csrf
+                                    <input type="hidden" name="admission_status" value="rejected">
+                                    <button type="submit"
+                                        class="inline-flex items-center px-2.5 py-1 rounded-md bg-red-100 text-red-800 text-xs font-semibold hover:bg-red-200 transition-colors"
+                                        title="Reject admission">
+                                        Reject
+                                    </button>
+                                </form>
                             @endif
                             <a href="{{ route('dashboard.students.edit', $student) }}"
                                 class="text-gray-500 hover:text-bd-green transition-colors" title="Edit">

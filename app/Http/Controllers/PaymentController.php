@@ -181,6 +181,14 @@ class PaymentController extends Controller
                 $payment->student->update(['batch_id' => $batch->id]);
             }
 
+            // Paying a course = confirmed admission. Keep the lifecycle status
+            // in sync everywhere (All Students / Admission Applications / login).
+            $payment->student->update([
+                'admission_status' => 'approved',
+                'status' => 'active',
+            ]);
+            $payment->student->user?->update(['is_active' => true]);
+
             Notification::create([
                 'user_id' => $payment->student->user_id,
                 'user_type' => 'student',

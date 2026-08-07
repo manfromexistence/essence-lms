@@ -140,7 +140,9 @@ class StudentController extends Controller
 
             $validated['user_id'] = $user->id;
             $validated['applied_at'] = now();
-            $validated['admission_status'] = !empty($validated['batch_id']) ? 'approved' : 'pending';
+            $approved = !empty($validated['batch_id']);
+            $validated['admission_status'] = $approved ? 'approved' : 'pending';
+            $validated['status'] = $approved ? 'active' : 'pending';
             $this->studentService->create($validated);
         });
 
@@ -167,10 +169,10 @@ class StudentController extends Controller
     {
         $student->load('user', 'batch');
         $batches = Batch::select('id', 'name', 'code', 'course_id', 'schedule')->get();
-        $classes = range(1, 12);
-        $courses = Course::where('class', $student->class)->get(['id', 'name']);
+        $courses = Course::active()->orderBy('delivery_mode')->orderBy('name')->get(['id', 'name', 'delivery_mode']);
+        $defaultMode = $student->admission_mode ?? 'offline';
 
-        return view('dashboard.students.edit', compact('student', 'batches', 'courses', 'classes'));
+        return view('dashboard.students.edit', compact('student', 'batches', 'courses', 'defaultMode'));
     }
 
     /**
@@ -180,9 +182,18 @@ class StudentController extends Controller
     {
         $validated = $request->validated();
 
-        // Update user name if provided
-        if ($student->user && isset($validated['name_bn'])) {
-            $student->user->update(['name' => $validated['name_bn']]);
+        // Sync the linked user account: name + email can be edited here.
+        if ($student->user) {
+            $userData = [];
+            if (!empty($validated['name'])) {
+                $userData['name'] = $validated['name'];
+            }
+            if (!empty($validated['email']) && $validated['email'] !== $student->user->email) {
+                $userData['email'] = $validated['email'];
+            }
+            if ($userData) {
+                $student->user->update($userData);
+            }
         }
 
         // Handle profile image - file upload takes priority over URL
@@ -200,6 +211,20 @@ class StudentController extends Controller
             if ($course) {
                 $validated['course_name'] = $course->name;
             }
+        }
+
+        // Keep the lifecycle status in sync when admission_status is edited.
+        if (isset($validated['admission_status'])) {
+            $validated['status'] = $validated['admission_status'] === 'approved' ? 'active' : $validated['admission_status'];
+            $student->user?->update([
+                'is_active' => $validated['admission_status'] === 'approved',
+            ]);
+        } elseif (array_key_exists('batch_id', $validated)) {
+            // Assigning a batch in the edit form = approved/enrolled.
+            $approved = (bool) $validated['batch_id'];
+            $validated['admission_status'] = $approved ? 'approved' : 'pending';
+            $validated['status'] = $approved ? 'active' : 'pending';
+            $student->user?->update(['is_active' => $approved]);
         }
 
         // Update student using service
@@ -244,10 +269,13 @@ class StudentController extends Controller
         if ($request->filled('admission_status')) {
             switch ($request->admission_status) {
                 case 'pending':
-                    $query->whereNull('batch_id');
+                    $query->where('admission_status', 'pending');
                     break;
                 case 'approved':
-                    $query->whereNotNull('batch_id')->where('status', 'active');
+                    $query->where('admission_status', 'approved');
+                    break;
+                case 'rejected':
+                    $query->where('admission_status', 'rejected');
                     break;
                 case 'recent':
                     $query->where('created_at', '>=', now()->subDays(30));
@@ -299,8 +327,9 @@ class StudentController extends Controller
         // Statistics for dashboard
         $stats = [
             'total_applications' => Student::count(),
-            'pending_admissions' => Student::whereNull('batch_id')->count(),
-            'approved_admissions' => Student::whereNotNull('batch_id')->where('status', 'active')->count(),
+            'pending_admissions' => Student::where('admission_status', 'pending')->count(),
+            'approved_admissions' => Student::where('admission_status', 'approved')->count(),
+            'rejected_admissions' => Student::where('admission_status', 'rejected')->count(),
             'recent_applications' => Student::where('created_at', '>=', now()->subDays(7))->count(),
         ];
 
@@ -330,17 +359,67 @@ class StudentController extends Controller
 
         $student = Student::findOrFail($request->student_id);
         $wasInactive = !$student->user?->is_active;
+        $approved = (bool) $request->batch_id;
         $student->update([
             'batch_id' => $request->batch_id,
-            'admission_status' => $request->batch_id ? 'approved' : 'pending',
+            'admission_status' => $approved ? 'approved' : 'pending',
+            'status' => $approved ? 'active' : 'pending',
         ]);
-        $student->user?->update(['is_active' => (bool) $request->batch_id]);
-        if ($request->batch_id && $wasInactive && $student->user) {
+        $student->user?->update(['is_active' => $approved]);
+        if ($approved && $wasInactive && $student->user) {
             Password::sendResetLink(['email' => $student->user->email]);
         }
 
         return redirect()->route('dashboard.students.batch-assignment')
             ->with('success', 'Student batch assignment updated successfully.');
+    }
+
+    /**
+     * Approve or reject a student's admission (single source of truth).
+     */
+    public function updateAdmissionStatus(Request $request, Student $student): RedirectResponse
+    {
+        $request->validate([
+            'admission_status' => 'required|in:pending,approved,rejected',
+        ]);
+
+        $status = $request->admission_status;
+        $student->update([
+            'admission_status' => $status,
+            'status' => $status === 'approved' ? 'active' : $status,
+        ]);
+
+        // Rejected students lose login access; approved (even unbatched) gain it.
+        $student->user?->update([
+            'is_active' => $status === 'approved',
+        ]);
+
+        if ($status === 'approved') {
+            try {
+                $student->load('user');
+                $courseName = $student->batch?->course?->name ?? $student->course_name ?? 'your selected course';
+                $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
+                    . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
+                    . '<h2 style="color:#fff;margin:0;">Admission Approved</h2></div>'
+                    . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
+                    . '<p>Dear <strong>' . e($student->user?->name ?? 'Student') . '</strong>,</p>'
+                    . '<p>Congratulations! Your admission to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute has been approved.</p>'
+                    . '<p>Your account is now active. Please use your registered email to <a href="' . route('password.request') . '">set your password</a> and log in to your dashboard.</p>'
+                    . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
+                    . '</div></div>';
+
+                app(\App\Services\BrevoEmailService::class)->send(
+                    $student->user->email,
+                    'Admission Approved — ' . $courseName,
+                    $html,
+                    ['type' => 'admission']
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Approval email failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        return back()->with('success', 'Admission status updated to ' . ucfirst($status) . '.');
     }
 
     /**
@@ -356,14 +435,16 @@ class StudentController extends Controller
 
         $usersToInvite = User::whereHas('student', fn ($query) => $query->whereIn('id', $request->student_ids))
             ->where('is_active', false)->get();
+        $approved = (bool) $request->batch_id;
         Student::whereIn('id', $request->student_ids)
             ->update([
                 'batch_id' => $request->batch_id,
-                'admission_status' => $request->batch_id ? 'approved' : 'pending',
+                'admission_status' => $approved ? 'approved' : 'pending',
+                'status' => $approved ? 'active' : 'pending',
             ]);
         User::whereHas('student', fn ($query) => $query->whereIn('id', $request->student_ids))
-            ->update(['is_active' => (bool) $request->batch_id]);
-        if ($request->batch_id) {
+            ->update(['is_active' => $approved]);
+        if ($approved) {
             $usersToInvite->each(fn (User $user) => Password::sendResetLink(['email' => $user->email]));
         }
 

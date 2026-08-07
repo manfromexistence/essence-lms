@@ -87,6 +87,7 @@ Route::middleware('auth')->group(function () {
         Route::get('students/batch-assignment', [AdminStudentController::class, 'batchAssignment'])->name('students.batch-assignment');
         Route::post('students/batch-assignment/update', [AdminStudentController::class, 'updateBatchAssignment'])->name('students.batch-assignment.update');
         Route::post('students/batch-assignment/bulk', [AdminStudentController::class, 'bulkBatchAssignment'])->name('students.batch-assignment.bulk');
+        Route::post('students/{student}/admission-status', [AdminStudentController::class, 'updateAdmissionStatus'])->name('students.admission-status');
         Route::get('students/attendance', [AdminStudentController::class, 'attendance'])->name('students.attendance');
         Route::get('students/sms', [AdminStudentController::class, 'sms'])->name('students.sms');
         Route::get('students/routine', [AdminStudentController::class, 'routine'])->name('students.routine');
