@@ -6,7 +6,7 @@
 <section class="hero hero--solid hero--dark">
     <div class="hero-inner text-center">
         <h1 class="hero-title">{{ $page ? $page->getContent('page_title', 'Meet our team') : 'Meet our team' }}</h1>
-        <p class="hero-subtitle mt-4 max-w-2xl text-lg md:text-xl">{{ $page ? $page->getContent('page_subtitle', 'Exper instructors and support professionals committed to attenability, hands-on mentorship and student outcomes.') : 'Expert instructors and support professionals committed to accountability, hands-on mentorship and student outcomes.' }}</p>
+        <p class="hero-subtitle mx-auto mt-4 max-w-2xl text-lg md:text-xl">{{ $page ? $page->getContent('page_subtitle', 'Expert instructors and support professionals committed to hands-on mentorship and student outcomes.') : 'Expert instructors and support professionals committed to hands-on mentorship and student outcomes.' }}</p>
     </div>
 </section>
 
