@@ -696,7 +696,7 @@
                             class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-50 origin-top-right transition-all duration-100 ease-out transform scale-95 opacity-0">
                             <a href="{{ url('/') }}"
                                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fa-solid fa-house mr-2"></i> Home (Frontend)
+                                <i class="fa-solid fa-house mr-2"></i> Home
                             </a>
                             @if(Auth::user()->isSuperAdmin())
                             <a href="{{ route('dashboard.settings.index') }}"
@@ -704,14 +704,6 @@
                                 <i class="fa-solid fa-gear mr-2"></i> Settings
                             </a>
                             @endif
-                            <div class="border-t border-gray-100 my-1"></div>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="button" onclick="event.preventDefault(); this.closest('form').submit();"
-                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                    <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i> Sign out
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </div>

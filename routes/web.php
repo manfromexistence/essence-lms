@@ -289,6 +289,13 @@ Route::middleware('auth')->group(function () {
         Route::post('certificates/{certificate}/email', [\App\Http\Controllers\Admin\CertificateController::class, 'email'])->name('certificates.email');
         Route::post('certificates/{certificate}/revoke', [\App\Http\Controllers\Admin\CertificateController::class, 'revoke'])->name('certificates.revoke');
 
+        // Certificate Templates
+        Route::get('certificates/templates', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'index'])->name('certificates.templates.index');
+        Route::post('certificates/templates', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'store'])->name('certificates.templates.store');
+        Route::put('certificates/templates/{template}', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'update'])->name('certificates.templates.update');
+        Route::delete('certificates/templates/{template}', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'destroy'])->name('certificates.templates.destroy');
+        Route::post('certificates/templates/{template}/default', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'setDefault'])->name('certificates.templates.default');
+
         // Settings (Super Admin Only)
         Route::middleware('role:super-admin')->group(function () {
             Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');

@@ -35,10 +35,12 @@ class CertificateService
 
     public function issue(Student $student, Course $course, ?User $issuer = null): Certificate
     {
-        $template = CertificateTemplate::firstOrCreate(
-            ['type' => 'course_completion', 'is_default' => true],
-            ['name' => 'Dhaka IT Institute Course Completion', 'is_active' => true]
-        );
+        // Use the default template, or fall back to creating a basic one
+        $template = CertificateTemplate::where('is_default', true)->where('is_active', true)->first()
+            ?? CertificateTemplate::firstOrCreate(
+                ['type' => 'course_completion', 'is_default' => true],
+                ['name' => 'Dhaka IT Institute Course Completion', 'is_active' => true]
+            );
         $issuer ??= User::whereHas('roles', fn ($query) => $query->whereIn('slug', ['super-admin', 'admin']))->first();
         $issuer ??= $student->user;
 

@@ -807,7 +807,13 @@ class SidebarService
                     ['title' => 'Due / Advance Tracking', 'icon' => 'exclamation-circle', 'route' => 'dashboard.payments.tracking', 'roles' => $admins],
                 ],
             ],
-            ['title' => 'Certificates', 'icon' => 'academic-cap', 'route' => 'dashboard.certificates.index', 'roles' => $admins],
+            [
+                'title' => 'Certificates', 'icon' => 'academic-cap', 'route' => null, 'roles' => $admins,
+                'children' => [
+                    ['title' => 'Issue Certificates', 'icon' => 'academic-cap', 'route' => 'dashboard.certificates.index', 'roles' => $admins],
+                    ['title' => 'Certificate Templates', 'icon' => 'document-text', 'route' => 'dashboard.certificates.templates.index', 'roles' => $admins],
+                ],
+            ],
             ['title' => 'Announcements', 'icon' => 'announcement', 'route' => 'dashboard.announcements.index', 'roles' => $admins],
             [
                 'title' => 'Services & Store', 'icon' => 'briefcase', 'route' => 'dashboard.services.index', 'roles' => $admins,
