@@ -131,7 +131,7 @@ class TeamAndServicesSeeder extends Seeder
                 $user = User::create([
                     'name' => $data['name'],
                     'email' => $data['email'],
-                    'password' => Hash::make('password'),
+                    'password' => \Illuminate\Support\Facades\Hash::make('password', ['rounds' => 4]),
                     'is_active' => true,
                 ]);
                 $existingUsers[$data['email']] = $user->id;

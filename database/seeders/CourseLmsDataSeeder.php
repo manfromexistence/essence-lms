@@ -76,7 +76,7 @@ class CourseLmsDataSeeder extends Seeder
                 $user = User::create([
                     'name' => $name,
                     'email' => $email,
-                    'password' => Hash::make('password'),
+                    'password' => \Illuminate\Support\Facades\Hash::make('password', ['rounds' => 4]),
                     'is_active' => true,
                     'must_change_password' => false,
                 ]);

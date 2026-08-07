@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminUserSeeder extends Seeder
 {
+    /**
+     * Fast hash for demo accounts — cost 4 keeps seeding quick
+     * (production admin uses the env password at default cost).
+     */
+    private function quickHash(string $password): string
+    {
+        return Hash::make($password, ['rounds' => 4]);
+    }
+
     public function run(): void
     {
         if (app()->environment('production')) {
@@ -34,7 +43,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'owner@dhakaitinstitute.test'],
             [
                 'name' => 'Super Admin',
-                'password' => Hash::make('password'),
+                'password' => $this->quickHash('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -50,7 +59,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Admin User',
-                'password' => Hash::make('password'),
+                'password' => $this->quickHash('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -65,7 +74,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@dhakaitinstitute.test'],
             [
                 'name' => 'Dhaka IT Admin',
-                'password' => Hash::make('password'),
+                'password' => $this->quickHash('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -80,7 +89,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'teacher@gmail.com'],
             [
                 'name' => 'Demo Teacher',
-                'password' => Hash::make('password'),
+                'password' => $this->quickHash('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -96,7 +105,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'teacher@dhakaitinstitute.test'],
             [
                 'name' => 'Dhaka IT Demo Teacher',
-                'password' => Hash::make('password'),
+                'password' => $this->quickHash('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -110,7 +119,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'student@gmail.com'],
             [
                 'name' => 'Demo Student',
-                'password' => Hash::make('password'),
+                'password' => $this->quickHash('password'),
                 'email_verified_at' => now(),
             ]
         );
@@ -126,7 +135,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'student@dhakaitinstitute.test'],
             [
                 'name' => 'Dhaka IT Demo Student',
-                'password' => Hash::make('password'),
+                'password' => $this->quickHash('password'),
                 'email_verified_at' => now(),
             ]
         );
