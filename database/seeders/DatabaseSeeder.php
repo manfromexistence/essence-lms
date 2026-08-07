@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
                 RoleSeeder::class,
                 PermissionSeeder::class,
                 AdminUserSeeder::class,
+                CourseSeeder::class,
+                PageSeeder::class,
+                TeamAndServicesSeeder::class,
+                BatchSeeder::class,
+                CourseVideoSeeder::class,
             ]);
 
             return;

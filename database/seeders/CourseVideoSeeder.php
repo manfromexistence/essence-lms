@@ -2,15 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\Course;
+use App\Models\CourseVideo;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class CourseVideoSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command->info('Seeding course videos...');
-        
+        $this->command?->info('Seeding course videos...');
+
         // Real Educational YouTube video IDs
         $youtubeIds = [
             'RF_eOpCLayA', // Learn Python - Full Course for Beginners (freeCodeCamp)
@@ -34,22 +35,44 @@ class CourseVideoSeeder extends Seeder
             'vmEHCJofslg', // Web Design Tutorial (DesignCourse)
             'UB1O30fR-EE', // HTML Crash Course For Absolute Beginners (Traversy Media)
         ];
-        
+
         // Get all existing courses
-        $courses = DB::table('courses')->get();
-        
+        $courses = Course::all();
+
         if ($courses->isEmpty()) {
-            $this->command->warn('No courses found! Please seed courses first.');
+            $this->command?->warn('No courses found! Please seed courses first.');
             return;
         }
-        
-        $videos = [];
-        
+
+        $created = 0;
+        $updated = 0;
+
         foreach ($courses as $course) {
-            $videoCount = rand(3, 8);
-            
-            for ($j = 1; $j <= $videoCount; $j++) {
-                $videos[] = [
+            // Ensure a consistent preview lesson per course
+            CourseVideo::updateOrCreate(
+                [
+                    'course_id' => $course->id,
+                    'order' => 1,
+                ],
+                [
+                    'title' => $course->name . ' — Free Orientation Class',
+                    'description' => 'Watch this free demo lesson to understand the course teaching style and practical learning approach.',
+                    'video_type' => 'youtube',
+                    'external_id' => $youtubeIds[$course->id % count($youtubeIds)],
+                    'duration' => rand(600, 2400),
+                    'is_preview' => true,
+                ]
+            ) ? $created++ : $updated++;
+
+            // Add a few more lessons if the course has none beyond the preview
+            $existing = $course->videos()->count();
+            $target = max($existing, rand(4, 6));
+
+            for ($j = 2; $j <= $target; $j++) {
+                if ($course->videos()->where('order', $j)->exists()) {
+                    continue;
+                }
+                CourseVideo::create([
                     'course_id' => $course->id,
                     'title' => "Lesson {$j}: Introduction to Topic {$j}",
                     'description' => "This is a detailed video explanation for lesson {$j} of {$course->name}.",
@@ -57,21 +80,11 @@ class CourseVideoSeeder extends Seeder
                     'external_id' => $youtubeIds[array_rand($youtubeIds)],
                     'duration' => rand(300, 3600),
                     'order' => $j,
-                    'is_preview' => $j === 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+                    'is_preview' => false,
+                ]);
             }
         }
-        
-        // Clear existing videos
-        DB::table('course_videos')->truncate();
-        
-        // Insert in chunks to avoid query size limits
-        foreach (array_chunk($videos, 500) as $chunk) {
-            DB::table('course_videos')->insert($chunk);
-        }
-        
-        $this->command->info('Successfully seeded ' . count($videos) . ' videos for ' . $courses->count() . ' courses!');
+
+        $this->command?->info("Seeded course videos: {$created} created, {$updated} updated for {$courses->count()} courses.");
     }
 }
