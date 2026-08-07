@@ -20,3 +20,4 @@
 - Wants the admin dashboard navigation (sidebar) to expose all route-backed modules, not a trimmed menu — complained about "too less pages" with too few reachable sections, accepting full modules like Exams, Accounts, Inventory, and Communication in the admin menu. Confidence: 0.85
 - Expects tasks fully completed and verified (tests green + Blade compiles) before accepting — repeats "please complete this" until verification confirms the fix works, not just a summary. Confidence: 0.85
 - Prefers root-cause fixes over band-aids — asks to "fix it correctly" and accepts deep tracing through test/env tooling (e.g. CSRF/APP_ENV precedence) to the real cause. Confidence: 0.80
+- Prefers graceful empty states (HTTP 200 with an empty-state message) over hard 403 Forbidden responses when a user lacks required profile data, reserving 403 for genuine authorization/ownership violations only. Confidence: 0.70

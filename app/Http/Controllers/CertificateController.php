@@ -11,7 +11,14 @@ class CertificateController extends Controller
     public function index()
     {
         $student = Auth::user()->student;
-        abort_unless($student, 403);
+
+        // A role-less or admin user without a student profile should not get a
+        // bare 403 — show the empty state instead, like the other student pages.
+        if (!$student) {
+            $certificates = collect();
+            return view('student.certificates.index', compact('certificates'));
+        }
+
         $certificates = Certificate::with('course')->where('student_id', $student->id)->latest('issued_at')->get();
 
         return view('student.certificates.index', compact('certificates'));
@@ -20,7 +27,14 @@ class CertificateController extends Controller
     public function show(Certificate $certificate)
     {
         $student = Auth::user()->student;
-        abort_unless($student && $certificate->student_id === $student->id, 403);
+
+        // Only block when there is a real ownership violation; users without a
+        // student profile simply cannot own a certificate.
+        if (!$student) {
+            abort(404);
+        }
+
+        abort_unless($certificate->student_id === $student->id, 403);
         $certificate->load(['student.user', 'course', 'issuer']);
 
         return view('certificates.show', compact('certificate'));
