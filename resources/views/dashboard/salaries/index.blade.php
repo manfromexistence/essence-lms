@@ -33,14 +33,14 @@
         <form action="{{ route('dashboard.salaries.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700">Filter by Teacher</label>
-                <x-ui.select-native name="teacher_id">
+                <x-ui.select name="teacher_id" :selected="(string) request('teacher_id')">
                     <option value="">All Teachers</option>
                     @foreach($teachers as $teacher)
                         <option value="{{ $teacher->id }}" {{ request('teacher_id') == $teacher->id ? 'selected' : '' }}>
                             {{ $teacher->user->name }}
                         </option>
                     @endforeach
-                </x-ui.select-native>
+                </x-ui.select>
             </div>
             <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700">Filter by Month</label>
@@ -141,12 +141,12 @@
                 <div class="space-y-4">
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Teacher <span class="text-red-500">*</span></label>
-                        <x-ui.select-native name="teacher_id" required>
+                        <x-ui.select name="teacher_id" required>
                             <option value="">Select Teacher</option>
                             @foreach($teachers as $teacher)
                                 <option value="{{ $teacher->id }}">{{ $teacher->user->name }}</option>
                             @endforeach
-                        </x-ui.select-native>
+                        </x-ui.select>
                         @error('teacher_id')
                             <p class="text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -174,12 +174,12 @@
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Payment Method</label>
-                        <x-ui.select-native name="payment_method">
+                        <x-ui.select name="payment_method">
                             <option value="Cash">Cash</option>
                             <option value="Bank Transfer">Bank Transfer</option>
                             <option value="Cheque">Cheque</option>
                             <option value="Mobile Banking">Mobile Banking</option>
-                        </x-ui.select-native>
+                        </x-ui.select>
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Notes</label>
@@ -211,12 +211,12 @@
                 <div class="space-y-4">
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Teacher <span class="text-red-500">*</span></label>
-                        <x-ui.select-native name="teacher_id" id="edit_teacher_id" required>
+                        <x-ui.select name="teacher_id" id="edit_teacher_id" required>
                             <option value="">Select Teacher</option>
                             @foreach($teachers as $teacher)
                                 <option value="{{ $teacher->id }}">{{ $teacher->user->name }}</option>
                             @endforeach
-                        </x-ui.select-native>
+                        </x-ui.select>
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Amount <span class="text-red-500">*</span></label>
@@ -235,12 +235,12 @@
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Payment Method</label>
-                        <x-ui.select-native name="payment_method" id="edit_payment_method">
+                        <x-ui.select name="payment_method" id="edit_payment_method">
                             <option value="Cash">Cash</option>
                             <option value="Bank Transfer">Bank Transfer</option>
                             <option value="Cheque">Cheque</option>
                             <option value="Mobile Banking">Mobile Banking</option>
-                        </x-ui.select-native>
+                        </x-ui.select>
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Notes</label>
@@ -288,7 +288,14 @@
         }
 
         function openEditModal(salary) {
-            document.getElementById('edit_teacher_id').value = salary.teacher_id;
+            // Set custom select values (native select + dropdown display)
+            if (typeof selectOption === 'function') {
+                selectOption('edit_teacher_id', salary.teacher_id, null);
+                selectOption('edit_payment_method', salary.payment_method || 'Cash', null);
+            } else {
+                document.getElementById('edit_teacher_id').value = salary.teacher_id;
+                document.getElementById('edit_payment_method').value = salary.payment_method || 'Cash';
+            }
             document.getElementById('edit_amount').value = salary.amount;
             
             // Set date picker value
@@ -305,7 +312,6 @@
                 }
             }
             
-            document.getElementById('edit_payment_method').value = salary.payment_method || 'Cash';
             document.getElementById('edit_notes').value = salary.notes || '';
             document.getElementById('editForm').action = `/dashboard/salaries/${salary.id}`;
             document.getElementById('editModal').classList.remove('hidden');

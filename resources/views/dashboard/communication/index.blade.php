@@ -48,12 +48,12 @@
                     
                     <div>
                         <x-ui.label for="single_template">Use Template (Optional)</x-ui.label>
-                        <x-ui.select-native name="template_select" id="single_template" onchange="applySingleTemplate()">
+                        <x-ui.select name="template_select" id="single_template" onchange="applySingleTemplate()">
                             <option value="">Select Template</option>
                             @foreach($templates as $template)
                                 <option value="{{ $template->content }}">{{ $template->name }}</option>
                             @endforeach
-                        </x-ui.select-native>
+                        </x-ui.select>
                     </div>
                     
                     <div>
@@ -88,33 +88,33 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-ui.label for="recipient_type">Recipient Type</x-ui.label>
-                            <x-ui.select-native name="recipient_type" id="recipient_type" onchange="toggleRecipientFields()" required>
+                            <x-ui.select name="recipient_type" id="recipient_type" onchange="toggleRecipientFields()" required>
                                 <option value="all">All Students</option>
                                 <option value="batch">By Batch</option>
                                 <option value="course">By Course</option>
                                 <option value="students_with_dues">Students with Dues</option>
                                 <option value="custom">Custom Numbers</option>
-                            </x-ui.select-native>
+                            </x-ui.select>
                         </div>
                         
                         <div id="batch_field" class="hidden">
                             <x-ui.label for="batch_id">Select Batch</x-ui.label>
-                            <x-ui.select-native name="batch_id" id="batch_id">
+                            <x-ui.select name="batch_id" id="batch_id">
                                 <option value="">Select Batch</option>
                                 @foreach($batches as $batch)
                                     <option value="{{ $batch->id }}">{{ $batch->name }}</option>
                                 @endforeach
-                            </x-ui.select-native>
+                            </x-ui.select>
                         </div>
                         
                         <div id="course_field" class="hidden">
                             <x-ui.label for="course_id">Select Course</x-ui.label>
-                            <x-ui.select-native name="course_id" id="course_id">
+                            <x-ui.select name="course_id" id="course_id">
                                 <option value="">Select Course</option>
                                 @foreach($courses as $course)
                                     <option value="{{ $course->id }}">{{ $course->name }}</option>
                                 @endforeach
-                            </x-ui.select-native>
+                            </x-ui.select>
                         </div>
                     </div>
                     
@@ -131,12 +131,12 @@
                     
                     <div>
                         <x-ui.label for="bulk_template">Use Template (Optional)</x-ui.label>
-                        <x-ui.select-native name="template_select" id="bulk_template" onchange="applyBulkTemplate()">
+                        <x-ui.select name="template_select" id="bulk_template" onchange="applyBulkTemplate()">
                             <option value="">Select Template</option>
                             @foreach($templates as $template)
                                 <option value="{{ $template->content }}">{{ $template->name }}</option>
                             @endforeach
-                        </x-ui.select-native>
+                        </x-ui.select>
                     </div>
                     
                     <div>

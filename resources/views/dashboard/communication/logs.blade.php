@@ -16,26 +16,26 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div>
                         <x-ui.label for="status">Status</x-ui.label>
-                        <x-ui.select-native name="status" id="status">
+                        <x-ui.select name="status" id="status" :selected="$filters['status'] ?? ''">
                             <option value="">All Status</option>
                             @foreach($statusOptions as $status)
                                 <option value="{{ $status }}" {{ ($filters['status'] ?? '') === $status ? 'selected' : '' }}>
                                     {{ ucfirst($status) }}
                                 </option>
                             @endforeach
-                        </x-ui.select-native>
+                        </x-ui.select>
                     </div>
                     
                     <div>
                         <x-ui.label for="type">Type</x-ui.label>
-                        <x-ui.select-native name="type" id="type">
+                        <x-ui.select name="type" id="type" :selected="$filters['type'] ?? ''">
                             <option value="">All Types</option>
                             @foreach($typeOptions as $type)
                                 <option value="{{ $type }}" {{ ($filters['type'] ?? '') === $type ? 'selected' : '' }}>
                                     {{ ucfirst($type) }}
                                 </option>
                             @endforeach
-                        </x-ui.select-native>
+                        </x-ui.select>
                     </div>
                     
                     <div>

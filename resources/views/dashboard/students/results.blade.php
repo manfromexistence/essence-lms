@@ -77,31 +77,31 @@
 
                 <div>
                     <label for="student_id" class="block text-sm font-medium text-gray-700 mb-1">Student</label>
-                    <select name="student_id" id="student_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bd-green focus:border-transparent">
+                    <x-ui.select name="student_id" id="student_id" :selected="(string) request('student_id')">
                         <option value="">All Students</option>
                         @foreach($students as $student)
                             <option value="{{ $student->id }}" {{ request('student_id') == $student->id ? 'selected' : '' }}>
                                 {{ $student->user->name ?? 'N/A' }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-ui.select>
                 </div>
 
                 <div>
                     <label for="exam_id" class="block text-sm font-medium text-gray-700 mb-1">Exam</label>
-                    <select name="exam_id" id="exam_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bd-green focus:border-transparent">
+                    <x-ui.select name="exam_id" id="exam_id" :selected="(string) request('exam_id')">
                         <option value="">All Exams</option>
                         @foreach($exams as $exam)
                             <option value="{{ $exam->id }}" {{ request('exam_id') == $exam->id ? 'selected' : '' }}>
                                 {{ $exam->title }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-ui.select>
                 </div>
 
                 <div>
                     <label for="grade" class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
-                    <select name="grade" id="grade" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bd-green focus:border-transparent">
+                    <x-ui.select name="grade" id="grade" :selected="(string) request('grade')">
                         <option value="">All Grades</option>
                         <option value="A+" {{ request('grade') == 'A+' ? 'selected' : '' }}>A+</option>
                         <option value="A" {{ request('grade') == 'A' ? 'selected' : '' }}>A</option>
@@ -110,16 +110,16 @@
                         <option value="C" {{ request('grade') == 'C' ? 'selected' : '' }}>C</option>
                         <option value="D" {{ request('grade') == 'D' ? 'selected' : '' }}>D</option>
                         <option value="F" {{ request('grade') == 'F' ? 'selected' : '' }}>F</option>
-                    </select>
+                    </x-ui.select>
                 </div>
 
                 <div>
                     <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bd-green focus:border-transparent">
+                    <x-ui.select name="status" id="status" :selected="(string) request('status')">
                         <option value="">All Status</option>
                         <option value="passed" {{ request('status') == 'passed' ? 'selected' : '' }}>Passed</option>
                         <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
-                    </select>
+                    </x-ui.select>
                 </div>
             </div>
 

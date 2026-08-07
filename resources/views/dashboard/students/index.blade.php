@@ -53,28 +53,21 @@
                 </div>
                 <div>
                     <label for="search-field" class="mb-1.5 block text-sm font-semibold text-gray-700">Search field</label>
-                    <select id="search-field" name="search_field" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-bd-green focus:ring-bd-green">
-                        @foreach(['all' => 'All fields', 'name' => 'Name', 'number' => 'Phone / ID number', 'batch' => 'Batch', 'area' => 'Area', 'blood_group' => 'Blood group'] as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['search_field'] ?? 'all') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
+                    <x-ui.select name="search_field" id="search-field"
+                        :options="['all' => 'All fields', 'name' => 'Name', 'number' => 'Phone / ID number', 'batch' => 'Batch', 'area' => 'Area', 'blood_group' => 'Blood group']"
+                        :selected="$filters['search_field'] ?? 'all'" />
                 </div>
                 <div>
                     <label for="student-mode" class="mb-1.5 block text-sm font-semibold text-gray-700">Student type</label>
-                    <select id="student-mode" name="mode" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-bd-green focus:ring-bd-green">
-                        <option value="">Online & offline</option>
-                        <option value="online" @selected(($filters['mode'] ?? '') === 'online')>Online students</option>
-                        <option value="offline" @selected(($filters['mode'] ?? '') === 'offline')>Offline students</option>
-                    </select>
+                    <x-ui.select name="mode" id="student-mode"
+                        :options="['' => 'Online & offline', 'online' => 'Online students', 'offline' => 'Offline students']"
+                        :selected="$filters['mode'] ?? ''" />
                 </div>
                 <div>
                     <label for="student-batch" class="mb-1.5 block text-sm font-semibold text-gray-700">Batch</label>
-                    <select id="student-batch" name="batch_id" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-bd-green focus:ring-bd-green">
-                        <option value="">All batches</option>
-                        @foreach($batches as $batch)
-                            <option value="{{ $batch->id }}" @selected((string) ($filters['batch_id'] ?? '') === (string) $batch->id)>{{ $batch->name }}</option>
-                        @endforeach
-                    </select>
+                    <x-ui.select name="batch_id" id="student-batch"
+                        :options="['' => 'All batches'] + $batches->pluck('name', 'id')->map(fn($n) => (string) $n)->all()"
+                        :selected="(string) ($filters['batch_id'] ?? '')" />
                 </div>
                 <div class="flex items-end gap-2">
                     <button type="submit" class="inline-flex flex-1 items-center justify-center rounded-lg bg-bd-green px-4 py-2.5 text-sm font-semibold text-white hover:bg-bd-green-dark">Search</button>
