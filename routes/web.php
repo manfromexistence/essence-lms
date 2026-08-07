@@ -292,6 +292,7 @@ Route::middleware('auth')->group(function () {
         // Certificate Templates
         Route::get('certificates/templates', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'index'])->name('certificates.templates.index');
         Route::post('certificates/templates', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'store'])->name('certificates.templates.store');
+        Route::get('certificates/templates/{template}/edit', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'edit'])->name('certificates.templates.edit');
         Route::put('certificates/templates/{template}', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'update'])->name('certificates.templates.update');
         Route::delete('certificates/templates/{template}', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'destroy'])->name('certificates.templates.destroy');
         Route::post('certificates/templates/{template}/default', [\App\Http\Controllers\Admin\CertificateTemplateController::class, 'setDefault'])->name('certificates.templates.default');

@@ -69,14 +69,14 @@
         <div class="lg:col-span-2 space-y-4">
             @forelse($templates as $template)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-start gap-5">
-                    <div class="w-28 h-20 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+                    <div class="w-40 h-28 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 relative">
                         @if($template->background_image)
-                            <img src="{{ asset('storage/' . $template->background_image) }}" class="w-full h-full object-cover">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center text-gray-400">
-                                <i class="fa-solid fa-certificate text-2xl"></i>
-                            </div>
+                            <img src="{{ asset('storage/' . $template->background_image) }}" class="absolute inset-0 w-full h-full object-cover">
                         @endif
+                        {{-- Live preview of the layout, scaled down --}}
+                        <div class="absolute inset-0 overflow-hidden" style="transform: scale(0.2); transform-origin: 0 0; width: {{ $template->width ?? 1200 }}px; height: {{ $template->height ?? 900 }}px;">
+                            @include('dashboard.certificates.partials.render-elements', ['template' => $template])
+                        </div>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
@@ -96,7 +96,8 @@
                                     <button type="submit" class="text-xs font-semibold text-primary hover:underline">Set as Default</button>
                                 </form>
                             @endif
-                            <button type="button" onclick="openEditModal({{ $template->id }})" class="text-xs font-semibold text-indigo-600 hover:underline">Edit</button>
+                            <a href="{{ route('dashboard.certificates.templates.edit', $template) }}" class="text-xs font-semibold text-indigo-600 hover:underline">Design Editor</a>
+                            <button type="button" onclick="openEditModal({{ $template->id }})" class="text-xs font-semibold text-gray-600 hover:underline">Settings</button>
                             <form action="{{ route('dashboard.certificates.templates.destroy', $template) }}" method="POST" onsubmit="return confirm('Delete this template?')">@csrf @method('DELETE')
                                 <button type="submit" class="text-xs font-semibold text-red-600 hover:underline">Delete</button>
                             </form>

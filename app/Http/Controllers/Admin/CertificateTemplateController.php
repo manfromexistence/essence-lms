@@ -53,6 +53,12 @@ class CertificateTemplateController extends Controller
         return back()->with('success', 'Certificate template created.');
     }
 
+    public function edit(CertificateTemplate $template)
+    {
+        $template->load('certificates');
+        return view('dashboard.certificates.edit', compact('template'));
+    }
+
     public function update(Request $request, CertificateTemplate $template)
     {
         $data = $request->validate([
@@ -65,6 +71,7 @@ class CertificateTemplateController extends Controller
             'height' => 'nullable|integer|min:400|max:2000',
             'is_active' => 'nullable|boolean',
             'is_default' => 'nullable|boolean',
+            'layout_config' => 'nullable|json',
         ]);
 
         if ($request->hasFile('background_image')) {
@@ -79,6 +86,14 @@ class CertificateTemplateController extends Controller
 
         $data['is_active'] = $request->boolean('is_active');
         $data['is_default'] = $request->boolean('is_default');
+
+        // Parse layout_config JSON into array
+        if (!empty($request->input('layout_config'))) {
+            $decoded = json_decode($request->input('layout_config'), true);
+            if (is_array($decoded)) {
+                $data['layout_config'] = array_values($decoded);
+            }
+        }
 
         if ($data['is_default']) {
             CertificateTemplate::where('is_default', true)->where('id', '!=', $template->id)->update(['is_default' => false]);
