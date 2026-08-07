@@ -4,6 +4,8 @@
     'type' => 'button',
     'disabled' => false,
     'asChild' => false,
+    'as' => 'button',
+    'href' => null,
 ])
 
 @php
@@ -31,10 +33,16 @@ $sizes = [
 $classes = $baseClasses . ' ' . ($variants[$variant] ?? $variants['default']) . ' ' . ($sizes[$size] ?? $sizes['default']);
 @endphp
 
-<button 
-    type="{{ $type }}" 
-    {{ $attributes->merge(['class' => $classes]) }}
-    @if($disabled) disabled @endif
->
-    {{ $slot }}
-</button>
+@if($as === 'a' || $href)
+    <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>
+        {{ $slot }}
+    </a>
+@else
+    <button
+        type="{{ $type }}"
+        {{ $attributes->merge(['class' => $classes]) }}
+        @if($disabled) disabled @endif
+    >
+        {{ $slot }}
+    </button>
+@endif

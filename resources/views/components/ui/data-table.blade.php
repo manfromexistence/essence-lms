@@ -69,7 +69,7 @@
                     @foreach($headers as $index => $header)
                         <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 rounded cursor-pointer group">
                              <input type="checkbox" 
-                                   class="peer h-4 w-4 shrink-0 rounded-sm border border-gray-200 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 checked:bg-bd-green checked:text-white checked:border-bd-green accent-bd-green cursor-pointer column-toggle"
+                                   class="h-4 w-4 shrink-0 rounded-sm border border-gray-300 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 accent-primary cursor-pointer column-toggle"
                                    data-index="{{ $index }}"
                                    checked>
                             <span class="ml-2 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">{{ $header['label'] }}</span>

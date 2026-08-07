@@ -34,22 +34,23 @@ class BrevoEmailService
         $type = $metadata['type'] ?? 'general';
         $related = $metadata['related'] ?? null;
 
-        $log = EmailLog::create([
-            'to' => $to,
-            'subject' => $subject,
-            'template_type' => $type,
-            'status' => 'pending',
-        ]);
-
-        if ($related) {
-            $log->update([
-                'user_id' => $related->user_id ?? $related->id,
-                'user_type' => get_class($related),
-            ]);
-        }
-
+        // The email_logs table only allows 'sent' or 'failed' (no 'pending'),
+        // so create the log with its final state after the API attempt.
         if (!$this->apiKey) {
-            return $this->markFailed($log, 'Brevo API key is not configured in Settings.');
+            $log = EmailLog::create([
+                'to' => $to,
+                'subject' => $subject,
+                'template_type' => $type,
+                'status' => 'failed',
+                'error_message' => 'Brevo API key is not configured in Settings.',
+            ]);
+            if ($related) {
+                $log->update([
+                    'user_id' => $related->user_id ?? $related->id,
+                    'user_type' => get_class($related),
+                ]);
+            }
+            return $log->fresh();
         }
 
         try {
@@ -70,20 +71,55 @@ class BrevoEmailService
             ]);
 
             if ($response->successful()) {
-                $log->update([
+                $log = EmailLog::create([
+                    'to' => $to,
+                    'subject' => $subject,
+                    'template_type' => $type,
                     'status' => 'sent',
                     'sent_at' => now(),
                 ]);
+                if ($related) {
+                    $log->update([
+                        'user_id' => $related->user_id ?? $related->id,
+                        'user_type' => get_class($related),
+                    ]);
+                }
                 return $log->fresh();
             }
 
-            return $this->markFailed($log, 'Brevo API error: ' . $response->body());
+            $log = EmailLog::create([
+                'to' => $to,
+                'subject' => $subject,
+                'template_type' => $type,
+                'status' => 'failed',
+                'error_message' => substr('Brevo API error: ' . $response->body(), 0, 2000),
+            ]);
+            if ($related) {
+                $log->update([
+                    'user_id' => $related->user_id ?? $related->id,
+                    'user_type' => get_class($related),
+                ]);
+            }
+            return $log->fresh();
         } catch (\Exception $e) {
             Log::error('Brevo email send failed', [
                 'to' => $to,
                 'error' => $e->getMessage(),
             ]);
-            return $this->markFailed($log, $e->getMessage());
+            $log = EmailLog::create([
+                'to' => $to,
+                'subject' => $subject,
+                'template_type' => $type,
+                'status' => 'failed',
+                'error_message' => substr($e->getMessage(), 0, 2000),
+            ]);
+            if ($related) {
+                $log->update([
+                    'user_id' => $related->user_id ?? $related->id,
+                    'user_type' => get_class($related),
+                ]);
+            }
+            return $log->fresh();
         }
     }
 
@@ -143,18 +179,9 @@ class BrevoEmailService
         return [
             'total_sent' => EmailLog::where('status', 'sent')->count(),
             'total_failed' => EmailLog::where('status', 'failed')->count(),
-            'total_pending' => EmailLog::where('status', 'pending')->count(),
+            'total_pending' => 0,
             'today_sent' => EmailLog::where('status', 'sent')
                 ->whereDate('created_at', today())->count(),
         ];
-    }
-
-    protected function markFailed(EmailLog $log, string $error): EmailLog
-    {
-        $log->update([
-            'status' => 'failed',
-            'error_message' => substr($error, 0, 2000),
-        ]);
-        return $log->fresh();
     }
 }

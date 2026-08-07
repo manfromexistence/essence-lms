@@ -190,6 +190,33 @@ class PaymentController extends Controller
                 'data' => ['payment_id' => $payment->id, 'course_id' => $payment->course_id],
                 'action_url' => route('student.course.watch', $payment->course_id),
             ]);
+
+            // Notify the student by email (Brevo)
+            try {
+                $studentName = $payment->student?->user?->name ?? 'Student';
+                $studentEmail = $payment->student?->user?->email;
+                if ($studentEmail) {
+                    $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
+                        . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
+                        . '<h2 style="color:#fff;margin:0;">Payment Approved 🎉</h2></div>'
+                        . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
+                        . '<p>Dear <strong>' . e($studentName) . '</strong>,</p>'
+                        . '<p>Your payment of <strong>৳' . number_format($payment->amount, 2) . '</strong> for <strong>' . e($payment->course?->name ?? 'your course') . '</strong> has been verified and approved.</p>'
+                        . '<p>You now have full access to the course. Start learning today!</p>'
+                        . '<p style="margin-top:24px;"><a href="' . route('student.course.watch', $payment->course_id) . '" style="background:#168536;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">Go to Course</a></p>'
+                        . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
+                        . '</div></div>';
+
+                    app(\App\Services\BrevoEmailService::class)->send(
+                        $studentEmail,
+                        'Payment Approved — ' . ($payment->course?->name ?? 'Course'),
+                        $html,
+                        ['type' => 'payment', 'related' => $payment->student]
+                    );
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Payment approval email failed', ['error' => $e->getMessage()]);
+            }
         });
 
         return redirect()->route('payment.review.list')

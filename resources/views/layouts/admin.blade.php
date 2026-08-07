@@ -579,7 +579,6 @@
                 transition: opacity 0.3s ease-out, transform 0.3s ease-out;
             }
         </style>
-        @stack('scripts')
     </div>
 
     <!-- Main Content -->

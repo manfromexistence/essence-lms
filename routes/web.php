@@ -285,6 +285,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('certificates', [\App\Http\Controllers\Admin\CertificateController::class, 'index'])->name('certificates.index');
         Route::post('certificates', [\App\Http\Controllers\Admin\CertificateController::class, 'store'])->name('certificates.store');
+        Route::put('certificates/{certificate}', [\App\Http\Controllers\Admin\CertificateController::class, 'update'])->name('certificates.update');
+        Route::post('certificates/{certificate}/email', [\App\Http\Controllers\Admin\CertificateController::class, 'email'])->name('certificates.email');
         Route::post('certificates/{certificate}/revoke', [\App\Http\Controllers\Admin\CertificateController::class, 'revoke'])->name('certificates.revoke');
 
         // Settings (Super Admin Only)
