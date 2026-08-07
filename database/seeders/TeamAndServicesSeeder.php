@@ -115,19 +115,39 @@ class TeamAndServicesSeeder extends Seeder
             ],
         ];
 
-        foreach ($members as $data) {
-            $user = User::firstOrCreate(
-                ['email' => $data['email']],
-                ['name' => $data['name'], 'password' => Hash::make('password'), 'is_active' => true]
-            );
-            if ($teacherRole && !$user->hasRole('teacher')) {
-                $user->roles()->attach($teacherRole->id);
+        $teacherRoleId = $teacherRole?->id;
+        // Preload existing teacher-role assignments once
+        $assigned = $teacherRoleId
+            ? \Illuminate\Support\Facades\DB::table('role_user')->where('role_id', $teacherRoleId)->pluck('user_id')->all()
+            : [];
+        $assignedSet = array_flip($assigned);
+        // Preload existing users by email
+        $existingUsers = User::whereIn('email', array_column($members, 'email'))->pluck('id', 'email');
+
+        foreach ($members as $i => $data) {
+            if (isset($existingUsers[$data['email']])) {
+                $user = User::find($existingUsers[$data['email']]);
+            } else {
+                $user = User::create([
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'password' => Hash::make('password'),
+                    'is_active' => true,
+                ]);
+                $existingUsers[$data['email']] = $user->id;
+            }
+            if ($teacherRoleId && !isset($assignedSet[$user->id])) {
+                \Illuminate\Support\Facades\DB::table('role_user')->insert([
+                    'role_id' => $teacherRoleId,
+                    'user_id' => $user->id,
+                ]);
+                $assignedSet[$user->id] = true;
             }
 
             Teacher::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'phone' => '017' . rand(10000000, 99999999),
+                    'phone' => '017' . str_pad((string) (10000000 + $i * 113), 8, '0', STR_PAD_LEFT),
                     'department' => $data['department'],
                     'designation' => $data['designation'],
                     'bio' => $data['bio'],
@@ -137,7 +157,7 @@ class TeamAndServicesSeeder extends Seeder
                     'is_featured' => $data['featured'],
                     'display_order' => $data['order'],
                     'status' => 'active',
-                    'salary' => rand(30000, 80000),
+                    'salary' => 30000 + ($i * 7000),
                 ]
             );
         }
