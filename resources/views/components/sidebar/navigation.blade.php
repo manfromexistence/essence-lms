@@ -6,7 +6,7 @@
     @empty
         {{-- Fallback: Show dashboard link if no menu items --}}
         <a href="{{ route('dashboard') }}"
-            class="flex items-center space-x-3 px-4 py-3 bg-emerald-50 text-bd-green rounded-lg font-medium">
+            class="flex items-center space-x-3 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium">
             <x-sidebar.menu-icon icon="dashboard" />
             <span>Dashboard</span>
         </a>
