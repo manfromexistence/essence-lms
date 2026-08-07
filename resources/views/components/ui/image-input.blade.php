@@ -22,8 +22,13 @@
     // Determine if the value is a storage path (not an external URL)
     $isStoragePath = $urlValue && !str_starts_with($urlValue, 'http://') && !str_starts_with($urlValue, 'https://');
     
-    // For preview: convert storage paths to full URLs
-    if ($isStoragePath) {
+    // Brand assets live directly under public/images (e.g. images/brand/...)
+    $isBrandAsset = $isStoragePath && str_starts_with($urlValue, 'images/');
+    
+    // For preview: convert storage/brand paths to full URLs
+    if ($isBrandAsset) {
+        $previewUrl = asset($urlValue);
+    } elseif ($isStoragePath) {
         // Remove 'public/' prefix if present (storage paths are stored as 'logos/file.png' not 'public/logos/file.png')
         $cleanPath = str_starts_with($urlValue, 'public/') ? substr($urlValue, 7) : $urlValue;
         $previewUrl = asset('storage/' . $cleanPath);
@@ -34,8 +39,8 @@
     // For display in URL input: show the full URL
     $displayUrl = $previewUrl;
     
-    // For submission: disable URL input for storage paths and default assets
-    $shouldDisableUrlInput = $isStoragePath || $isDefaultAsset;
+    // For submission: disable URL input for storage paths, brand assets, and default assets
+    $shouldDisableUrlInput = $isStoragePath || $isDefaultAsset || $isBrandAsset;
     
     $hasFileError = $errors->has($name . '_file') || $errors->has($name);
 @endphp

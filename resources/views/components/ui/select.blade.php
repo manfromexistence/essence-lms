@@ -33,7 +33,7 @@
             type="button" 
             id="select-btn-{{ $name }}"
             onclick="toggleCustomSelect('{{ $name }}')"
-            class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-left focus:border-primary transition-all outline-none flex items-center justify-between group"
+            class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-left focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none flex items-center justify-between group"
         >
             <span id="select-text-{{ $name }}" class="text-gray-900 truncate">Select Option</span>
             <svg id="select-arrow-{{ $name }}" class="w-4 h-4 text-gray-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">

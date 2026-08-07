@@ -5,24 +5,66 @@
 
 @push('scripts')
 <script>
-    // Sync color picker with text input
+    // Sync color picker <-> text input <-> swatch with hex validation
     document.addEventListener('DOMContentLoaded', function() {
-        const colorInputs = [
-            { picker: 'theme_primary_color', text: 'theme_primary_color_text' },
-            { picker: 'theme_primary_foreground', text: 'theme_primary_foreground_text' },
-            { picker: 'theme_secondary_color', text: 'theme_secondary_color_text' },
-            { picker: 'theme_secondary_foreground', text: 'theme_secondary_foreground_text' }
+        const colorFields = [
+            { picker: 'theme_primary_color', text: 'theme_primary_color_text', swatch: 'theme_primary_color_swatch' },
+            { picker: 'theme_primary_foreground', text: 'theme_primary_foreground_text', swatch: 'theme_primary_foreground_swatch' },
+            { picker: 'theme_secondary_color', text: 'theme_secondary_color_text', swatch: 'theme_secondary_color_swatch' },
+            { picker: 'theme_secondary_foreground', text: 'theme_secondary_foreground_text', swatch: 'theme_secondary_foreground_swatch' }
         ];
 
-        colorInputs.forEach(({ picker, text }) => {
+        const isHex = (v) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim());
+        const normalizeHex = (v) => {
+            v = v.trim();
+            if (v[0] !== '#') v = '#' + v;
+            if (/^#[0-9a-fA-F]{3}$/.test(v)) {
+                v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+            }
+            return v;
+        };
+
+        colorFields.forEach(({ picker, text, swatch }) => {
             const pickerEl = document.getElementById(picker);
             const textEl = document.getElementById(text);
-            
-            if (pickerEl && textEl) {
-                pickerEl.addEventListener('input', function() {
-                    textEl.value = this.value;
-                });
-            }
+            const swatchEl = document.getElementById(swatch);
+
+            if (!pickerEl || !textEl) return;
+
+            const apply = (color) => {
+                pickerEl.value = color;
+                textEl.value = color;
+                if (swatchEl) swatchEl.style.backgroundColor = color;
+            };
+
+            // Picker -> text + swatch
+            pickerEl.addEventListener('input', function() {
+                textEl.value = this.value;
+                if (swatchEl) swatchEl.style.backgroundColor = this.value;
+                textEl.classList.remove('border-red-400');
+            });
+
+            // Text -> picker + swatch (validate as you type)
+            textEl.addEventListener('input', function() {
+                const val = this.value.trim();
+                if (isHex(val)) {
+                    const normalized = normalizeHex(val);
+                    pickerEl.value = normalized;
+                    if (swatchEl) swatchEl.style.backgroundColor = normalized;
+                    this.classList.remove('border-red-400', 'ring-2', 'ring-red-200');
+                } else if (val !== '') {
+                    this.classList.add('border-red-400', 'ring-2', 'ring-red-200');
+                }
+            });
+
+            textEl.addEventListener('change', function() {
+                const val = this.value.trim();
+                if (isHex(val)) {
+                    apply(normalizeHex(val));
+                } else if (val === '') {
+                    this.classList.remove('border-red-400', 'ring-2', 'ring-red-200');
+                }
+            });
         });
     });
 </script>
@@ -85,9 +127,9 @@
                         @php
                             $settingsService = app(\App\Services\SettingsService::class);
                             $currentLogo = $settings['institution']['institution_logo']['value'] ?? '';
-                            // If empty, use the default logo URL for preview
-                            $logoPreview = empty($currentLogo) ? asset('logo.png') : $currentLogo;
-                            $logoHelperText = empty($currentLogo) 
+                            // Resolve via the service so brand asset paths (images/...) get a full URL
+                            $logoPreview = $settingsService->getLogo();
+                            $logoHelperText = empty($currentLogo) || str_contains($currentLogo, 'logo.png')
                                 ? 'Currently using default logo.png. Upload a file to replace it. Recommended size: 200x200px. Supports JPG, PNG, SVG, WebP'
                                 : 'Recommended size: 200x200px. Supports JPG, PNG, SVG, WebP';
                         @endphp
@@ -103,10 +145,8 @@
                     <div class="md:col-span-2">
                         @php
                             $currentFavicon = $settings['institution']['institution_favicon']['value'] ?? '';
-                            // If empty, use the current branded favicon for preview.
-                            $faviconPreview = empty($currentFavicon)
-                                ? app(\App\Services\SettingsService::class)->getFavicon()
-                                : $currentFavicon;
+                            // Resolve via the service so brand asset paths (images/...) get a full URL
+                            $faviconPreview = $settingsService->getFavicon();
                             $faviconHelperText = empty($currentFavicon)
                                 ? 'Currently using the Dhaka IT Institute favicon. Upload a file to replace it. Recommended size: 32x32px or 64x64px. Supports ICO, PNG, SVG'
                                 : 'Recommended size: 32x32px or 64x64px. Supports ICO, PNG, SVG';
@@ -262,57 +302,32 @@
             </x-ui.card-header>
             <x-ui.card-content>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                        <x-ui.label for="theme_primary_color">Primary Background Color</x-ui.label>
-                        <div class="flex gap-3 items-center">
-                            <input type="color" name="theme_primary_color" id="theme_primary_color" 
-                                value="{{ $settings['theme']['theme_primary_color']['value'] ?? '#3d59f9' }}"
-                                class="h-10 w-20 rounded border border-input cursor-pointer" />
-                            <x-ui.input type="text" id="theme_primary_color_text" 
-                                value="{{ $settings['theme']['theme_primary_color']['value'] ?? '#3d59f9' }}"
-                                placeholder="#3d59f9" class="flex-1" readonly />
+                    @php
+                        $themeColors = [
+                            'theme_primary_color' => ['label' => 'Primary Background Color', 'hint' => 'Main brand background color', 'default' => '#168536'],
+                            'theme_primary_foreground' => ['label' => 'Primary Text Color', 'hint' => 'Text color on primary background', 'default' => '#ffffff'],
+                            'theme_secondary_color' => ['label' => 'Secondary Background Color', 'hint' => 'Accent background color', 'default' => '#171717'],
+                            'theme_secondary_foreground' => ['label' => 'Secondary Text Color', 'hint' => 'Text color on secondary background', 'default' => '#ffffff'],
+                        ];
+                    @endphp
+                    @foreach($themeColors as $key => $meta)
+                        @php
+                            $colorValue = $settings['theme'][$key]['value'] ?? $meta['default'];
+                        @endphp
+                        <div class="space-y-2">
+                            <x-ui.label for="{{ $key }}">{{ $meta['label'] }}</x-ui.label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" name="{{ $key }}" id="{{ $key }}"
+                                    value="{{ $colorValue }}"
+                                    class="h-10 w-14 rounded border border-gray-300 cursor-pointer bg-transparent p-1" />
+                                <x-ui.input type="text" id="{{ $key }}_text"
+                                    value="{{ $colorValue }}"
+                                    placeholder="{{ $meta['default'] }}" class="flex-1 font-mono" maxlength="7" />
+                                <span class="h-10 w-10 shrink-0 rounded-lg border border-gray-200 shadow-sm" id="{{ $key }}_swatch" style="background-color: {{ $colorValue }}"></span>
+                            </div>
+                            <p class="text-[0.8rem] text-muted-foreground">{{ $meta['hint'] }}</p>
                         </div>
-                        <p class="text-[0.8rem] text-muted-foreground">Main brand background color</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <x-ui.label for="theme_primary_foreground">Primary Text Color</x-ui.label>
-                        <div class="flex gap-3 items-center">
-                            <input type="color" name="theme_primary_foreground" id="theme_primary_foreground" 
-                                value="{{ $settings['theme']['theme_primary_foreground']['value'] ?? '#ffffff' }}"
-                                class="h-10 w-20 rounded border border-input cursor-pointer" />
-                            <x-ui.input type="text" id="theme_primary_foreground_text" 
-                                value="{{ $settings['theme']['theme_primary_foreground']['value'] ?? '#ffffff' }}"
-                                placeholder="#ffffff" class="flex-1" readonly />
-                        </div>
-                        <p class="text-[0.8rem] text-muted-foreground">Text color on primary background</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <x-ui.label for="theme_secondary_color">Secondary Background Color</x-ui.label>
-                        <div class="flex gap-3 items-center">
-                            <input type="color" name="theme_secondary_color" id="theme_secondary_color" 
-                                value="{{ $settings['theme']['theme_secondary_color']['value'] ?? '#8b5cf6' }}"
-                                class="h-10 w-20 rounded border border-input cursor-pointer" />
-                            <x-ui.input type="text" id="theme_secondary_color_text" 
-                                value="{{ $settings['theme']['theme_secondary_color']['value'] ?? '#8b5cf6' }}"
-                                placeholder="#8b5cf6" class="flex-1" readonly />
-                        </div>
-                        <p class="text-[0.8rem] text-muted-foreground">Accent background color</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <x-ui.label for="theme_secondary_foreground">Secondary Text Color</x-ui.label>
-                        <div class="flex gap-3 items-center">
-                            <input type="color" name="theme_secondary_foreground" id="theme_secondary_foreground" 
-                                value="{{ $settings['theme']['theme_secondary_foreground']['value'] ?? '#ffffff' }}"
-                                class="h-10 w-20 rounded border border-input cursor-pointer" />
-                            <x-ui.input type="text" id="theme_secondary_foreground_text" 
-                                value="{{ $settings['theme']['theme_secondary_foreground']['value'] ?? '#ffffff' }}"
-                                placeholder="#ffffff" class="flex-1" readonly />
-                        </div>
-                        <p class="text-[0.8rem] text-muted-foreground">Text color on secondary background</p>
-                    </div>
+                    @endforeach
                 </div>
             </x-ui.card-content>
         </x-ui.card>
