@@ -31,9 +31,9 @@ class CertificateEditorTest extends TestCase
 
         $response = $this->actingAs($admin)->get("/dashboard/certificates/templates/{$template->id}/edit");
         $response->assertStatus(200)
-            ->assertSee('Certificate Template Editor')
-            ->assertSee('Add Text')
-            ->assertSee('Add Image')
+            ->assertSee('Certificate Designer')
+            ->assertSee('> Text', false)
+            ->assertSee('> Image', false)
             ->assertSee('student_name', false)
             ->assertSee('Live Preview');
     }
@@ -45,8 +45,11 @@ class CertificateEditorTest extends TestCase
         $template = CertificateTemplate::where('type', 'course_completion')->first();
 
         $layout = [
-            ['type' => 'text', 'content' => '{student_name}', 'x' => 100, 'y' => 200, 'width' => 900, 'fontSize' => 50, 'fontFamily' => 'Georgia, serif', 'color' => '#ff0000', 'bold' => true, 'align' => 'center'],
-            ['type' => 'image', 'imageField' => 'logo', 'x' => 500, 'y' => 50, 'width' => 150, 'height' => 60],
+            'elements' => [
+                ['type' => 'text', 'content' => '{student_name}', 'x' => 100, 'y' => 200, 'width' => 900, 'fontSize' => 50, 'fontFamily' => 'Georgia, serif', 'color' => '#ff0000', 'bold' => true, 'align' => 'center', 'rotation' => 0, 'opacity' => 1],
+                ['type' => 'image', 'imageField' => 'logo', 'x' => 500, 'y' => 50, 'width' => 150, 'height' => 60, 'rotation' => 0, 'opacity' => 1],
+            ],
+            'background_opacity' => 0.7,
         ];
 
         $this->actingAs($admin)->put("/dashboard/certificates/templates/{$template->id}", [
@@ -60,8 +63,9 @@ class CertificateEditorTest extends TestCase
         ])->assertRedirect();
 
         $template->refresh();
-        $this->assertCount(2, $template->layout_config);
-        $this->assertEquals('#ff0000', $template->layout_config[0]['color']);
+        $this->assertCount(2, $template->layout_config['elements']);
+        $this->assertEquals('#ff0000', $template->layout_config['elements'][0]['color']);
+        $this->assertEquals(0.7, $template->layout_config['background_opacity']);
     }
 
     public function test_certificate_show_renders_from_layout_config(): void
@@ -90,7 +94,7 @@ class CertificateEditorTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/dashboard/certificates/templates');
         $response->assertStatus(200)
-            ->assertSee('Design Editor')
+            ->assertSee('Design', false)
             ->assertSee('Dhaka IT Course Completion');
     }
 }

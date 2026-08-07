@@ -68,19 +68,23 @@
         <!-- Templates List -->
         <div class="lg:col-span-2 space-y-4">
             @forelse($templates as $template)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-start gap-5">
-                    <div class="w-40 h-28 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 relative">
+                <a href="{{ route('dashboard.certificates.templates.edit', $template) }}"
+                   class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-start gap-5 hover:border-bd-green hover:shadow-md transition group">
+                    <div class="w-44 h-32 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 relative">
                         @if($template->background_image)
-                            <img src="{{ asset('storage/' . $template->background_image) }}" class="absolute inset-0 w-full h-full object-cover">
+                            <img src="{{ asset('storage/' . $template->background_image) }}" class="absolute inset-0 w-full h-full object-cover" style="opacity: 0.6;">
                         @endif
                         {{-- Live preview of the layout, scaled down --}}
-                        <div class="absolute inset-0 overflow-hidden" style="transform: scale(0.2); transform-origin: 0 0; width: {{ $template->width ?? 1200 }}px; height: {{ $template->height ?? 900 }}px;">
+                        <div class="absolute inset-0 overflow-hidden" style="transform: scale(0.17); transform-origin: 0 0; width: {{ $template->width ?? 1200 }}px; height: {{ $template->height ?? 900 }}px;">
                             @include('dashboard.certificates.partials.render-elements', ['template' => $template])
+                        </div>
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+                            <span class="opacity-0 group-hover:opacity-100 text-white text-xs font-bold bg-bd-green px-3 py-1.5 rounded-lg"><i class="fa-solid fa-pen mr-1"></i> Design</span>
                         </div>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                            <h3 class="font-semibold text-gray-900">{{ $template->name }}</h3>
+                            <h3 class="font-semibold text-gray-900 group-hover:text-bd-green">{{ $template->name }}</h3>
                             @if($template->is_default)
                                 <span class="inline-flex items-center rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">Default</span>
                             @endif
@@ -90,20 +94,19 @@
                         </div>
                         <p class="text-sm text-gray-500 mt-1">Type: {{ str_replace('_', ' ', ucfirst($template->type)) }} • {{ $template->width }}×{{ $template->height }}px</p>
                         <p class="text-xs text-gray-400 mt-1">{{ $template->certificates()->count() }} certificate(s) issued</p>
-                        <div class="flex flex-wrap gap-2 mt-3">
+                        <div class="flex flex-wrap gap-3 mt-3" onclick="event.stopPropagation(); event.preventDefault();">
                             @if(!$template->is_default)
                                 <form action="{{ route('dashboard.certificates.templates.default', $template) }}" method="POST">@csrf
                                     <button type="submit" class="text-xs font-semibold text-primary hover:underline">Set as Default</button>
                                 </form>
                             @endif
-                            <a href="{{ route('dashboard.certificates.templates.edit', $template) }}" class="text-xs font-semibold text-indigo-600 hover:underline">Design Editor</a>
                             <button type="button" onclick="openEditModal({{ $template->id }})" class="text-xs font-semibold text-gray-600 hover:underline">Settings</button>
                             <form action="{{ route('dashboard.certificates.templates.destroy', $template) }}" method="POST" onsubmit="return confirm('Delete this template?')">@csrf @method('DELETE')
                                 <button type="submit" class="text-xs font-semibold text-red-600 hover:underline">Delete</button>
                             </form>
                         </div>
                     </div>
-                </div>
+                </a>
             @empty
                 <div class="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500">
                     <i class="fa-solid fa-certificate text-4xl text-gray-300 mb-3"></i>

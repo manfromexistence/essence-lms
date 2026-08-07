@@ -87,11 +87,14 @@ class CertificateTemplateController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_default'] = $request->boolean('is_default');
 
-        // Parse layout_config JSON into array
+        // Parse layout_config JSON into array (preserve {elements, background_opacity} structure)
         if (!empty($request->input('layout_config'))) {
             $decoded = json_decode($request->input('layout_config'), true);
             if (is_array($decoded)) {
-                $data['layout_config'] = array_values($decoded);
+                if (isset($decoded['elements']) && is_array($decoded['elements'])) {
+                    $decoded['elements'] = array_values($decoded['elements']);
+                }
+                $data['layout_config'] = $decoded;
             }
         }
 
