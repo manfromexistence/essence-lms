@@ -33,10 +33,6 @@
     --warning-foreground: 26 83.3% 14.1%;
     --info: 201.3 96.3% 32.2%;
     --info-foreground: 210 40% 98%;
-    
-    /* Keep existing custom colors (alias to primary) */
-    --bd-green: var(--color-primary);
-    --bd-green-dark: var(--color-primary);
 }
 
 @theme {
@@ -69,11 +65,11 @@
     --color-warning-foreground: hsl(var(--warning-foreground));
     --color-info: hsl(var(--info));
     --color-info-foreground: hsl(var(--info-foreground));
-    
-    /* Keep existing custom colors */
-    --color-bd-green: var(--bd-green);
-    --color-bd-green-dark: var(--bd-green-dark);
-    
+
+    /* Brand green (used by .bg-primary/.text-primary overrides in layouts) */
+    --color-bd-green: #168536;
+    --color-bd-green-dark: #0f6b2c;
+
     /* Border radius */
     --radius-lg: calc(var(--radius) + 4px);
     --radius-md: calc(var(--radius) + 2px);
@@ -85,132 +81,12 @@
     * {
         border-color: hsl(var(--border));
     }
-    
+
     body {
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
     }
 }
 
-/* --------------------------------------------------------------------------
-   Ensure every Tailwind "green" utility uses the dynamic primary color so
-   all green appearances follow the configured theme. This central override
-   keeps existing templates (that use text-green-*, bg-green-* etc.) in-sync
-   with --color-primary without changing every template.
-   NOTE: we intentionally map the green utilities directly to the primary
-   color (single source of truth). If you want distinct light/dark shades
-   derived from primary, we can generate those next.
-   -------------------------------------------------------------------------- */
-
-@layer utilities {
-    /* text (including SVG using currentColor) */
-    .text-green-50, .text-green-100, .text-green-200, .text-green-300,
-    .text-green-400, .text-green-500, .text-green-600, .text-green-700,
-    .text-green-800, .text-green-900 {
-        color: var(--color-primary) !important;
-    }
-
-    /* background */
-    .bg-green-50, .bg-green-100, .bg-green-200, .bg-green-300,
-    .bg-green-400, .bg-green-500, .bg-green-600, .bg-green-700,
-    .bg-green-800, .bg-green-900 {
-        background-color: var(--color-primary) !important;
-        color: var(--color-primary-foreground, #fff) !important;
-    }
-
-    /* borders, rings, divide */
-    .border-green-50, .border-green-100, .border-green-200, .border-green-300,
-    .border-green-400, .border-green-500, .border-green-600, .border-green-700,
-    .border-green-800, .border-green-900,
-    .ring-green-500, .divide-green-500 {
-        border-color: var(--color-primary) !important;
-    }
-
-    /* hover / focus variants (escaped selectors for Tailwind-style classes) */
-    .hover\:bg-green-50:hover, .hover\:bg-green-100:hover, .hover\:bg-green-200:hover,
-    .hover\:bg-green-300:hover, .hover\:bg-green-400:hover, .hover\:bg-green-500:hover,
-    .hover\:bg-green-600:hover, .hover\:bg-green-700:hover, .hover\:bg-green-800:hover,
-    .hover\:bg-green-900:hover {
-        background-color: var(--color-primary) !important;
-    }
-
-    .hover\:text-green-50:hover, .hover\:text-green-100:hover, .hover\:text-green-200:hover,
-    .hover\:text-green-300:hover, .hover\:text-green-400:hover, .hover\:text-green-500:hover,
-    .hover\:text-green-600:hover, .hover\:text-green-700:hover, .hover\:text-green-800:hover,
-    .hover\:text-green-900:hover {
-        color: var(--color-primary) !important;
-    }
-
-    /* SVG/stroke/fill utilities */
-    .stroke-green-500, .fill-green-500 {
-        stroke: var(--color-primary) !important;
-        fill: var(--color-primary) !important;
-    }
-
-    /* small helper for cases that expect a darker hover — maintainable alternative
-       to hardcoding darker hexes is to use filter on hover (works in modern browsers) */
-    .bg-green-600:hover, .hover\:bg-green-600:hover {
-        filter: brightness(0.92);
-    }
-
-    /* ----------------------------------------------------------------------
-       Map Tailwind 'emerald-*' utilities and gradient stops to the primary
-       color so remaining emerald usage follows the configured theme.
-       Also include an attribute-selector fallback to catch any remaining
-       inline arbitrary classes like `bg-[#006A4E]`.
-       ---------------------------------------------------------------------- */
-
-    /* emerald -> primary (text/background/border/ring) */
-    .text-emerald-50, .text-emerald-100, .text-emerald-200, .text-emerald-300,
-    .text-emerald-400, .text-emerald-500, .text-emerald-600, .text-emerald-700,
-    .text-emerald-800, .text-emerald-900 {
-        color: var(--color-primary) !important;
-    }
-
-    .bg-emerald-50, .bg-emerald-100, .bg-emerald-200, .bg-emerald-300,
-    .bg-emerald-400, .bg-emerald-500, .bg-emerald-600, .bg-emerald-700,
-    .bg-emerald-800, .bg-emerald-900 {
-        background-color: var(--color-primary) !important;
-        color: var(--color-primary-foreground, #fff) !important;
-    }
-
-    .border-emerald-50, .border-emerald-100, .border-emerald-200, .border-emerald-300,
-    .border-emerald-400, .border-emerald-500, .border-emerald-600, .border-emerald-700,
-    .border-emerald-800, .border-emerald-900,
-    .ring-emerald-500, .divide-emerald-500 {
-        border-color: var(--color-primary) !important;
-    }
-
-    /* gradient stop helpers used by Tailwind */
-    .from-emerald-50, .from-emerald-100, .from-emerald-200, .from-emerald-300,
-    .from-emerald-400, .from-emerald-500, .from-emerald-600, .from-emerald-700,
-    .from-emerald-800, .from-emerald-900 {
-        --tw-gradient-from: var(--color-primary);
-        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,255,255,0));
-    }
-
-    .via-emerald-50, .via-emerald-100, .via-emerald-200, .via-emerald-300,
-    .via-emerald-400, .via-emerald-500, .via-emerald-600, .via-emerald-700,
-    .via-emerald-800, .via-emerald-900 {
-        --tw-gradient-stops: var(--color-primary), var(--tw-gradient-to, rgba(255,255,255,0));
-    }
-
-    .to-emerald-50, .to-emerald-100, .to-emerald-200, .to-emerald-300,
-    .to-emerald-400, .to-emerald-500, .to-emerald-600, .to-emerald-700,
-    .to-emerald-800, .to-emerald-900 {
-        --tw-gradient-to: var(--color-primary);
-    }
-
-    .hover\:bg-emerald-600:hover, .hover\:text-emerald-600:hover { background-color: var(--color-primary) !important; color: var(--color-primary-foreground) !important; }
-
-    .stroke-emerald-500, .fill-emerald-500 { stroke: var(--color-primary) !important; fill: var(--color-primary) !important; }
-
-    /* Fallback: override any classes that still contain the old hard-coded hex */
-    [class*="#006A4E"], [class*="#005840"] {
-        /* common patterns: bg-[#006A4E], text-[#006A4E], hover:bg-[#005a42], from-[#006A4E] */
-        background-color: var(--color-primary) !important;
-        color: var(--color-primary-foreground, #fff) !important;
-        border-color: var(--color-primary) !important;
-    }
-}
-
+/* Brand utility overrides — these live in the Blade layouts' <style> blocks so
+   they can use the runtime theme colors from Settings. Nothing else is needed here. */

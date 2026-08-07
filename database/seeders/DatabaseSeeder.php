@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
                 TeamAndServicesSeeder::class,
                 BatchSeeder::class,
                 CourseVideoSeeder::class,
+                CourseLmsDataSeeder::class,
             ]);
 
             return;
@@ -40,6 +41,9 @@ class DatabaseSeeder extends Seeder
             TeacherManagementSeeder::class,
             PageSeeder::class,
             TeamAndServicesSeeder::class,
+            
+            // Course-LMS data (students, enrollments, payments)
+            CourseLmsDataSeeder::class,
             
             // Comprehensive data seeder - populates all missing data
             ComprehensiveDataSeeder::class,

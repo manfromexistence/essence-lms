@@ -180,6 +180,10 @@
         .hover\:text-primary:hover { color: var(--color-primary) !important; }
         .from-primary { --tw-gradient-from: var(--color-primary) !important; }
         .to-primary { --tw-gradient-to: var(--color-primary) !important; }
+        .accent-primary { accent-color: var(--color-primary) !important; }
+        .checked\:bg-primary:checked { background-color: var(--color-primary) !important; }
+        .checked\:border-primary:checked { border-color: var(--color-primary) !important; }
+        .peer-checked\:bg-primary:checked ~ * { background-color: var(--color-primary) !important; }
     </style>
     @stack('styles')
 </head>

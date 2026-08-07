@@ -344,13 +344,13 @@
             @endcan
 
             @can('communication.send')
-            <a href="{{ route('dashboard.communication.index') }}" class="p-4 bg-amber-50 hover:bg-amber-100 rounded-xl transition-all group">
+            <a href="{{ route('dashboard.email.index') }}" class="p-4 bg-amber-50 hover:bg-amber-100 rounded-xl transition-all group">
                 <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                 </div>
-                <p class="font-semibold text-gray-900 text-sm">Send SMS</p>
+                <p class="font-semibold text-gray-900 text-sm">Send Email</p>
             </a>
             @endcan
 

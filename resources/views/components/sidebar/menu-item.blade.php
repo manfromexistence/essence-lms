@@ -61,7 +61,8 @@
     {{-- Menu item with children (submenu) --}}
     <div class="space-y-1">
         <button onclick="toggleSubmenu('{{ $submenuId }}')"
-            class="flex items-center justify-between w-full px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg font-medium text-sm {{ $hasActiveChild ? 'bg-emerald-50 text-bd-green' : '' }}">
+            class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium text-sm transition-colors
+                {{ $hasActiveChild ? 'bg-emerald-50 text-bd-green border-l-4 border-bd-green' : 'text-gray-700 hover:bg-gray-100 border-l-4 border-transparent' }}">
             <div class="flex items-center space-x-2">
                 <x-sidebar.menu-icon :icon="$item['icon'] ?? 'default'" />
                 <span class="truncate">{{ $item['title'] }}</span>
@@ -84,17 +85,17 @@
     @if(isset($item['route']) && $item['route'])
         @if($routeExists)
             <a href="{{ $routeUrl }}"
-                class="flex items-center space-x-{{ $level > 0 ? '3' : '2' }} px-{{ $level > 0 ? '4' : '3' }} py-{{ $level > 0 ? '2' : '2.5' }} text-{{ $level > 0 ? 'sm' : 'sm' }} rounded-lg font-medium transition-colors
+                class="flex items-center space-x-{{ $level > 0 ? '3' : '2' }} px-{{ $level > 0 ? '4' : '3' }} py-{{ $level > 0 ? '2' : '2.5' }} text-sm rounded-lg font-medium transition-colors border-l-4
                     {{ $isActive 
-                        ? 'bg-emerald-50 text-bd-green' 
-                        : 'text-gray-' . ($level > 0 ? '600' : '700') . ' hover:bg-gray-100' 
+                        ? 'bg-emerald-50 text-bd-green border-bd-green font-semibold' 
+                        : 'text-gray-' . ($level > 0 ? '600' : '700') . ' hover:bg-gray-100 border-transparent' 
                     }}">
                 <x-sidebar.menu-icon :icon="$item['icon'] ?? 'default'" />
                 <span class="truncate">{{ $item['title'] }}</span>
             </a>
         @else
             {{-- Route doesn't exist yet, show disabled state --}}
-            <span class="flex items-center space-x-{{ $level > 0 ? '3' : '2' }} px-{{ $level > 0 ? '4' : '3' }} py-{{ $level > 0 ? '2' : '2.5' }} text-{{ $level > 0 ? 'sm' : 'sm' }} text-gray-400 rounded-lg font-medium cursor-not-allowed" title="Route not defined: {{ $item['route'] }}">
+            <span class="flex items-center space-x-{{ $level > 0 ? '3' : '2' }} px-{{ $level > 0 ? '4' : '3' }} py-{{ $level > 0 ? '2' : '2.5' }} text-sm text-gray-400 rounded-lg font-medium cursor-not-allowed border-l-4 border-transparent" title="Route not defined: {{ $item['route'] }}">
                 <x-sidebar.menu-icon :icon="$item['icon'] ?? 'default'" />
                 <span class="truncate">{{ $item['title'] }}</span>
             </span>

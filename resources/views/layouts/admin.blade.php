@@ -39,6 +39,22 @@
             --color-primary-foreground: {{ $primaryForeground }};
             --color-secondary: {{ $secondaryColor }};
             --color-secondary-foreground: {{ $secondaryForeground }};
+            --color-success: #10b981;
+            --color-success-foreground: #ffffff;
+            --color-warning: #f59e0b;
+            --color-warning-foreground: #ffffff;
+            --color-info: #3b82f6;
+            --color-info-foreground: #ffffff;
+            --color-destructive: #ef4444;
+            --color-destructive-foreground: #ffffff;
+            --color-background: #ffffff;
+            --color-foreground: #111827;
+            --color-muted: #f3f4f6;
+            --color-muted-foreground: #6b7280;
+            --color-accent: #f3f4f6;
+            --color-accent-foreground: #111827;
+            --color-input: #d1d5db;
+            --color-ring: {{ $primaryColor }};
         }
         
         /* 1. Standard approach for Firefox */
@@ -86,6 +102,44 @@
         .text-primary-foreground {
             color: var(--color-primary-foreground) !important;
         }
+
+        /* Semantic color utilities (used by badge/button/alert components) */
+        .bg-success { background-color: var(--color-success) !important; }
+        .text-success { color: var(--color-success) !important; }
+        .text-success-foreground { color: var(--color-success-foreground) !important; }
+        .bg-success\/10 { background-color: rgba(16, 185, 129, 0.1) !important; }
+        .border-success\/50 { border-color: rgba(16, 185, 129, 0.5) !important; }
+        .bg-warning { background-color: var(--color-warning) !important; }
+        .text-warning { color: var(--color-warning) !important; }
+        .text-warning-foreground { color: var(--color-warning-foreground) !important; }
+        .bg-warning\/10 { background-color: rgba(245, 158, 11, 0.1) !important; }
+        .border-warning\/50 { border-color: rgba(245, 158, 11, 0.5) !important; }
+        .bg-info { background-color: var(--color-info) !important; }
+        .text-info { color: var(--color-info) !important; }
+        .text-info-foreground { color: var(--color-info-foreground) !important; }
+        .bg-info\/10 { background-color: rgba(59, 130, 246, 0.1) !important; }
+        .border-info\/50 { border-color: rgba(59, 130, 246, 0.5) !important; }
+        .bg-destructive { background-color: var(--color-destructive) !important; }
+        .text-destructive { color: var(--color-destructive) !important; }
+        .text-destructive-foreground { color: var(--color-destructive-foreground) !important; }
+        .border-destructive\/50 { border-color: rgba(239, 68, 68, 0.5) !important; }
+        .bg-background { background-color: var(--color-background) !important; }
+        .text-foreground { color: var(--color-foreground) !important; }
+        .bg-muted { background-color: var(--color-muted) !important; }
+        .text-muted-foreground { color: var(--color-muted-foreground) !important; }
+        .bg-accent { background-color: var(--color-accent) !important; }
+        .text-accent-foreground { color: var(--color-accent-foreground) !important; }
+        .border-input { border-color: var(--color-input) !important; }
+        .ring-ring { --tw-ring-color: var(--color-ring) !important; }
+        .border-destructive { border-color: var(--color-destructive) !important; }
+        .hover\:bg-destructive\/10:hover { background-color: rgba(239, 68, 68, 0.1) !important; }
+        .hover\:bg-destructive\/80:hover { background-color: var(--color-destructive) !important; opacity: 0.8; }
+        .hover\:bg-success\/80:hover { background-color: var(--color-success) !important; opacity: 0.8; }
+        .hover\:bg-warning\/80:hover { background-color: var(--color-warning) !important; opacity: 0.8; }
+        .hover\:bg-info\/80:hover { background-color: var(--color-info) !important; opacity: 0.8; }
+        .hover\:bg-primary\/80:hover { background-color: var(--color-primary) !important; opacity: 0.8; }
+        .hover\:bg-accent:hover { background-color: var(--color-accent) !important; }
+        .hover\:text-accent-foreground:hover { color: var(--color-accent-foreground) !important; }
         
         .bg-secondary {
             background-color: var(--color-secondary) !important;
@@ -283,7 +337,7 @@
                     @csrf
                     <button type="submit"
                         class="flex items-center space-x-3 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg font-medium text-sm w-full transition-colors">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
