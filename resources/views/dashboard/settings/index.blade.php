@@ -5,13 +5,11 @@
 
 @push('scripts')
 <script>
-    // Sync color picker <-> text input <-> swatch with hex validation
+    // Sync color picker <-> text input with hex validation
     document.addEventListener('DOMContentLoaded', function() {
         const colorFields = [
-            { picker: 'theme_primary_color', text: 'theme_primary_color_text', swatch: 'theme_primary_color_swatch' },
-            { picker: 'theme_primary_foreground', text: 'theme_primary_foreground_text', swatch: 'theme_primary_foreground_swatch' },
-            { picker: 'theme_secondary_color', text: 'theme_secondary_color_text', swatch: 'theme_secondary_color_swatch' },
-            { picker: 'theme_secondary_foreground', text: 'theme_secondary_foreground_text', swatch: 'theme_secondary_foreground_swatch' }
+            'theme_primary_color', 'theme_primary_foreground',
+            'theme_secondary_color', 'theme_secondary_foreground'
         ];
 
         const isHex = (v) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim());
@@ -24,33 +22,29 @@
             return v;
         };
 
-        colorFields.forEach(({ picker, text, swatch }) => {
-            const pickerEl = document.getElementById(picker);
-            const textEl = document.getElementById(text);
-            const swatchEl = document.getElementById(swatch);
+        colorFields.forEach((name) => {
+            const pickerEl = document.getElementById(name);
+            const textEl = document.getElementById(name + '_text');
 
             if (!pickerEl || !textEl) return;
 
             const apply = (color) => {
                 pickerEl.value = color;
                 textEl.value = color;
-                if (swatchEl) swatchEl.style.backgroundColor = color;
+                textEl.classList.remove('border-red-400', 'ring-2', 'ring-red-200');
             };
 
-            // Picker -> text + swatch
+            // Picker -> text
             pickerEl.addEventListener('input', function() {
                 textEl.value = this.value;
-                if (swatchEl) swatchEl.style.backgroundColor = this.value;
-                textEl.classList.remove('border-red-400');
+                textEl.classList.remove('border-red-400', 'ring-2', 'ring-red-200');
             });
 
-            // Text -> picker + swatch (validate as you type)
+            // Text -> picker (validate as you type)
             textEl.addEventListener('input', function() {
                 const val = this.value.trim();
                 if (isHex(val)) {
-                    const normalized = normalizeHex(val);
-                    pickerEl.value = normalized;
-                    if (swatchEl) swatchEl.style.backgroundColor = normalized;
+                    pickerEl.value = normalizeHex(val);
                     this.classList.remove('border-red-400', 'ring-2', 'ring-red-200');
                 } else if (val !== '') {
                     this.classList.add('border-red-400', 'ring-2', 'ring-red-200');
@@ -193,7 +187,46 @@
             </x-ui.card-content>
         </x-ui.card>
 
-        <!-- SMS Gateway Settings -->
+        <!-- Email (Brevo) Settings -->
+        <x-ui.card>
+            <x-ui.card-header>
+                <div class="flex items-center gap-4">
+                    <div class="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600">
+                        <i class="fas fa-envelope text-lg"></i>
+                    </div>
+                    <div>
+                        <x-ui.card-title>Email (Brevo)</x-ui.card-title>
+                        <x-ui.card-description>Configure Brevo SMTP/API to send emails to students</x-ui.card-description>
+                    </div>
+                </div>
+            </x-ui.card-header>
+            <x-ui.card-content>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <x-ui.label for="brevo_api_key">Brevo API Key</x-ui.label>
+                        <x-ui.input type="password" name="brevo_api_key" id="brevo_api_key"
+                            value="{{ $settings['email']['brevo_api_key']['value'] ?? '' }}"
+                            placeholder="xkeysib-..." autocomplete="off" />
+                        <p class="text-[0.8rem] text-muted-foreground">Find this in Brevo → Settings → API Keys</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="brevo_sender_email">Sender Email</x-ui.label>
+                        <x-ui.input type="email" name="brevo_sender_email" id="brevo_sender_email"
+                            value="{{ $settings['email']['brevo_sender_email']['value'] ?? 'ajju40959@gmail.com' }}" />
+                        <p class="text-[0.8rem] text-muted-foreground">Verified sender address in Brevo</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="brevo_sender_name">Sender Name</x-ui.label>
+                        <x-ui.input type="text" name="brevo_sender_name" id="brevo_sender_name"
+                            value="{{ $settings['email']['brevo_sender_name']['value'] ?? 'Dhaka IT Institute' }}" />
+                    </div>
+                </div>
+            </x-ui.card-content>
+        </x-ui.card>
+
+        {{-- SMS Gateway — commented out (replaced by Brevo email)
         <x-ui.card>
             <x-ui.card-header>
                 <div class="flex items-center gap-4">
@@ -225,24 +258,25 @@
 
                     <div class="space-y-2">
                         <x-ui.label for="sms_sender_id">Sender ID</x-ui.label>
-                        <x-ui.input type="text" name="sms_sender_id" id="sms_sender_id" 
+                        <x-ui.input type="text" name="sms_sender_id" id="sms_sender_id"
                             value="{{ $settings['sms']['sms_sender_id']['value'] ?? '' }}" />
                     </div>
 
                     <div class="space-y-2">
                         <x-ui.label for="sms_gateway_api_key">API Key</x-ui.label>
-                        <x-ui.input type="password" name="sms_gateway_api_key" id="sms_gateway_api_key" 
+                        <x-ui.input type="password" name="sms_gateway_api_key" id="sms_gateway_api_key"
                             value="{{ $settings['sms']['sms_gateway_api_key']['value'] ?? '' }}" />
                     </div>
 
                     <div class="space-y-2">
                         <x-ui.label for="sms_gateway_api_secret">API Secret</x-ui.label>
-                        <x-ui.input type="password" name="sms_gateway_api_secret" id="sms_gateway_api_secret" 
+                        <x-ui.input type="password" name="sms_gateway_api_secret" id="sms_gateway_api_secret"
                             value="{{ $settings['sms']['sms_gateway_api_secret']['value'] ?? '' }}" />
                     </div>
                 </div>
             </x-ui.card-content>
         </x-ui.card>
+        --}}
 
         <!-- Attendance & Payment Settings -->
         <x-ui.card>
@@ -319,11 +353,10 @@
                             <div class="flex gap-3 items-center">
                                 <input type="color" name="{{ $key }}" id="{{ $key }}"
                                     value="{{ $colorValue }}"
-                                    class="h-10 w-14 rounded border border-gray-300 cursor-pointer bg-transparent p-1" />
+                                    class="h-10 w-16 shrink-0 cursor-pointer rounded-md border border-gray-300 bg-white p-1 shadow-sm transition hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20" />
                                 <x-ui.input type="text" id="{{ $key }}_text"
                                     value="{{ $colorValue }}"
                                     placeholder="{{ $meta['default'] }}" class="flex-1 font-mono" maxlength="7" />
-                                <span class="h-10 w-10 shrink-0 rounded-lg border border-gray-200 shadow-sm" id="{{ $key }}_swatch" style="background-color: {{ $colorValue }}"></span>
                             </div>
                             <p class="text-[0.8rem] text-muted-foreground">{{ $meta['hint'] }}</p>
                         </div>

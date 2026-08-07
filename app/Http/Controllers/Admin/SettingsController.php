@@ -56,6 +56,11 @@ class SettingsController extends Controller
             'sms_gateway_api_secret' => 'nullable|string|max:255',
             'sms_sender_id' => 'nullable|string|max:20',
 
+            // Email (Brevo) Settings
+            'brevo_api_key' => 'nullable|string|max:255',
+            'brevo_sender_email' => 'nullable|email|max:255',
+            'brevo_sender_name' => 'nullable|string|max:255',
+
             // Attendance Settings
             'attendance_threshold' => 'nullable|integer|min:0|max:100',
 
@@ -111,6 +116,14 @@ class SettingsController extends Controller
             // Handle checkbox for sms_gateway_enabled (unchecked = not in request)
             if (!$request->has('sms_gateway_enabled')) {
                 $this->settingsService->set('sms_gateway_enabled', false);
+            }
+
+            // Pre-fill Brevo defaults so the email dashboard works out of the box
+            if (!$this->settingsService->get('brevo_sender_email')) {
+                $this->settingsService->set('brevo_sender_email', 'ajju40959@gmail.com');
+            }
+            if (!$this->settingsService->get('brevo_sender_name')) {
+                $this->settingsService->set('brevo_sender_name', 'Dhaka IT Institute');
             }
 
             return redirect()->route('dashboard.settings.index')

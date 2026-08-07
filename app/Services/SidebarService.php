@@ -813,6 +813,7 @@ class SidebarService
                 'title' => 'Services & Store', 'icon' => 'briefcase', 'route' => 'dashboard.services.index', 'roles' => $admins,
             ],
             ['title' => 'Team Members', 'icon' => 'users', 'route' => 'dashboard.teachers.index', 'roles' => $admins],
+            ['title' => 'Email', 'icon' => 'envelope', 'route' => 'dashboard.email.index', 'roles' => $admins],
             // School accounting ledger — commented out (not needed for course LMS; Payments cover revenue)
             // [
             //     'title' => 'Accounts', 'icon' => 'currency', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],

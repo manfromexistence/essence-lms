@@ -248,6 +248,11 @@ Route::middleware('auth')->group(function () {
         Route::put('communication/templates/{template}', [\App\Http\Controllers\Admin\CommunicationController::class, 'updateTemplate'])->name('communication.templates.update');
         Route::delete('communication/templates/{template}', [\App\Http\Controllers\Admin\CommunicationController::class, 'deleteTemplate'])->name('communication.templates.delete');
 
+        // Email (Brevo) Communication
+        Route::get('email', [\App\Http\Controllers\Admin\EmailController::class, 'index'])->name('email.index');
+        Route::post('email/send', [\App\Http\Controllers\Admin\EmailController::class, 'send'])->name('email.send');
+        Route::post('email/send-bulk', [\App\Http\Controllers\Admin\EmailController::class, 'sendBulk'])->name('email.send-bulk');
+
         // Reports
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('attendance', [\App\Http\Controllers\Admin\ReportController::class, 'attendance'])->name('attendance');

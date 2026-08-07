@@ -78,6 +78,23 @@ class SettingsService
             'type' => 'string',
         ],
 
+        // Email (Brevo) Settings
+        'brevo_api_key' => [
+            'value' => '',
+            'group' => 'email',
+            'type' => 'string',
+        ],
+        'brevo_sender_email' => [
+            'value' => 'ajju40959@gmail.com',
+            'group' => 'email',
+            'type' => 'string',
+        ],
+        'brevo_sender_name' => [
+            'value' => 'Dhaka IT Institute',
+            'group' => 'email',
+            'type' => 'string',
+        ],
+
         // Institution Info
         'institution_name' => [
             'value' => 'Dhaka IT Institute',
