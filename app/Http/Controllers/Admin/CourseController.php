@@ -154,9 +154,17 @@ class CourseController extends Controller
         return view('dashboard.courses.routine', compact('batches'));
     }
 
-    public function materials()
+    public function materials(Request $request)
     {
         $courses = Course::active()->get();
+
+        // If a course is selected, show its materials via the real materials view
+        if ($request->filled('course_id')) {
+            $course = Course::findOrFail($request->course_id);
+            $materials = $course->materials()->orderBy('order')->get();
+            return view('dashboard.materials.index', compact('course', 'materials'));
+        }
+
         return view('dashboard.courses.materials', compact('courses'));
     }
 

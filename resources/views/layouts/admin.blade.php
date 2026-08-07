@@ -15,6 +15,9 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
+    <!-- Alpine.js for interactive components -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
@@ -637,10 +640,12 @@
                         <!-- Dropdown Menu -->
                         <div id="profileDropdownMenu"
                             class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-50 origin-top-right transition-all duration-100 ease-out transform scale-95 opacity-0">
+                            @if(Auth::user()->isSuperAdmin())
                             <a href="{{ route('dashboard.settings.index') }}"
                                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Settings
                             </a>
+                            @endif
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="button" onclick="event.preventDefault(); this.closest('form').submit();"

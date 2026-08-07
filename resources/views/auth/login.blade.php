@@ -85,7 +85,7 @@
                 <img src="{{ $logoUrl }}" alt="{{ $institutionName }} Logo" class="h-16 w-auto">
             </div>
             <!-- <h1 class="text-3xl font-bold text-gray-900">{{ $institutionName }}</h1> -->
-            <p class="text-gray-600 mt-2">Admin Dashboard Login</p>
+            <p class="text-gray-600 mt-2">Sign in to your account</p>
         </div>
 
         <!-- Login Card -->

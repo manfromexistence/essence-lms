@@ -126,7 +126,7 @@
                             @foreach($enrollment['payments'] as $payment)
                             <div class="flex justify-between items-center bg-gray-50 rounded p-3">
                                 <div class="flex items-center space-x-3">
-                                    @if($payment->status === 'approved')
+                                    @if(in_array($payment->status, ['approved', 'completed']))
                                         <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
                                     @elseif($payment->status === 'pending')
                                         <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
@@ -195,7 +195,7 @@
                             <p class="font-semibold text-gray-900">৳{{ number_format($payment->amount, 2) }}</p>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            @if($payment->status === 'approved')
+                            @if(in_array($payment->status, ['approved', 'completed']))
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
                             @elseif($payment->status === 'pending')
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>

@@ -27,6 +27,7 @@ Route::get('/students', [HomeController::class, 'students'])->name('students');
 Route::get('/results', [HomeController::class, 'results'])->name('results');
 
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
+Route::post('/contact', [HomeController::class, 'submitContact'])->name('contact.submit')->middleware('throttle:5,1');
 Route::get('/services', [HomeController::class, 'services'])->name('services');
 Route::get('/team', [HomeController::class, 'team'])->name('team');
 Route::get('/courses/{course}/demo', [HomeController::class, 'courseDemo'])->name('courses.demo');
@@ -121,6 +122,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{video}/edit', [\App\Http\Controllers\Admin\CourseVideoController::class, 'edit'])->name('edit');
             Route::put('/{video}', [\App\Http\Controllers\Admin\CourseVideoController::class, 'update'])->name('update');
             Route::delete('/{video}', [\App\Http\Controllers\Admin\CourseVideoController::class, 'destroy'])->name('destroy');
+            Route::get('/{video}/stream', [\App\Http\Controllers\Admin\CourseVideoController::class, 'stream'])->name('stream');
             Route::post('/reorder', [\App\Http\Controllers\Admin\CourseVideoController::class, 'reorder'])->name('reorder');
         });
 

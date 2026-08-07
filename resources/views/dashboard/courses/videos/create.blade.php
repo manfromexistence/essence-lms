@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Add Video: ' . $course->title)
+@section('title', 'Add Video: ' . $course->name)
 @section('page-title', 'Add New Video')
 
 @section('content')
@@ -19,7 +19,7 @@
                 <!-- Video Type Selection -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Video Source</label>
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-4 gap-3">
                         <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center">
                             <input type="radio" name="video_type" value="upload" checked onclick="toggleVideoFields('upload')">
                             <span class="mt-1 text-sm font-medium">File Upload</span>
@@ -31,6 +31,10 @@
                         <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center">
                             <input type="radio" name="video_type" value="vimeo" onclick="toggleVideoFields('vimeo')">
                             <span class="mt-1 text-sm font-medium">Vimeo</span>
+                        </label>
+                        <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center">
+                            <input type="radio" name="video_type" value="facebook" onclick="toggleVideoFields('facebook')">
+                            <span class="mt-1 text-sm font-medium">Facebook</span>
                         </label>
                     </div>
                 </div>

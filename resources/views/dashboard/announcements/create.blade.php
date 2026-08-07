@@ -128,11 +128,6 @@
                     targetIdSelect.appendChild(option);
                 });
             }
-
-            // Trigger update of custom UI
-            if (window.renderOptions) {
-                window.renderOptions('target_id');
-            }
         }
 
         targetTypeSelect.addEventListener('change', function() {

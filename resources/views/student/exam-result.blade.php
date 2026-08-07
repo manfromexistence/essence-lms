@@ -8,7 +8,7 @@
         <!-- Result Header -->
         <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
             <div class="px-6 py-8 text-center {{ $result->percentage >= 40 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600' }}">
-                <h1 class="text-2xl font-bold text-white mb-2">{{ $result->exam->name ?? 'Exam Result' }}</h1>
+                <h1 class="text-2xl font-bold text-white mb-2">{{ $result->exam->title ?? 'Exam Result' }}</h1>
                 <div class="text-6xl font-bold text-white my-4">{{ $result->grade }}</div>
                 <p class="text-white text-xl">{{ $result->marks }}/{{ $result->total_marks }} marks</p>
                 <p class="text-white/80 text-lg">{{ $result->percentage }}%</p>
@@ -28,7 +28,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Remarks</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ $result->remarks ?? 'N/A' }}</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ $result->feedback ?? $result->remarks ?? 'N/A' }}</p>
                     </div>
                 </div>
             </div>
@@ -67,12 +67,15 @@
                         </span>
                     </div>
                     
-                    <p class="text-gray-900 font-medium mb-4">{{ $question->question }}</p>
+                    <p class="text-gray-900 font-medium mb-4">{{ $question->question_text }}</p>
                     
                     <div class="space-y-2 ml-4">
                         @foreach(['A', 'B', 'C', 'D'] as $optKey)
-                        @php $optionField = 'option_' . strtolower($optKey); @endphp
-                        @if($question->{$optionField})
+                        @php
+                            $optionIndex = array_search($optKey, ['A', 'B', 'C', 'D']);
+                            $optionText = $question->options[$optionIndex] ?? null;
+                        @endphp
+                        @if($optionText !== null)
                         <div class="flex items-center p-3 rounded-lg
                             @if($optKey === $question->correct_answer) bg-green-50 border border-green-200
                             @elseif($optKey === $studentAnswer && !$isCorrect) bg-red-50 border border-red-200
@@ -85,7 +88,7 @@
                                 @if($optKey === $question->correct_answer) text-green-700
                                 @elseif($optKey === $studentAnswer && !$isCorrect) text-red-700
                                 @else text-gray-700 @endif">
-                                {{ $question->{$optionField} }}
+                                {{ $optionText }}
                             </span>
                             @if($optKey === $question->correct_answer)
                             <span class="ml-auto text-green-600 text-sm">✓ Correct Answer</span>

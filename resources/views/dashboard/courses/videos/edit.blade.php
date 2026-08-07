@@ -41,7 +41,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Video File</label>
                     @if($video->video_type == 'upload' && $video->video_path)
                         <div class="mb-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            Current file: <a href="{{ asset('storage/' . $video->video_path) }}" target="_blank" class="text-blue-600 underline">View Video</a>
+                            Current file: <a href="{{ route('dashboard.courses.videos.stream', [$course, $video]) }}" target="_blank" class="text-blue-600 underline">View Video</a>
                         </div>
                     @endif
                     <input type="file" name="video_file" accept="video/mp4,video/quicktime,video/x-msvideo" class="block w-full text-sm text-gray-500

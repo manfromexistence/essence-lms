@@ -120,14 +120,14 @@
                         @forelse($upcoming_exams as $exam)
                         <div class="px-4 py-4 flex justify-between items-center">
                             <div>
-                                <p class="text-sm font-medium text-gray-900">{{ $exam->name }}</p>
-                                <p class="text-sm text-gray-500">{{ $exam->scheduled_at ? $exam->scheduled_at->format('M d, Y h:i A') : 'Not scheduled' }}</p>
+                                <p class="text-sm font-medium text-gray-900">{{ $exam->title }}</p>
+                                <p class="text-sm text-gray-500">{{ $exam->start_time ? $exam->start_time->format('M d, Y h:i A') : 'Not scheduled' }}</p>
                             </div>
                             <div class="text-right">
                                 <span class="px-2 py-1 text-xs rounded-full {{ $exam->type === 'mcq' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
                                     {{ strtoupper($exam->type) }}
                                 </span>
-                                <p class="text-xs text-gray-500 mt-1">{{ $exam->duration }} mins</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $exam->duration_minutes }} mins</p>
                             </div>
                         </div>
                         @empty

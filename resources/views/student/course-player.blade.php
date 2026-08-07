@@ -86,8 +86,8 @@
             if (!response.ok) throw new Error('Unable to save completion');
             const result = await response.json();
             if (result.next_url) window.location.assign(result.next_url);
-            else if (data.certificate_url) {
-                status.innerHTML = `Course complete — <a class="font-semibold underline" href="${data.certificate_url}">view your certificate</a>.`;
+            else if (result.certificate_url) {
+                status.innerHTML = `Course complete — <a class="font-semibold underline" href="${result.certificate_url}">view your certificate</a>.`;
             } else status.textContent = 'Course complete — great work!';
         } catch (error) {
             completing = false;

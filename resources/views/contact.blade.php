@@ -18,28 +18,48 @@
                 <!-- Contact Form -->
                 <div class="bg-white rounded-lg shadow-lg p-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">{{ $page ? $page->getContent('form_title', 'বার্তা পাঠান') : 'বার্তা পাঠান' }}</h2>
-                    <form class="space-y-6">
+                    @if(session('success'))
+                        <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+                    @if(session('error'))
+                        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+                    @if($errors->any())
+                        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <ul class="list-disc list-inside">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    <form action="{{ route('contact.submit') }}" method="POST" class="space-y-6">
+                        @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-gray-700 font-semibold mb-2">আপনার নাম</label>
-                                <input type="text" placeholder="নাম লিখুন"
+                                <input type="text" name="name" value="{{ old('name') }}" placeholder="নাম লিখুন" required
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent">
                             </div>
                             <div>
                                 <label class="block text-gray-700 font-semibold mb-2">ইমেইল ঠিকানা</label>
-                                <input type="email" placeholder="ইমেইল লিখুন"
+                                <input type="email" name="email" value="{{ old('email') }}" placeholder="ইমেইল লিখুন" required
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent">
                             </div>
                         </div>
                         <div>
                             <label class="block text-gray-700 font-semibold mb-2">বিষয়</label>
-                            <input type="text" placeholder="বিষয় লিখুন"
+                            <input type="text" name="subject" value="{{ old('subject') }}" placeholder="বিষয় লিখুন" required
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent">
                         </div>
                         <div>
                             <label class="block text-gray-700 font-semibold mb-2">বার্তা</label>
-                            <textarea rows="5" placeholder="আপনার বার্তাটি এখানে লিখুন"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent"></textarea>
+                            <textarea name="message" rows="5" placeholder="আপনার বার্তাটি এখানে লিখুন" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent">{{ old('message') }}</textarea>
                         </div>
                         <button type="submit"
                             class="w-full bg-primary hover:opacity-90 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl">
@@ -75,7 +95,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-bold text-gray-800 mb-2">ফোন</h3>
-                            <p class="text-gray-600">{!! nl2br(e($page ? $page->getContent('phone', '+880 1XXX-XXXXXX') : '+880 1XXX-XXXXXX')) !!}</p>
+                            <p class="text-gray-600">{!! nl2br(e($page ? $page->getContent('phone', '+880 1682-715576') : '+880 1682-715576')) !!}</p>
                         </div>
                     </div>
 

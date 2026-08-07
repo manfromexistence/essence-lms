@@ -67,7 +67,7 @@ class ExamAttempt extends Model
             return 0;
         }
 
-        $durationSeconds = $this->exam->duration * 60;
+        $durationSeconds = ($this->exam->duration_minutes ?? 0) * 60;
         $elapsedSeconds = Carbon::now()->diffInSeconds($this->started_at);
         $remaining = $durationSeconds - $elapsedSeconds;
 

@@ -165,7 +165,7 @@ class StudentPortalService
             ->get();
 
         return [
-            'labels' => $results->pluck('exam.name')->toArray(),
+            'labels' => $results->pluck('exam.title')->toArray(),
             'scores' => $results->pluck('percentage')->toArray(),
             'dates' => $results->pluck('created_at')->map(fn($d) => $d->format('M d'))->toArray(),
         ];

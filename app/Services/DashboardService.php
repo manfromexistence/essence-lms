@@ -169,11 +169,19 @@ class DashboardService
         $teacher = Teacher::where('user_id', $userId)->first();
         if (!$teacher) return [];
         
+        // Real counts from the course-business data
+        $batchIds = $teacher->batches()->pluck('batches.id');
+        $studentCount = \App\Models\Batch::whereIn('id', $batchIds)->withCount('students')->get()->sum('students_count');
+        $todayDay = now()->dayOfWeek; // 0=Sunday ... 6=Saturday
+        $todayClasses = \App\Models\ClassSchedule::where('teacher_id', $teacher->id)
+            ->where('day_of_week', $todayDay)
+            ->count();
+
         return [
-            'my_batches' => $teacher->batches()->count(),
-            'total_students' => $teacher->batches()->withCount('students')->get()->sum('students_count'),
-            'today_classes' => 0, // Would need ClassSchedule integration
-            'pending_results' => 0, // Would need exam results integration
+            'my_batches' => $batchIds->count(),
+            'total_students' => $studentCount,
+            'today_classes' => $todayClasses,
+            'pending_results' => \App\Models\ExamResult::where('grade', 'Pending')->count(),
         ];
     }
 
@@ -192,7 +200,12 @@ class DashboardService
         return [
             'attendance_rate' => $totalAttendance > 0 ? round(($attendanceRate / $totalAttendance) * 100, 1) : 0,
             'balance' => $student->balance ?? 0,
-            'upcoming_exams' => 0, // Would need exam integration
+            'upcoming_exams' => \App\Models\Exam::where('start_time', '>=', now())
+                ->where(function ($q) use ($student) {
+                    $q->whereNull('batch_id')
+                      ->orWhere('batch_id', $student->batch_id);
+                })
+                ->count(),
             'recent_results_count' => $student->results()->count(),
         ];
     }

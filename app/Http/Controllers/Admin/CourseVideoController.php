@@ -187,4 +187,19 @@ class CourseVideoController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Stream a privately-stored uploaded video (admin preview).
+     */
+    public function stream(Course $course, CourseVideo $video)
+    {
+        abort_unless($video->course_id === $course->id, 404);
+        $disk = Storage::disk(config('filesystems.private'));
+        abort_unless($video->video_path && $disk->exists($video->video_path), 404);
+
+        return $disk->response($video->video_path, null, [
+            'Content-Type' => $disk->mimeType($video->video_path) ?: 'video/mp4',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
 }

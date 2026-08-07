@@ -220,10 +220,7 @@
         }
 
         function enrollCourse(courseId) {
-            if (confirm('আপনি কি এই কোর্সে ভর্তি হতে চান?')) {
-                // Here you can add AJAX call to enroll
-                alert('ভর্তি প্রক্রিয়া শীঘ্রই চালু হবে। অনুগ্রহ করে প্রশাসনের সাথে যোগাযোগ করুন।');
-            }
+            window.location.href = `/student/courses/${courseId}/enroll`;
         }
 
         // Close modal on escape key

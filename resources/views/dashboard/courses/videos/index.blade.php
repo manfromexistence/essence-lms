@@ -1,12 +1,12 @@
 @extends('layouts.admin')
 
-@section('title', 'Manage Videos: ' . $course->title)
+@section('title', 'Manage Videos: ' . $course->name)
 @section('page-title', 'Manage Videos')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-md border border-gray-100">
     <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-gray-900"> Videos for {{ $course->title }}</h2>
+        <h2 class="text-lg font-semibold text-gray-900"> Videos for {{ $course->name }}</h2>
         <a href="{{ route('dashboard.courses.videos.create', $course) }}" class="inline-flex items-center px-4 py-2 bg-bd-green text-white rounded-lg hover:bg-bd-green-dark transition-colors font-medium text-sm shadow-sm">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Add New Video
@@ -61,7 +61,12 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onclick="playVideo('{{ $video->video_type }}', '{{ $video->external_id }}', '{{ $video->video_path ? asset('storage/' . $video->video_path) : '' }}')" 
+                        @php
+                            $streamUrl = $video->video_type === 'upload' && $video->video_path
+                                ? route('dashboard.courses.videos.stream', [$course, $video])
+                                : '';
+                        @endphp
+                        <button onclick="playVideo('{{ $video->video_type }}', '{{ $video->external_id }}', '{{ $streamUrl }}')" 
                                 class="text-bd-green hover:text-bd-green-dark mr-3" title="Play Video">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </button>

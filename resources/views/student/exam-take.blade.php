@@ -199,7 +199,7 @@
 </div>
 
 <script>
-let remainingTime = {{ $remaining_time }};
+let remainingTime = {{ $remaining_time ?? 0 }};
 let currentQuestion = 0;
 const totalQuestions = {{ $total_questions }};
 const saveAnswerUrl = '{{ route("student.exams.save-answer", $attempt) }}';
