@@ -7,8 +7,6 @@ storage/logs
 .env.local
 .env.example
 bun.lock
-package-lock.json
-composer.lock
 lms.pdf
 README.md
 .phpunit.*
