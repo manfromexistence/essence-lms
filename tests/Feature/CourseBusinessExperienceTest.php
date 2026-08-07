@@ -58,18 +58,19 @@ class CourseBusinessExperienceTest extends TestCase
         $this->assertStringContainsString('Videos & Demo Classes', $menu);
         $this->assertStringContainsString('Services & Store', $menu);
         $this->assertStringContainsString('Team Members', $menu);
-
-        // The full admin toolkit (which was previously missing) is reachable
-        $this->assertStringContainsString('MCQ Exams', $menu);
         $this->assertStringContainsString('Batches', $menu);
-        $this->assertStringContainsString('Attendance', $menu);
-        $this->assertStringContainsString('Accounts', $menu);
-        $this->assertStringContainsString('Communication', $menu);
+
+        // School/class modules are commented out (not needed for course LMS)
+        $this->assertStringNotContainsString('MCQ Exams', $menu);
+        $this->assertStringNotContainsString('Attendance', $menu);
+        $this->assertStringNotContainsString('Accounts', $menu);
+        $this->assertStringNotContainsString('Communication', $menu);
+        $this->assertStringNotContainsString('Inventory', $menu);
+        $this->assertStringNotContainsString('Reports', $menu);
 
         // Legacy school-only modules that have no routes stay hidden
         $this->assertStringNotContainsString('All Classes', $menu);
         $this->assertStringNotContainsString('Class 12', $menu);
-        $this->assertStringNotContainsString('Exam Leaderboard', $menu);
     }
 
     public function test_dashboard_select_hover_keeps_full_opacity(): void

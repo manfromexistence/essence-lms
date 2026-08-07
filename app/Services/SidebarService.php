@@ -761,10 +761,11 @@ class SidebarService
                     ['title' => 'All Students', 'icon' => 'user', 'route' => 'dashboard.students.index', 'roles' => $admins],
                     ['title' => 'Add New Student', 'icon' => 'plus', 'route' => 'dashboard.students.create', 'roles' => $admins],
                     ['title' => 'Admission Applications', 'icon' => 'document', 'route' => 'dashboard.students.admission-form', 'roles' => $admins],
-                    ['title' => 'Batch Assignment', 'icon' => 'users', 'route' => 'dashboard.students.batch-assignment', 'roles' => $admins],
-                    ['title' => 'Attendance', 'icon' => 'clipboard-check', 'route' => 'dashboard.students.attendance', 'roles' => $admins],
-                    ['title' => 'Exam Routine', 'icon' => 'calendar', 'route' => 'dashboard.students.routine', 'roles' => $admins],
-                    ['title' => 'Results & Mark Sheets', 'icon' => 'document-text', 'route' => 'dashboard.students.results', 'roles' => $admins],
+                    // School/class items — commented out (not needed for course LMS)
+                    // ['title' => 'Batch Assignment', 'icon' => 'users', 'route' => 'dashboard.students.batch-assignment', 'roles' => $admins],
+                    // ['title' => 'Attendance', 'icon' => 'clipboard-check', 'route' => 'dashboard.students.attendance', 'roles' => $admins],
+                    // ['title' => 'Exam Routine', 'icon' => 'calendar', 'route' => 'dashboard.students.routine', 'roles' => $admins],
+                    // ['title' => 'Results & Mark Sheets', 'icon' => 'document-text', 'route' => 'dashboard.students.results', 'roles' => $admins],
                 ],
             ],
             [
@@ -774,26 +775,28 @@ class SidebarService
                     ['title' => 'Courses & Modules', 'icon' => 'collection', 'route' => 'dashboard.courses.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
                     ['title' => 'Videos & Demo Classes', 'icon' => 'video', 'route' => 'dashboard.courses.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
                     ['title' => 'Learning Materials', 'icon' => 'document', 'route' => 'dashboard.courses.materials', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Course Routine', 'icon' => 'calendar', 'route' => 'dashboard.courses.routine', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Class Schedule', 'icon' => 'clock', 'route' => 'dashboard.schedules.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+                    // School/class items — commented out
+                    // ['title' => 'Course Routine', 'icon' => 'calendar', 'route' => 'dashboard.courses.routine', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+                    // ['title' => 'Class Schedule', 'icon' => 'clock', 'route' => 'dashboard.schedules.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
                 ],
             ],
             [
                 'title' => 'Batches', 'icon' => 'batches', 'route' => 'dashboard.batches.index',
                 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER],
             ],
-            [
-                'title' => 'Exams', 'icon' => 'exams', 'route' => null,
-                'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER],
-                'children' => [
-                    ['title' => 'MCQ Exams', 'icon' => 'clipboard', 'route' => 'dashboard.exams.mcq', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'CQ Exams', 'icon' => 'pencil', 'route' => 'dashboard.exams.cq', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Live Exams', 'icon' => 'clock', 'route' => 'dashboard.exams.live', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Exam Results', 'icon' => 'document-text', 'route' => 'dashboard.exams.results', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Leaderboard', 'icon' => 'chart-bar', 'route' => 'dashboard.exams.leaderboard', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Exam Routine', 'icon' => 'calendar', 'route' => 'dashboard.exams.routine', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                ],
-            ],
+            // School exam system — commented out (not needed for video-based course LMS)
+            // [
+            //     'title' => 'Exams', 'icon' => 'exams', 'route' => null,
+            //     'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER],
+            //     'children' => [
+            //         ['title' => 'MCQ Exams', 'icon' => 'clipboard', 'route' => 'dashboard.exams.mcq', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //         ['title' => 'CQ Exams', 'icon' => 'pencil', 'route' => 'dashboard.exams.cq', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //         ['title' => 'Live Exams', 'icon' => 'clock', 'route' => 'dashboard.exams.live', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //         ['title' => 'Exam Results', 'icon' => 'document-text', 'route' => 'dashboard.exams.results', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //         ['title' => 'Leaderboard', 'icon' => 'chart-bar', 'route' => 'dashboard.exams.leaderboard', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //         ['title' => 'Exam Routine', 'icon' => 'calendar', 'route' => 'dashboard.exams.routine', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //     ],
+            // ],
             [
                 'title' => 'Payments', 'icon' => 'payments', 'route' => null, 'roles' => $admins,
                 'children' => [
@@ -810,41 +813,45 @@ class SidebarService
                 'title' => 'Services & Store', 'icon' => 'briefcase', 'route' => 'dashboard.services.index', 'roles' => $admins,
             ],
             ['title' => 'Team Members', 'icon' => 'users', 'route' => 'dashboard.teachers.index', 'roles' => $admins],
-            [
-                'title' => 'Accounts', 'icon' => 'currency', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
-                'children' => [
-                    ['title' => 'Overview', 'icon' => 'chart-pie', 'route' => 'dashboard.accounts.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                    ['title' => 'Income Management', 'icon' => 'trending-up', 'route' => 'dashboard.accounts.income', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                    ['title' => 'Expense Tracking', 'icon' => 'trending-down', 'route' => 'dashboard.accounts.expenses', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                    ['title' => 'Financial Reports', 'icon' => 'document-text', 'route' => 'dashboard.accounts.reports', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                ],
-            ],
-            [
-                'title' => 'Reports', 'icon' => 'reports', 'route' => null,
-                'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER],
-                'children' => [
-                    ['title' => 'Attendance Report', 'icon' => 'clipboard-check', 'route' => 'dashboard.reports.attendance', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Payment Summary', 'icon' => 'currency', 'route' => 'dashboard.reports.payment-summary', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
-                    ['title' => 'Performance Charts', 'icon' => 'chart-pie', 'route' => 'dashboard.reports.performance', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                    ['title' => 'Student Report', 'icon' => 'users', 'route' => 'dashboard.reports.student', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
-                ],
-            ],
-            [
-                'title' => 'Communication', 'icon' => 'communication', 'route' => null,
-                'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
-                'children' => [
-                    ['title' => 'Send SMS', 'icon' => 'chat', 'route' => 'dashboard.communication.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
-                    ['title' => 'SMS Templates', 'icon' => 'document', 'route' => 'dashboard.communication.templates', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
-                    ['title' => 'SMS Logs', 'icon' => 'clipboard-list', 'route' => 'dashboard.communication.logs', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
-                ],
-            ],
-            [
-                'title' => 'Inventory', 'icon' => 'archive', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
-                'children' => [
-                    ['title' => 'Items List', 'icon' => 'list', 'route' => 'dashboard.inventory.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                    ['title' => 'Inventory Report', 'icon' => 'chart-bar', 'route' => 'dashboard.inventory.report', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                ],
-            ],
+            // School accounting ledger — commented out (not needed for course LMS; Payments cover revenue)
+            // [
+            //     'title' => 'Accounts', 'icon' => 'currency', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
+            //     'children' => [
+            //         ['title' => 'Overview', 'icon' => 'chart-pie', 'route' => 'dashboard.accounts.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            //         ['title' => 'Income Management', 'icon' => 'trending-up', 'route' => 'dashboard.accounts.income', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            //         ['title' => 'Expense Tracking', 'icon' => 'trending-down', 'route' => 'dashboard.accounts.expenses', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            //         ['title' => 'Financial Reports', 'icon' => 'document-text', 'route' => 'dashboard.accounts.reports', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            //     ],
+            // ],
+            // School reporting — commented out (not needed for course LMS)
+            // [
+            //     'title' => 'Reports', 'icon' => 'reports', 'route' => null,
+            //     'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER],
+            //     'children' => [
+            //         ['title' => 'Attendance Report', 'icon' => 'clipboard-check', 'route' => 'dashboard.reports.attendance', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //         ['title' => 'Payment Summary', 'icon' => 'currency', 'route' => 'dashboard.reports.payment-summary', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
+            //         ['title' => 'Performance Charts', 'icon' => 'chart-pie', 'route' => 'dashboard.reports.performance', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //         ['title' => 'Student Report', 'icon' => 'users', 'route' => 'dashboard.reports.student', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_TEACHER]],
+            //     ],
+            // ],
+            // SMS communication — commented out (in-app notifications cover student comms)
+            // [
+            //     'title' => 'Communication', 'icon' => 'communication', 'route' => null,
+            //     'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN],
+            //     'children' => [
+            //         ['title' => 'Send SMS', 'icon' => 'chat', 'route' => 'dashboard.communication.index', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
+            //         ['title' => 'SMS Templates', 'icon' => 'document', 'route' => 'dashboard.communication.templates', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
+            //         ['title' => 'SMS Logs', 'icon' => 'clipboard-list', 'route' => 'dashboard.communication.logs', 'roles' => [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]],
+            //     ],
+            // ],
+            // Physical school inventory — commented out (irrelevant to course LMS)
+            // [
+            //     'title' => 'Inventory', 'icon' => 'archive', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
+            //     'children' => [
+            //         ['title' => 'Items List', 'icon' => 'list', 'route' => 'dashboard.inventory.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            //         ['title' => 'Inventory Report', 'icon' => 'chart-bar', 'route' => 'dashboard.inventory.report', 'roles' => [self::ROLE_SUPER_ADMIN]],
+            //     ],
+            // ],
             [
                 'title' => 'Website Content', 'icon' => 'globe', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
                 'children' => [
