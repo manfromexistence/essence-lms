@@ -134,9 +134,9 @@ class StudentController extends Controller
                 'must_change_password' => true,
             ]);
 
-            if ($studentRole = Role::where('slug', 'student')->first()) {
-                $user->roles()->attach($studentRole->id);
-            }
+            $studentRole = Role::where('slug', 'student')->first();
+            abort_unless($studentRole, 500, 'The "student" role is missing. Run the role seeder first.');
+            $user->roles()->attach($studentRole->id);
 
             $validated['user_id'] = $user->id;
             $validated['applied_at'] = now();

@@ -146,11 +146,20 @@ class Course extends Model
     }
 
     /**
-     * Get the teachers for the course.
+     * Get the teachers for the course (via batches, using teacher_batch pivot).
+     * A course's teachers are the teachers assigned to any of its batches.
      */
-    public function teachers(): BelongsToMany
+    public function teachers(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
     {
-        return $this->belongsToMany(Teacher::class, 'course_teacher');
+        return $this->hasManyThrough(
+            Teacher::class,
+            \App\Models\Batch::class,
+            'course_id',    // batches.course_id
+            'id',           // teachers.id
+            'id',           // courses.id
+            'id'            // batches.id — matched against teacher_batch.batch_id below
+        )->join('teacher_batch', 'teacher_batch.batch_id', '=', 'batches.id')
+         ->distinct();
     }
 
     /**

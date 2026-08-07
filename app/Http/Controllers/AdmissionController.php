@@ -55,9 +55,9 @@ class AdmissionController extends Controller
                 'is_active' => false,
                 'must_change_password' => true,
             ]);
-            if ($role = Role::where('slug', 'student')->first()) {
-                $user->roles()->attach($role);
-            }
+            $studentRole = Role::where('slug', 'student')->first();
+            abort_unless($studentRole, 500, 'The "student" role is missing. Run the role seeder first.');
+            $user->roles()->attach($studentRole->id);
 
             $validated['user_id'] = $user->id;
             $validated['course_name'] = $course?->name;

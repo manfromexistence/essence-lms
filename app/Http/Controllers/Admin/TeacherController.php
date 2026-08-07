@@ -71,9 +71,8 @@ class TeacherController extends Controller
 
         // Assign teacher role
         $teacherRole = Role::where('slug', 'teacher')->first();
-        if ($teacherRole) {
-            $user->roles()->attach($teacherRole->id);
-        }
+        abort_unless($teacherRole, 500, 'The "teacher" role is missing. Run the role seeder first.');
+        $user->roles()->attach($teacherRole->id);
 
         // Handle profile image
         $profileImage = $this->handleImageInput($request, 'profile_image', 'teachers/profiles');

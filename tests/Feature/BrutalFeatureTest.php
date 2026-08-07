@@ -346,6 +346,7 @@ class BrutalFeatureTest extends TestCase
 
     public function test_public_admission_submission_works(): void
     {
+        Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
         $course = Course::factory()->active()->create(['delivery_mode' => 'offline']);
 
         $this->post('/admission', [

@@ -170,15 +170,21 @@
     </div>
 </div>
 
+@php
+    $templatesJson = $templates->map(function ($t) {
+        return [
+            'id' => $t->id,
+            'name' => $t->name,
+            'type' => $t->type,
+            'is_active' => $t->is_active,
+            'is_default' => $t->is_default,
+        ];
+    })->values();
+@endphp
+
 @push('scripts')
 <script>
-    const templates = @json($templates->map(fn($t) => [
-        'id' => $t->id,
-        'name' => $t->name,
-        'type' => $t->type,
-        'is_active' => $t->is_active,
-        'is_default' => $t->is_default,
-    ]));
+    const templates = @json($templatesJson);
 
     function openEditModal(id) {
         const t = templates.find(x => x.id === id);

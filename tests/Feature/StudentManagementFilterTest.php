@@ -35,6 +35,7 @@ class StudentManagementFilterTest extends TestCase
 
     public function test_offline_admission_form_can_be_submitted_with_office_search_details(): void
     {
+        \App\Models\Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
         $course = Course::factory()->active()->create([
             'name' => 'Offline Computer Office Application',
             'delivery_mode' => 'offline',
