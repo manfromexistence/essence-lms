@@ -523,6 +523,9 @@
                             <h3 class="text-xl leading-6 font-bold text-gray-900 mb-4" id="modal-title">Course Title</h3>
                             <div class="mt-2">
                                 <img id="modal-image" src="" alt="Course Image" class="w-full h-48 object-cover rounded-lg mb-4 shadow-sm">
+                                <div id="modal-video-player" class="mb-4 hidden overflow-hidden rounded-lg bg-black shadow-sm">
+                                    <div class="aspect-video"><iframe id="modal-video-frame" class="h-full w-full" src="" title="Course demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+                                </div>
                                 <div class="prose prose-sm text-gray-500">
                                     <p id="modal-description">Course Description</p>
                                 </div>
@@ -766,6 +769,18 @@
                 const imageUrl = course.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
                 document.getElementById('modal-image').src = imageUrl;
 
+                // Embed the free preview lesson (YouTube) directly in the modal
+                const videoPlayer = document.getElementById('modal-video-player');
+                const videoFrame = document.getElementById('modal-video-frame');
+                const previewVideo = (course.videos || []).find(v => v.is_preview) || (course.videos || [])[0];
+                if (previewVideo && previewVideo.video_type === 'youtube' && previewVideo.external_id) {
+                    videoFrame.src = `https://www.youtube-nocookie.com/embed/${previewVideo.external_id}?rel=0&modestbranding=1`;
+                    videoPlayer.classList.remove('hidden');
+                } else {
+                    videoFrame.src = '';
+                    videoPlayer.classList.add('hidden');
+                }
+
                 if (course.videos_count) {
                      document.getElementById('modal-videos-text').innerText = `${course.videos_count} টি ভিডিও`;
                      document.getElementById('modal-videos').style.display = 'flex';
@@ -801,6 +816,8 @@
 
         function closeCourseModal() {
             document.getElementById('courseModal').classList.add('hidden');
+            const frame = document.getElementById('modal-video-frame');
+            if (frame) frame.src = '';
             document.body.style.overflow = 'auto';
         }
 

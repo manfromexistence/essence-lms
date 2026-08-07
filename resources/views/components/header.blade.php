@@ -35,9 +35,11 @@
                 <a href="{{ route('team') }}"
                     class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('team') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">টিম</a>
+                {{-- Teacher link hidden for now
                 <a href="{{ route('teachers') }}"
                     class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('teachers') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">শিক্ষক</a>
+                --}}
                 <a href="{{ route('about') }}"
                     class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('about') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">পরিচিতি</a>
@@ -96,9 +98,11 @@
                 <a href="{{ route('team') }}"
                     class="px-4 py-3 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('team') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">টিম</a>
+                {{-- Teacher link hidden for now
                 <a href="{{ route('teachers') }}"
                     class="px-4 py-3 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('teachers') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">শিক্ষক</a>
+                --}}
                 <a href="{{ route('about') }}"
                     class="px-4 py-3 rounded-md text-md font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('about') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">পরিচিতি</a>
