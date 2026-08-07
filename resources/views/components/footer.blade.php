@@ -65,7 +65,7 @@
                 <h3 class="text-base md:text-lg font-bold mb-4 text-primary">যোগাযোগ</h3>
                 <ul class="space-y-2 md:space-y-3 text-sm text-primary">
                     <li>ঠিকানা: House #5, Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216</li>
-                    <li>ফোন: +880 1682-715576</li>
+                    <li>ফোন: +880 1682-71557</li>
                     <li>ইমেইল: dhakaitinstitute@gmail.com</li>
                 </ul>
             </div>

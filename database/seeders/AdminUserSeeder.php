@@ -20,21 +20,27 @@ class AdminUserSeeder extends Seeder
 
     public function run(): void
     {
-        if (app()->environment('production')) {
-            $email = env('INITIAL_ADMIN_EMAIL');
-            $password = env('INITIAL_ADMIN_PASSWORD');
-            if (!$email || !$password || strlen($password) < 16) {
-                $this->command?->warn('Skipping initial admin: set INITIAL_ADMIN_EMAIL and a 16+ character INITIAL_ADMIN_PASSWORD.');
-                return;
-            }
-
-            $superAdmin = User::firstOrCreate(
+        // The primary admin comes from env (same credentials work in any
+        // environment). Falls back to local demo accounts when unset.
+        $email = env('INITIAL_ADMIN_EMAIL');
+        $password = env('INITIAL_ADMIN_PASSWORD');
+        if ($email && $password && strlen($password) >= 16) {
+            $superAdmin = User::updateOrCreate(
                 ['email' => $email],
-                ['name' => 'System Owner', 'password' => Hash::make($password), 'email_verified_at' => now()]
+                [
+                    'name' => 'System Owner',
+                    'password' => Hash::make($password),
+                    'email_verified_at' => now(),
+                ]
             );
             if ($role = Role::where('slug', 'super-admin')->first()) {
                 $superAdmin->roles()->syncWithoutDetaching([$role->id]);
             }
+            if (app()->environment('production')) {
+                return; // production only gets the env admin
+            }
+        } elseif (app()->environment('production')) {
+            $this->command?->warn('Skipping initial admin: set INITIAL_ADMIN_EMAIL and a 16+ character INITIAL_ADMIN_PASSWORD.');
             return;
         }
 

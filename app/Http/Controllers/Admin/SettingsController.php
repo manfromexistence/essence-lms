@@ -74,6 +74,7 @@ class SettingsController extends Controller
             'theme_primary_foreground' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'theme_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'theme_secondary_foreground' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'bangla_font' => 'nullable|string|max:100',
         ], [
             'institution_logo_file.image' => 'The logo must be an image file.',
             'institution_logo_file.mimes' => 'The logo must be a file of type: jpeg, png, jpg, gif, or webp.',

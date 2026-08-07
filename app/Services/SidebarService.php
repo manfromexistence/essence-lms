@@ -815,6 +815,7 @@ class SidebarService
                 ],
             ],
             ['title' => 'Announcements', 'icon' => 'announcement', 'route' => 'dashboard.announcements.index', 'roles' => $admins],
+            ['title' => 'Contact Messages', 'icon' => 'envelope', 'route' => 'dashboard.contact-messages.index', 'roles' => $admins, 'badge' => \App\Models\ContactMessage::where('status', 'new')->count() > 0 ? \App\Models\ContactMessage::where('status', 'new')->count() : null],
             [
                 'title' => 'Services & Store', 'icon' => 'briefcase', 'route' => 'dashboard.services.index', 'roles' => $admins,
             ],

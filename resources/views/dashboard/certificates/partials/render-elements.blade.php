@@ -32,7 +32,7 @@
         'student_email' => $values['student_email'] ?? 'student@example.com',
         'course_code' => $values['course_code'] ?? 'DIT-WD-01',
         'course_duration' => $values['course_duration'] ?? '12 months',
-        'institution_phone' => $values['institution_phone'] ?? '+880 1682-715576',
+        'institution_phone' => $values['institution_phone'] ?? '+880 1682-71557',
         'institution_address' => $values['institution_address'] ?? 'Mirpur-10, Dhaka',
     ];
 

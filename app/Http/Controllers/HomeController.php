@@ -82,6 +82,17 @@ class HomeController extends Controller
         ]);
 
         try {
+            // Always store the submission so it shows in the dashboard,
+            // even if the email send fails.
+            \App\Models\ContactMessage::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'subject' => $data['subject'],
+                'message' => $data['message'],
+                'status' => 'new',
+                'ip_address' => $request->ip(),
+            ]);
+
             $settingsService = app(\App\Services\SettingsService::class);
             $to = $settingsService->get('institution_email', 'dhakaitinstitute@gmail.com');
 
@@ -90,16 +101,20 @@ class HomeController extends Controller
                   . "<p><strong>Subject:</strong> " . e($data['subject']) . "</p>"
                   . "<hr><p>" . nl2br(e($data['message'])) . "</p>";
 
-            app(\App\Services\BrevoEmailService::class)->send(
-                $to,
-                'Contact form: ' . $data['subject'],
-                $html,
-                ['type' => 'contact']
-            );
+            try {
+                app(\App\Services\BrevoEmailService::class)->send(
+                    $to,
+                    'Contact form: ' . $data['subject'],
+                    $html,
+                    ['type' => 'contact']
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Contact form email failed (message stored)', ['error' => $e->getMessage()]);
+            }
 
             return back()->with('success', 'Your message has been sent. We will get back to you soon.');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Contact form send failed', ['error' => $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::error('Contact form store failed', ['error' => $e->getMessage()]);
             return back()->with('error', 'Sorry, your message could not be sent. Please try again.');
         }
     }

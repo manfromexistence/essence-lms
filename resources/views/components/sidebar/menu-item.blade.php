@@ -92,6 +92,9 @@
                     }}">
                 <x-sidebar.menu-icon :icon="$item['icon'] ?? 'default'" />
                 <span class="truncate">{{ $item['title'] }}</span>
+                @if(isset($item['badge']) && $item['badge'] > 0)
+                    <span class="ml-auto inline-flex items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold leading-none text-white">{{ $item['badge'] }}</span>
+                @endif
             </a>
         @else
             {{-- Route doesn't exist yet, show disabled state --}}

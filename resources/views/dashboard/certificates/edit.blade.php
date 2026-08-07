@@ -32,7 +32,7 @@
         @method('PUT')
         <input type="hidden" name="layout_config" id="layoutConfigInput">
 
-        <div class="grid grid-cols-1 xl:grid-cols-[280px_1fr_300px] gap-4">
+        <div class="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-4">
             <!-- LEFT: Elements + variables -->
             <div class="space-y-4">
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
@@ -59,9 +59,10 @@
                         @endforeach
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-3">
-                        <button type="button" onclick="addElement('text')" class="rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100"><i class="fa-solid fa-font mr-1"></i> Text</button>
-                        <button type="button" onclick="addElement('image')" class="rounded-lg border border-purple-200 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"><i class="fa-solid fa-image mr-1"></i> Image</button>
+                        <button type="button" draggable="true" id="dragAddText" onclick="addElement('text')" class="rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 cursor-grab active:cursor-grabbing"><i class="fa-solid fa-font mr-1"></i> Text</button>
+                        <button type="button" draggable="true" id="dragAddImage" onclick="addElement('image')" class="rounded-lg border border-purple-200 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 cursor-grab active:cursor-grabbing"><i class="fa-solid fa-image mr-1"></i> Image</button>
                     </div>
+                    <p class="text-[10px] text-gray-400 mt-1.5">Tip: drag a button onto the canvas, or click it to add at a default spot.</p>
                 </div>
 
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
@@ -71,7 +72,7 @@
                         @foreach($studentVariables as $var => $label)
                             <button type="button" onclick="insertVariable('{{ $var }}')"
                                 class="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-mono text-gray-700 hover:border-bd-green hover:text-bd-green transition">
-                                {'{ ' . $var . ' }'}
+                                {{ $var }}
                                 <span class="block text-[9px] font-sans text-gray-400">{{ $label }}</span>
                             </button>
                         @endforeach
@@ -102,11 +103,9 @@
                                 @endif
                             </div>
                             {{-- Elements layer (draggable) --}}
-                            <div id="canvas" class="absolute inset-0 cursor-move" style="width: {{ $templateW }}px; height: {{ $templateH }}px;">
+                            <div id="canvas" class="absolute inset-0" style="width: {{ $templateW }}px; height: {{ $templateH }}px;">
                                 @include('dashboard.certificates.partials.render-elements', ['template' => $template])
                             </div>
-                            {{-- Selection outline --}}
-                            <div id="selectionBox" class="hidden absolute border-2 border-dashed border-bd-green pointer-events-none" style="z-index:50;"></div>
                         </div>
                     </div>
                     <p class="text-[11px] text-gray-400 mt-2">Drag elements to move them. Click an element to select and edit. Use the handles to resize text/image.</p>
@@ -200,24 +199,6 @@
                 </div>
             </div>
 
-            <!-- RIGHT: quick actions -->
-            <div class="space-y-4">
-                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-                    <h3 class="font-semibold text-gray-900 mb-3">Design Tips</h3>
-                    <ul class="text-xs text-gray-500 space-y-2">
-                        <li><i class="fa-solid fa-hand-pointer text-bd-green mr-1"></i> Click any element on the canvas to select it</li>
-                        <li><i class="fa-solid fa-arrows-up-down-left-right text-bd-green mr-1"></i> Drag to reposition</li>
-                        <li><i class="fa-solid fa-trash-can text-red-500 mr-1"></i> Delete: select + press <kbd class="px-1 bg-gray-100 rounded">Del</kbd> or the trash icon</li>
-                        <li><i class="fa-solid fa-user text-bd-green mr-1"></i> Insert student variables for auto-filled certificates</li>
-                        <li><i class="fa-solid fa-palette text-bd-green mr-1"></i> Change colors, fonts, size, opacity per element</li>
-                        <li><i class="fa-solid fa-layer-group text-bd-green mr-1"></i> Elements stack in list order (top = front)</li>
-                    </ul>
-                    <div class="mt-4 pt-3 border-t border-gray-100 space-y-2">
-                        <button type="button" onclick="bringForward()" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-arrow-up mr-1"></i> Bring Forward</button>
-                        <button type="button" onclick="sendBackward()" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"><i class="fa-solid fa-arrow-down mr-1"></i> Send Backward</button>
-                    </div>
-                </div>
-            </div>
         </div>
     </form>
 </div>
@@ -241,7 +222,7 @@
             verification_code: 'ABC123XYZ789', issued_at: '07 Aug 2026', grade: 'A+',
             student_id: 'STU-0001', student_phone: '01712345678', student_email: 'student@example.com',
             course_code: 'DIT-WD-01', course_duration: '12 months',
-            institution_phone: '+880 1682-715576', institution_address: 'Mirpur-10, Dhaka',
+            institution_phone: '+880 1682-71557', institution_address: 'Mirpur-10, Dhaka',
         };
 
         elements.forEach((el, i) => {
@@ -267,6 +248,7 @@
                 style += `width:${el.width||160}px;height:${el.height||60}px;object-fit:contain;`;
             }
             node.style.cssText = style;
+            node.addEventListener('dblclick', (e) => { e.stopPropagation(); editTextInline(i); });
             canvas.appendChild(node);
         });
         updateSelection();
@@ -274,20 +256,12 @@
 
     // ---------- Selection ----------
     function updateSelection() {
-        const box = document.getElementById('selectionBox');
         const nodes = document.querySelectorAll('#canvas .cert-elem');
         nodes.forEach(n => n.classList.remove('ring-2', 'ring-bd-green'));
-        if (selectedIndex < 0) { box.classList.add('hidden'); return; }
+        if (selectedIndex < 0) return;
         const node = nodes[selectedIndex];
-        if (!node) { box.classList.add('hidden'); return; }
+        if (!node) return;
         node.classList.add('ring-2', 'ring-bd-green');
-        const rect = node.getBoundingClientRect();
-        const canvasRect = document.getElementById('canvas').getBoundingClientRect();
-        box.style.left = (rect.left - canvasRect.left) + 'px';
-        box.style.top = (rect.top - canvasRect.top) + 'px';
-        box.style.width = rect.width + 'px';
-        box.style.height = rect.height + 'px';
-        box.classList.remove('hidden');
     }
 
     // ---------- Drag & drop ----------
@@ -297,7 +271,7 @@
 
         canvas.addEventListener('mousedown', (e) => {
             const node = e.target.closest('.cert-elem');
-            if (!node) { selectedIndex = -1; renderPreview(); return; }
+            if (!node) { selectedIndex = -1; updateSelection(); return; }
             const idx = parseInt(node.dataset.index);
             selectElement(idx);
             dragging = idx;
@@ -311,14 +285,53 @@
             const scale = canvas.getBoundingClientRect().width / ({{ $templateW }});
             const dx = (e.clientX - startX) / scale;
             const dy = (e.clientY - startY) / scale;
-            elements[dragging].x = Math.round(origX + dx);
-            elements[dragging].y = Math.round(origY + dy);
+            elements[dragging].x = Math.max(0, Math.round(origX + dx));
+            elements[dragging].y = Math.max(0, Math.round(origY + dy));
             renderPreview();
             document.getElementById('el_x').value = elements[dragging].x;
             document.getElementById('el_y').value = elements[dragging].y;
         });
 
         document.addEventListener('mouseup', () => { dragging = null; });
+    }
+
+    // ---------- Double-click inline text editing ----------
+    function editTextInline(index) {
+        const el = elements[index];
+        if (!el || el.type !== 'text') return;
+        selectElement(index);
+        const canvas = document.getElementById('canvas');
+        const node = canvas.querySelector('.cert-elem[data-index="' + index + '"]');
+        if (!node) return;
+
+        // Replace with editable input positioned exactly over the element
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = el.content || '';
+        input.className = 'absolute z-50 px-1 rounded border border-blue-400 bg-white/95 shadow';
+        input.style.cssText = `left:${el.x||50}px;top:${el.y||50}px;width:${el.width||700}px;font-size:${el.fontSize||20}px;font-family:${el.fontFamily||'Georgia, serif'};color:${el.color||'#111827'};text-align:${el.align||'center'};line-height:1.2;`;
+        if (el.bold) input.style.fontWeight = 'bold';
+        if (el.italic) input.style.fontStyle = 'italic';
+        node.style.display = 'none';
+        canvas.appendChild(input);
+        input.focus();
+        input.select();
+
+        let done = false;
+        const commit = () => {
+            if (done) return; done = true;
+            elements[index].content = input.value;
+            input.remove();
+            node.style.display = '';
+            renderPreview();
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { input.value = elements[index].content || ''; commit(); }
+            // Stop arrow keys from moving the canvas-drag, and stop page scroll
+            e.stopPropagation();
+        });
     }
 
     // ---------- Element selection + props ----------
@@ -475,7 +488,39 @@
 
         // Click on empty canvas deselects
         document.getElementById('canvas').addEventListener('click', (e) => {
-            if (!e.target.closest('.cert-elem')) { selectedIndex = -1; renderPreview(); }
+            if (!e.target.closest('.cert-elem')) { selectedIndex = -1; updateSelection(); }
+        });
+
+        // ---------- Drag from sidebar onto canvas ----------
+        const canvasEl = document.getElementById('canvas');
+        const addTextBtn = document.getElementById('dragAddText');
+        const addImageBtn = document.getElementById('dragAddImage');
+
+        ['dragAddText', 'dragAddImage'].forEach(id => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', id === 'dragAddText' ? 'text' : 'image');
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+        });
+
+        canvasEl.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+        canvasEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('text/plain');
+            if (type !== 'text' && type !== 'image') return;
+            // Convert mouse position to canvas coordinates (accounting for zoom + scroll)
+            const rect = canvasEl.getBoundingClientRect();
+            const scale = rect.width / ({{ $templateW }});
+            const x = Math.max(0, Math.round((e.clientX - rect.left) / scale));
+            const y = Math.max(0, Math.round((e.clientY - rect.top) / scale));
+            const el = type === 'text'
+                ? { type: 'text', content: 'New Text', x, y, width: 700, fontSize: 24, fontFamily: 'Georgia, serif', color: '#111827', bold: false, italic: false, align: 'center', letterSpacing: 0, opacity: 1, rotation: 0 }
+                : { type: 'image', imageField: 'logo', x, y, width: 160, height: 60, opacity: 1, rotation: 0 };
+            elements.push(el);
+            renderElementList();
+            renderPreview();
+            selectElement(elements.length - 1);
         });
 
         renderElementList();

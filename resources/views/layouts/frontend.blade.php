@@ -89,6 +89,8 @@
             padding: 2rem 0;
             display: flex;
             align-items: center;
+            justify-content: center;
+            min-height: 12rem;
             background-size: cover;
             background-position: center;
         }
@@ -96,6 +98,7 @@
         @media (min-width: 768px) {
             .hero {
                 padding: 4.5rem 0;
+                min-height: 16rem;
             }
         }
 

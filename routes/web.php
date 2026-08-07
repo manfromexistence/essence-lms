@@ -321,6 +321,14 @@ Route::middleware('auth')->group(function () {
             Route::put('/{page}', [\App\Http\Controllers\Admin\PageController::class, 'update'])->name('update');
             Route::delete('/{page}', [\App\Http\Controllers\Admin\PageController::class, 'destroy'])->name('destroy');
         });
+
+        // Contact Messages
+        Route::prefix('contact-messages')->name('contact-messages.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ContactMessageController::class, 'index'])->name('index');
+            Route::get('/{message}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'show'])->name('show');
+            Route::post('/{message}/status', [\App\Http\Controllers\Admin\ContactMessageController::class, 'updateStatus'])->name('status');
+            Route::delete('/{message}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'destroy'])->name('destroy');
+        });
         
     });
 

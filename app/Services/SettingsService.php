@@ -177,6 +177,13 @@ class SettingsService
             'group' => 'theme',
             'type' => 'string',
         ],
+
+        // Bangla Font Setting
+        'bangla_font' => [
+            'value' => 'noto-sans-bengali',
+            'group' => 'theme',
+            'type' => 'string',
+        ],
     ];
 
     /**
@@ -288,6 +295,62 @@ class SettingsService
         }
 
         return $result;
+    }
+
+    /**
+     * Get the available Bangla font options.
+     *
+     * Each entry: key (setting value) => [family (CSS font-family), label, description].
+     */
+    public function getBanglaFonts(): array
+    {
+        return [
+            'noto-sans-bengali' => [
+                'family' => 'Noto Sans Bengali',
+                'label' => 'Noto Sans Bengali',
+                'description' => 'Clean sans-serif, the current default. Great for screen readability.',
+            ],
+            'noto-serif-bengali' => [
+                'family' => 'Noto Serif Bengali',
+                'label' => 'Noto Serif Bengali',
+                'description' => 'Elegant serif, ideal for documents and long-form reading.',
+            ],
+            'baloo-da-2' => [
+                'family' => 'Baloo Da 2',
+                'label' => 'Baloo Da 2',
+                'description' => 'Rounded, friendly display sans with extra weights.',
+            ],
+            'atma' => [
+                'family' => 'Atma',
+                'label' => 'Atma',
+                'description' => 'Soft, rounded design available in 5 weights.',
+            ],
+            'galada' => [
+                'family' => 'Galada',
+                'label' => 'Galada',
+                'description' => 'Playful display face, single weight. Use for headings.',
+            ],
+            'mina' => [
+                'family' => 'Mina',
+                'label' => 'Mina',
+                'description' => 'Neutral, compact sans in regular and bold.',
+            ],
+            'alkatra' => [
+                'family' => 'Alkatra',
+                'label' => 'Alkatra',
+                'description' => 'Variable weight (400-700) with a modern editorial feel.',
+            ],
+        ];
+    }
+
+    /**
+     * Get the CSS font-family for a given Bangla font key.
+     */
+    public function getBanglaFontFamily(?string $key): string
+    {
+        $fonts = $this->getBanglaFonts();
+
+        return $fonts[$key]['family'] ?? $fonts['noto-sans-bengali']['family'];
     }
 
     /**

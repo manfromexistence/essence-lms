@@ -5,9 +5,9 @@
 @section('content')
     <!-- Page Header -->
     <section class="hero hero--solid hero--dark">
-        <div class="hero-inner max-w-7xl mx-auto px-4">
-            <h1 class="text-3xl md:text-4xl hero-title text-white text-center mb-2">{{ $page ? $page->getContent('page_title', 'যোগাযোগ করুন') : 'যোগাযোগ করুন' }}</h1>
-            <p class="text-white text-center opacity-90">{{ $page ? $page->getContent('page_subtitle', 'আমাদের সাথে যোগাযোগ করার বিভিন্ন মাধ্যম') : 'আমাদের সাথে যোগাযোগ করার বিভিন্ন মাধ্যম' }}</p>
+        <div class="hero-inner text-center">
+            <h1 class="hero-title">{{ $page ? $page->getContent('page_title', 'যোগাযোগ করুন') : 'যোগাযোগ করুন' }}</h1>
+            <p class="hero-subtitle mx-auto mt-4 max-w-2xl text-lg md:text-xl">{{ $page ? $page->getContent('page_subtitle', 'আমাদের সাথে যোগাযোগ করার বিভিন্ন মাধ্যম') : 'আমাদের সাথে যোগাযোগ করার বিভিন্ন মাধ্যম' }}</p>
         </div>
     </section>
 
@@ -73,8 +73,8 @@
                     <!-- Info Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-primary">
-                            <div
-                                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4 text-primary">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center mb-4"
+                                style="background-color: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary);">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -87,15 +87,15 @@
                         </div>
 
                         <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-primary">
-                            <div
-                                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4 text-primary">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center mb-4"
+                                style="background-color: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary);">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                             </div>
                             <h3 class="text-lg font-bold text-gray-800 mb-2">ফোন</h3>
-                            <p class="text-gray-600">{!! nl2br(e($page ? $page->getContent('phone', '+880 1682-715576') : '+880 1682-715576')) !!}</p>
+                            <p class="text-gray-600">{!! nl2br(e($page ? $page->getContent('phone', '+880 1682-71557') : '+880 1682-71557')) !!}</p>
                         </div>
                     </div>
 
