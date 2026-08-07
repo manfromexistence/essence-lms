@@ -1,13 +1,12 @@
 @extends('layouts.frontend')
 
-@section('title', 'Services - Dhaka IT Institute')
+@section('title', ($page ? $page->getContent('page_title', 'Services') : 'Services') . ' - Dhaka IT Institute')
 
 @section('content')
 <section class="hero hero--solid hero--dark">
     <div class="hero-inner text-center">
-        <span class="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold">Learn. Build. Grow.</span>
-        <h1 class="mt-6 hero-title">Services that turn skills into outcomes</h1>
-        <p class="mx-auto mt-5 max-w-3xl text-lg text-white/90">Training, digital solutions and practical support for students, freelancers and growing businesses.</p>
+        <h1 class="hero-title">{{ $page ? $page->getContent('page_title', 'Our services') : 'Our services' }}</h1>
+        <p class="hero-subtitle mt-4 max-w-2xl text-lg md:text-xl">{{ $page ? $page->getContent('page_subtitle', 'Training, digital solutions and practical support for students, freelancers and growing businesses.') : 'Training, digital solutions and practical support for students, freelancers and growing businesses.' }}</p>
     </div>
 </section>
 

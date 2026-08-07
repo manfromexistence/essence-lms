@@ -5,8 +5,8 @@
 @section('content')
 <section class="hero hero--solid hero--dark">
     <div class="hero-inner text-center">
-        <h1 class="hero-title">{{ $page ? $page->getContent('page_title', 'আমাদের টিম') : 'আমাদের টিম' }}</h1>
-        <p class="hero-subtitle mt-4 max-w-2xl text-lg md:text-xl">{{ $page ? $page->getContent('page_subtitle', 'বাস্তব কাজ, মার্কেটপ্লেস এবং সফল project delivery-এর জন্য অভিজ্ঞ শিক্ষক ও সমর্থন পেশাদার।') : '' }}</p>
+        <h1 class="hero-title">{{ $page ? $page->getContent('page_title', 'Meet our team') : 'Meet our team' }}</h1>
+        <p class="hero-subtitle mt-4 max-w-2xl text-lg md:text-xl">{{ $page ? $page->getContent('page_subtitle', 'Exper instructors and support professionals committed to attenability, hands-on mentorship and student outcomes.') : 'Expert instructors and support professionals committed to accountability, hands-on mentorship and student outcomes.' }}</p>
     </div>
 </section>
 
@@ -20,7 +20,7 @@
 @if($featured->isNotEmpty())
 <section class="bg-white py-12">
     <div class="max-w-6xl mx-auto px-4">
-        <h2 class="mb-8 text-center text-2xl font-black text-gray-900">✨ Featured</h2>
+        <h2 class="mb-8 text-center text-2xl font-black text-gray-900">Featured team</h2>
         <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             @foreach($featured as $member)
                 @include('partials.team-card', ['member' => $member, 'featured' => true])

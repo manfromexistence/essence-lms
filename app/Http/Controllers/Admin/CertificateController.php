@@ -14,8 +14,16 @@ class CertificateController extends Controller
 
     public function index()
     {
-        $certificates = Certificate::with(['student.user', 'course'])->latest('issued_at')->paginate(20);
-        $enrollments = CourseEnrollment::with(['student.user', 'course'])->latest()->get();
+        $certificates = Certificate::with(['student.user', 'course'])
+            ->latest('issued_at')
+            ->paginate(20);
+
+        // Only include enrollments whose student and course can be resolved,
+        // so the "issue" dropdown never tries to read a missing relation.
+        $enrollments = CourseEnrollment::with(['student.user', 'course'])
+            ->latest()
+            ->get()
+            ->filter(fn ($e) => $e->student?->user && $e->course);
 
         return view('dashboard.certificates.index', compact('certificates', 'enrollments'));
     }

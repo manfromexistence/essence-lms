@@ -14,5 +14,9 @@
 - Prunes irrelevant academic/school features from LMS dashboards, keeping only course-selling-related items. Confidence: 0.75
 - Payment systems follow an admin-verification workflow: student submits transaction ID and details, admin reviews in a table, notifications communicate between parties, admin approves, then access is granted. Confidence: 0.90
 - Admin panels include multi-field search (name, number, batch, area, blood group) and dropdown/toggle filters (e.g., online vs. offline students, online/offline views). Confidence: 0.85
+- Wants admin dashboard pagination to show sufficient items per page (complained about 'too less pages' limiting admin listings). Confidence: 0.70
 - Rebrands existing projects with client-specific identity (name, theme colors, logo, favicons) everywhere — no remnants of previous brand. Confidence: 0.90
 - Deployments (Render, Vercel) must render all dashboard and frontend pages correctly — no broken/missing pages. Confidence: 0.85
+- Wants the admin dashboard navigation (sidebar) to expose all route-backed modules, not a trimmed menu — complained about "too less pages" with too few reachable sections, accepting full modules like Exams, Accounts, Inventory, and Communication in the admin menu. Confidence: 0.85
+- Expects tasks fully completed and verified (tests green + Blade compiles) before accepting — repeats "please complete this" until verification confirms the fix works, not just a summary. Confidence: 0.85
+- Prefers root-cause fixes over band-aids — asks to "fix it correctly" and accepts deep tracing through test/env tooling (e.g. CSRF/APP_ENV precedence) to the real cause. Confidence: 0.80

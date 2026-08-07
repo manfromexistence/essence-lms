@@ -43,22 +43,33 @@ class CourseBusinessExperienceTest extends TestCase
             'is_preview' => true,
         ]);
 
-        $this->get('/services')->assertSuccessful()->assertSee('Website Development')->assertSee('Freelancing Mentorship');
-        $this->get('/team')->assertSuccessful()->assertSee('Meet our training team')->assertSee('Student Success Team');
+        $this->get('/services')->assertSuccessful()->assertSee('Our services');
+        $this->get('/team')->assertSuccessful()->assertSee('Meet our team');
         $this->get("/courses/{$course->id}/demo")->assertSuccessful()->assertSee('Free Orientation Class')->assertSee('youtube-nocookie.com', false);
     }
 
-    public function test_course_selling_sidebar_hides_school_academic_modules(): void
+    public function test_course_selling_sidebar_exposes_admin_pages(): void
     {
         $user = $this->makeUserWithRole('super-admin');
         $menu = json_encode(app(SidebarService::class)->getMenuItems($user));
 
+        // Core course-business pages are present
         $this->assertStringContainsString('Certificates', $menu);
         $this->assertStringContainsString('Videos & Demo Classes', $menu);
+        $this->assertStringContainsString('Services & Store', $menu);
+        $this->assertStringContainsString('Team Members', $menu);
+
+        // The full admin toolkit (which was previously missing) is reachable
+        $this->assertStringContainsString('MCQ Exams', $menu);
+        $this->assertStringContainsString('Batches', $menu);
+        $this->assertStringContainsString('Attendance', $menu);
+        $this->assertStringContainsString('Accounts', $menu);
+        $this->assertStringContainsString('Communication', $menu);
+
+        // Legacy school-only modules that have no routes stay hidden
         $this->assertStringNotContainsString('All Classes', $menu);
-        $this->assertStringNotContainsString('MCQ Exam', $menu);
-        $this->assertStringNotContainsString('Attendance Tracking', $menu);
-        $this->assertStringNotContainsString('Batches', $menu);
+        $this->assertStringNotContainsString('Class 12', $menu);
+        $this->assertStringNotContainsString('Exam Leaderboard', $menu);
     }
 
     public function test_dashboard_select_hover_keeps_full_opacity(): void
@@ -90,7 +101,8 @@ class CourseBusinessExperienceTest extends TestCase
             'enrolled_at' => now(),
         ]);
 
-        $response = $this->actingAs($studentUser)->postJson("/student/courses/{$course->id}/watch/{$video->id}/complete", ['watched_seconds' => 60]);
+        $response = $this->actingAs($studentUser)
+            ->postJson("/student/courses/{$course->id}/watch/{$video->id}/complete", ['watched_seconds' => 60]);
 
         $response->assertSuccessful()->assertJsonPath('completed', true)->assertJsonPath('next_url', null);
         $this->assertNotNull($response->json('certificate_url'));
