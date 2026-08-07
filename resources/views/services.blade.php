@@ -95,7 +95,15 @@
                         @endif
                         <div class="mt-6 flex gap-3">
                             <button type="button" onclick="addToCart('{{ addslashes($service->title) }}', {{ $service->price }}); closeServiceModal()" class="flex-1 rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Add to Cart – ৳{{ number_format($service->price, 0) }}</button>
-                            <a href="{{ route('admission.create') }}" class="flex-1 rounded-xl border border-gray-200 px-6 py-3 text-center font-bold text-gray-700 transition hover:bg-gray-50">Direct Enrol</a>
+                            @auth
+                                @if(Auth::user()->isStudent())
+                                    <a href="{{ route('student.courses') }}" class="flex-1 rounded-xl border border-gray-200 px-6 py-3 text-center font-bold text-gray-700 transition hover:bg-gray-50">Browse Courses</a>
+                                @else
+                                    <a href="{{ route('dashboard') }}" class="flex-1 rounded-xl border border-gray-200 px-6 py-3 text-center font-bold text-gray-700 transition hover:bg-gray-50">Go to Dashboard</a>
+                                @endif
+                            @else
+                                <a href="{{ route('admission.create') }}" class="flex-1 rounded-xl border border-gray-200 px-6 py-3 text-center font-bold text-gray-700 transition hover:bg-gray-50">Direct Enrol</a>
+                            @endauth
                         </div>
                     </div>
                 </div>
@@ -127,7 +135,15 @@
             <span class="text-sm text-gray-500">Total</span>
             <span id="cart-total" class="text-2xl font-black text-gray-900">৳0</span>
         </div>
-        <a href="{{ route('admission.create') }}" class="block rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Proceed to Enrol</a>
+        @auth
+            @if(Auth::user()->isStudent())
+                <a href="{{ route('student.courses') }}" class="block rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Proceed to Enrol</a>
+            @else
+                <a href="{{ route('dashboard') }}" class="block rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Go to Dashboard</a>
+            @endif
+        @else
+            <a href="{{ route('admission.create') }}" class="block rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Proceed to Enrol</a>
+        @endauth
     </div>
 </div>
 @else

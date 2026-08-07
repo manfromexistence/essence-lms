@@ -5,7 +5,7 @@
 @section('page-description', 'Register a new student in the system')
 
 @section('content')
-    <form class="max-w-7xl mx-auto" action="{{ route('dashboard.students.store') }}" method="POST"
+    <form class="max-w-5xl mx-auto" action="{{ route('dashboard.students.store') }}" method="POST"
         enctype="multipart/form-data">
         @csrf
 
@@ -24,60 +24,24 @@
             </div>
         @endif
 
-        <!-- 1. Identity Information -->
+        <!-- 1. Student Information -->
         <div class="bg-white rounded-xl shadow-md border-gray-200 border mb-6">
             <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Identity Information</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Student Information</h3>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <x-ui.text-input name="name" label="Full Name (English)" required max="255" persist />
-                <x-ui.text-input name="name_bn" label="Full Name (Bangla)" max="255" persist />
-                
-                <!-- Registration No Auto-Generated -->
-                 <!-- <div class="md:col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ID No.</label>
-                    <input type="text" disabled value="Auto-generated" 
-                        class="min-h-12 px-4 w-full rounded-lg border-gray-300 bg-gray-100 text-gray-500 shadow-sm focus:border-bd-green focus:ring-bd-green">
-                    <p class="text-xs text-gray-500 mt-1">ID will be generated after saving (YYYY-BATCH-SEQ)</p>
-                </div> -->
-
+                <x-ui.text-input name="name" label="Full Name" required max="255" placeholder="Student's full name" persist />
                 <x-ui.text-input name="email" label="Email Address" type="email" placeholder="john@example.com" required persist />
-                <x-ui.text-input name="phone" label="Mobile No." type="tel" placeholder="017xxxxxxxx" max="20" persist />
-                <x-ui.text-input name="profession" label="Profession" max="255" persist />
-                <x-ui.date-picker name="dob" label="Date of Birth" placeholder="Select Birth Date" persist />
+                <x-ui.text-input name="phone" label="Mobile No." type="tel" placeholder="017xxxxxxxx" max="20" required persist />
 
+                <x-ui.date-picker name="dob" label="Date of Birth (Optional)" placeholder="Select Birth Date" persist />
                 <x-ui.select name="gender" label="Gender" persist>
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
-                </x-ui.select>
-                <x-ui.select name="marital_status" label="Marital Status" persist>
-                    <option value="">Select Status</option>
-                    <option value="single">Single</option>
-                    <option value="married">Married</option>
-                </x-ui.select>
-
-                <x-ui.select name="blood_group" label="Blood Group" persist>
-                    <option value="">Select Group</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                </x-ui.select>
-
-                <x-ui.select name="religion" label="Religion" persist>
-                    <option value="">Select Religion</option>
-                    <option value="Islam">Islam</option>
-                    <option value="Hinduism">Hinduism</option>
-                    <option value="Buddhism">Buddhism</option>
-                    <option value="Christianity">Christianity</option>
                     <option value="Other">Other</option>
                 </x-ui.select>
-                <x-ui.text-input name="admission_purpose" label="Purpose" max="1000" persist />
+                <x-ui.text-input name="guardian_phone" label="Guardian Phone (Optional)" type="tel" max="20" persist />
 
                 <div class="md:col-span-3">
                     <x-ui.image-input name="profile_image" label="Profile Photo"
@@ -86,161 +50,17 @@
             </div>
         </div>
 
-        <!-- 2. Family Information -->
+        <!-- 2. Course & Batch Information -->
         <div class="bg-white rounded-xl shadow-md border-gray-200 border mb-6">
             <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Family Information</h3>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Father -->
-                <x-ui.text-input name="father_name" label="Father's Name" max="255" persist />
-                <x-ui.text-input name="father_occupation" label="Father's Occupation" max="255" persist />
-                <x-ui.text-input name="father_phone" label="Father's Mobile No." max="20" persist />
-
-                <!-- Mother -->
-                <x-ui.text-input name="mother_name" label="Mother's Name" max="255" persist />
-                <x-ui.text-input name="mother_occupation" label="Mother's Occupation" max="255" persist />
-                <x-ui.text-input name="mother_phone" label="Mother's Mobile No." max="20" persist />
-
-                <!-- Guardian -->
-                <x-ui.text-input name="guardian_name" label="Guardian's Name" max="255" persist />
-                <x-ui.text-input name="guardian_phone" label="Guardian's Mobile No." max="20" persist />
-                <div class="hidden md:block"></div> <!-- Spacer -->
-            </div>
-        </div>
-
-        <!-- 3. Address Information -->
-        <div class="bg-white rounded-xl shadow-md border-gray-200 border mb-6">
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Address Information</h3>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Present Address -->
-                <div class="space-y-4">
-                    <h4 class="font-medium text-gray-700 border-b pb-2">Present Address</h4>
-                    <x-ui.text-input name="present_holding" label="Holding No." persist />
-                    <x-ui.text-input name="present_village" label="Mohila/Vill" persist />
-                    <x-ui.text-input name="present_po" label="Post Office (PO)" persist />
-                    <x-ui.text-input name="present_ps" label="Police Station (PS)" persist />
-                    <x-ui.text-input name="present_dist" label="District" persist />
-                </div>
-
-                <!-- Permanent Address -->
-                <div class="space-y-4">
-                    <h4 class="font-medium text-gray-700 border-b pb-2">Permanent Address</h4>
-                    <x-ui.text-input name="permanent_holding" label="Holding No." persist />
-                    <x-ui.text-input name="permanent_village" label="Mohila/Vill" persist />
-                    <x-ui.text-input name="permanent_po" label="Post Office (PO)" persist />
-                    <x-ui.text-input name="permanent_ps" label="Police Station (PS)" persist />
-                    <x-ui.text-input name="permanent_dist" label="District" persist />
-                </div>
-            </div>
-        </div>
-
-        <!-- 4. Academic Qualification -->
-        <div class="bg-white rounded-xl shadow-md border-gray-200 border mb-6">
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Academic Qualification</h3>
-            </div>
-            <div class="p-6 space-y-6">
-                <!-- SSC -->
-                <div>
-                    <h4 class="font-medium text-gray-700 mb-3">SSC / Equivalent</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <x-ui.text-input name="ssc_institute" label="Name of Institute" class="md:col-span-1" persist />
-                        <x-ui.select name="ssc_board" label="Board" persist>
-                            <option value="">Select Board</option>
-                            <option value="Dhaka">Dhaka</option>
-                            <option value="Rajshahi">Rajshahi</option>
-                            <option value="Comilla">Comilla</option>
-                            <option value="Jessore">Jessore</option>
-                            <option value="Chittagong">Chittagong</option>
-                            <option value="Barisal">Barisal</option>
-                            <option value="Sylhet">Sylhet</option>
-                            <option value="Dinajpur">Dinajpur</option>
-                            <option value="Mymensingh">Mymensingh</option>
-                            <option value="Madrasah">Madrasah</option>
-                            <option value="Technical">Technical</option>
-                            <option value="Brou">BOU</option>
-                            <option value="Other">Other</option>
-                        </x-ui.select>
-                        <x-ui.text-input name="ssc_year" label="Passing Year" type="number" placeholder="YYYY" min="1990" max="{{ date('Y') }}" persist />
-                        <x-ui.text-input name="ssc_gpa" label="GPA" type="number" step="0.01" min="1.00" max="5.00" placeholder="5.00" persist />
-                        <x-ui.select name="ssc_group" label="Group" persist>
-                            <option value="">Select Group</option>
-                            <option value="Science">Science</option>
-                            <option value="Business Studies">Business Studies</option>
-                            <option value="Humanities">Humanities</option>
-                        </x-ui.select>
-                    </div>
-                </div>
-
-                <!-- HSC -->
-                <div>
-                    <h4 class="font-medium text-gray-700 mb-3">HSC / Equivalent</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <x-ui.text-input name="hsc_institute" label="Name of Institute" class="md:col-span-1" persist />
-                        <x-ui.select name="hsc_board" label="Board" persist>
-                            <option value="">Select Board</option>
-                            <option value="Dhaka">Dhaka</option>
-                            <option value="Rajshahi">Rajshahi</option>
-                            <option value="Comilla">Comilla</option>
-                            <option value="Jessore">Jessore</option>
-                            <option value="Chittagong">Chittagong</option>
-                            <option value="Barisal">Barisal</option>
-                            <option value="Sylhet">Sylhet</option>
-                            <option value="Dinajpur">Dinajpur</option>
-                            <option value="Mymensingh">Mymensingh</option>
-                            <option value="Madrasah">Madrasah</option>
-                            <option value="Technical">Technical</option>
-                            <option value="Brou">BOU</option>
-                           <option value="Other">Other</option>
-                        </x-ui.select>
-                        <x-ui.text-input name="hsc_year" label="Passing Year" type="number" placeholder="YYYY" min="1990" max="{{ date('Y') }}" persist />
-                        <x-ui.text-input name="hsc_gpa" label="GPA" type="number" step="0.01" min="1.00" max="5.00" placeholder="5.00" persist />
-                        <x-ui.select name="hsc_group" label="Group" persist>
-                            <option value="">Select Group</option>
-                            <option value="Science">Science</option>
-                            <option value="Business Studies">Business Studies</option>
-                            <option value="Humanities">Humanities</option>
-                        </x-ui.select>
-                    </div>
-                </div>
-
-                <!-- Undergraduate -->
-                <div>
-                    <h4 class="font-medium text-gray-700 mb-3">Under Graduate / Equivalent</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                        <x-ui.text-input name="undergrad_institute" label="Name of Institute" class="md:col-span-1" persist />
-                        <x-ui.text-input name="undergrad_board" label="Board/University" persist />
-                        <x-ui.text-input name="undergrad_year" label="Passing Year" type="number" placeholder="YYYY" min="1990" max="{{ date('Y') }}" persist />
-                        <x-ui.text-input name="undergrad_gpa" label="CGPA/Class" type="number" step="0.01" min="0.00" max="4.00" placeholder="4.00" persist />
-                        <x-ui.text-input name="undergrad_group" label="Group/Unit" placeholder="e.g. A Unit" persist />
-                        <x-ui.text-input name="undergrad_department" label="Department" placeholder="e.g. CSE" persist />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 5. Course & Batch Information -->
-        <div class="bg-white rounded-xl shadow-md border-gray-200 border mb-6">
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Course & Admission Information</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Course & Admission</h3>
                 <p class="mt-1 text-sm text-gray-500">Choose online or offline first; only matching courses will be available.</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <x-ui.select name="admission_mode" label="Student Type / Class Mode" required persist
+                <x-ui.select name="admission_mode" label="Student Type" required persist
                     :options="['online' => 'Online Student', 'offline' => 'Offline Student']"
                     :selected="old('admission_mode', $defaultMode)" />
-                <!-- Class -->
-                <x-ui.select name="class" label="School Class (Optional)" persist>
-                    <option value="">Not applicable</option>
-                    @foreach($classes as $c)
-                        <option value="{{ $c }}" @selected((string) old('class') === (string) $c)>Class {{ $c }}</option>
-                    @endforeach
-                </x-ui.select>
 
-                <!-- Course -->
                 <x-ui.select name="course_id" label="Select Course" persist>
                     <option value="">Select Course</option>
                     @foreach($courses as $course)
@@ -250,27 +70,24 @@
                     @endforeach
                 </x-ui.select>
 
-                <!-- Batch -->
                 <x-ui.select name="batch_id" label="Batch (Optional)" persist>
                     <option value="">Assign later</option>
                     <!-- Populated by JS -->
                 </x-ui.select>
 
-                <!-- Class Day -->
-                <x-ui.select name="class_days" label="Class Days" persist>
+                <x-ui.select name="class_days" label="Class Days (Optional)" persist>
                     <option value="">Select Days</option>
                     <!-- Populated by JS -->
                 </x-ui.select>
 
-                <!-- Class Time -->
-                <x-ui.select name="class_time" label="Class Time" persist>
+                <x-ui.select name="class_time" label="Class Time (Optional)" persist>
                     <option value="">Select Time</option>
                     <!-- Populated by JS -->
                 </x-ui.select>
             </div>
         </div>
 
-        <!-- 6. Payment Information -->
+        <!-- 3. Payment Information -->
         <div class="bg-white rounded-xl shadow-md border-gray-200 border mb-6">
             <div class="p-6 border-b border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900">Payment Information</h3>
@@ -310,7 +127,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
             const els = {
-                class: document.getElementById('class'),
                 mode: document.getElementById('admission_mode'),
                 course: document.getElementById('course_id'),
                 batch: document.getElementById('batch_id'),
@@ -323,7 +139,6 @@
 
             // Old values from server (for restoration after validation failure)
             const oldValues = {
-                class: '{{ old("class", "") }}',
                 course_id: '{{ old("course_id", "") }}',
                 batch_id: '{{ old("batch_id", "") }}',
                 class_days: '{{ old("class_days", "") }}',
@@ -343,7 +158,7 @@
                     els.course.value = '';
                 }
 
-                resetSelect(els.batch, 'Select Batch');
+                resetSelect(els.batch, 'Assign later');
                 resetSelect(els.day, 'Select Days');
                 resetSelect(els.time, 'Select Time');
                 currentBatches = [];
@@ -356,7 +171,7 @@
             // 2. Course Change -> Fetch Batches
             els.course.addEventListener('change', function() {
                 const courseId = this.value;
-                resetSelect(els.batch, 'Select Batch');
+                resetSelect(els.batch, 'Assign later');
                 resetSelect(els.day, 'Select Days');
                 resetSelect(els.time, 'Select Time');
                 currentBatches = [];

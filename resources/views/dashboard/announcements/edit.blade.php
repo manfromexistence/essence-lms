@@ -127,6 +127,18 @@
                     targetIdSelect.appendChild(option);
                 });
             }
+
+            // Re-render the custom select dropdown so new options appear
+            if (typeof renderOptions === 'function') {
+                renderOptions('target_id');
+                if (currentTargetId) {
+                    const native = document.getElementById('target_id');
+                    if (native && typeof selectOption === 'function') {
+                        const opt = Array.from(native.options).find(o => String(o.value) === String(currentTargetId));
+                        if (opt) selectOption('target_id', opt.value, opt.text);
+                    }
+                }
+            }
         }
 
         targetTypeSelect.addEventListener('change', function() {

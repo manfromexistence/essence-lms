@@ -128,6 +128,11 @@
                     targetIdSelect.appendChild(option);
                 });
             }
+
+            // Re-render the custom select dropdown so new options appear
+            if (typeof renderOptions === 'function') {
+                renderOptions('target_id');
+            }
         }
 
         targetTypeSelect.addEventListener('change', function() {
