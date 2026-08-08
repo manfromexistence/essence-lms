@@ -8,9 +8,9 @@
     @if($errors->any())<div class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ $errors->first() }}</div>@endif
     <form method="POST" action="{{ route('password.change.update') }}" class="mt-6 space-y-4">
         @csrf @method('PUT')
-        <label class="block text-sm font-semibold">Current password<input type="password" name="current_password" required autocomplete="current-password" class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400"></label>
-        <label class="block text-sm font-semibold">New password<input type="password" name="password" required autocomplete="new-password" class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400"></label>
-        <label class="block text-sm font-semibold">Confirm password<input type="password" name="password_confirmation" required autocomplete="new-password" class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400"></label>
+        <label class="block text-sm font-semibold">Current password<x-ui.password-input name="current_password" required autocomplete="current-password" placeholder="Enter your current password" /></label>
+        <label class="block text-sm font-semibold">New password<x-ui.password-input name="password" required autocomplete="new-password" placeholder="Enter a strong password" /></label>
+        <label class="block text-sm font-semibold">Confirm password<x-ui.password-input name="password_confirmation" required autocomplete="new-password" placeholder="Re-enter password" /></label>
         <button class="w-full rounded-lg bg-primary px-4 py-3 font-semibold text-white">Change password</button>
     </form>
 </main>

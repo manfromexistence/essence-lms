@@ -56,8 +56,17 @@ class AuthController extends Controller
     public function sendResetLink(Request $request)
     {
         $request->validate(['email' => ['required', 'email']]);
-        Password::sendResetLink($request->only('email'));
 
+        // Only send a reset link to an ACTIVE user. Pending/rejected students
+        // cannot log in anyway, and sending a link to them would (a) leak that
+        // an account exists and (b) produce a link they cannot use.
+        $user = User::where('email', $request->email)->where('is_active', true)->first();
+        if ($user) {
+            Password::sendResetLink($request->only('email'));
+        }
+
+        // Always show the same message regardless of whether the account exists,
+        // so we don't disclose which emails have accounts.
         return back()->with('success', 'If an active account exists for that email, a secure password link has been sent.');
     }
 
@@ -74,10 +83,17 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
         ]);
 
+        // Pre-check: only active accounts may reset their password. Doing this
+        // here (before Password::reset) means a pending/rejected student never
+        // consumes a token or triggers a 403 mid-request.
+        $user = User::where('email', $validated['email'])->first();
+        if ($user && ! $user->is_active) {
+            return back()->withErrors(['email' => __('passwords.user')])->withInput($request->only('email'));
+        }
+
         $status = Password::reset(
             $validated,
             function (User $user, string $password) {
-                abort_unless($user->is_active, 403, 'This account is awaiting administrator approval.');
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'must_change_password' => false,

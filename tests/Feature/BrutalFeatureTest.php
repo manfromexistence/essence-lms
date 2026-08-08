@@ -84,6 +84,8 @@ class BrutalFeatureTest extends TestCase
             'admission_mode' => 'offline',
             'course_id' => $course->id,
             'batch_id' => $batch->id,
+            'password' => 'Strong!Pass123',
+            'password_confirmation' => 'Strong!Pass123',
             'total_amount' => 5000,
             'paid_amount' => 5000,
             'payment_method' => 'Cash',
@@ -92,7 +94,7 @@ class BrutalFeatureTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'brutal.student@test.com', 'is_active' => true]);
         $this->assertDatabaseHas('students', ['phone' => '01712345678']);
 
-        // Student can log in (password reset link is sent, but login uses the temp password setup)
+        // Student can log in with the password the admin set.
         $studentUser = User::where('email', 'brutal.student@test.com')->first();
         $this->assertTrue($studentUser->hasRole('student'));
     }
@@ -104,7 +106,7 @@ class BrutalFeatureTest extends TestCase
         $this->actingAs($admin)->post('/dashboard/students', [
             'email' => 'missing@test.com',
             'admission_mode' => 'online',
-        ])->assertSessionHasErrors(['name', 'phone']);
+        ])->assertSessionHasErrors(['name', 'phone', 'password']);
     }
 
     /* ---------- COURSE CREATION ---------- */
@@ -355,6 +357,8 @@ class BrutalFeatureTest extends TestCase
             'phone' => '01812345678',
             'course_id' => $course->id,
             'admission_mode' => 'offline',
+            'password' => 'Strong!Pass123',
+            'password_confirmation' => 'Strong!Pass123',
         ])->assertRedirect('/login');
 
         $this->assertDatabaseHas('students', ['phone' => '01812345678', 'admission_status' => 'pending']);

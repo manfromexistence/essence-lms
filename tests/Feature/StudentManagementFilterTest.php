@@ -51,6 +51,8 @@ class StudentManagementFilterTest extends TestCase
             'present_dist' => 'Dhaka',
             'admission_mode' => 'offline',
             'course_id' => $course->id,
+            'password' => 'Strong!Pass123',
+            'password_confirmation' => 'Strong!Pass123',
         ]);
 
         $response->assertRedirect('/login');

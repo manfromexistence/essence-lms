@@ -8,8 +8,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class TeacherController extends Controller
 {
@@ -39,6 +38,8 @@ class TeacherController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
+            'password_confirmation' => ['required', 'same:password'],
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'designation' => 'nullable|string|max:255',
@@ -59,15 +60,14 @@ class TeacherController extends Controller
             'profile_image_url' => 'nullable|url|max:500',
         ]);
 
-        // Create user
+        // Create user — the admin sets the teacher's login password directly.
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make(Str::password(32)),
+            'password' => Hash::make($request->password),
             'is_active' => true,
-            'must_change_password' => true,
+            'must_change_password' => false,
         ]);
-        Password::sendResetLink(['email' => $user->email]);
 
         // Assign teacher role
         $teacherRole = Role::where('slug', 'teacher')->first();

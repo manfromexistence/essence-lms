@@ -40,15 +40,8 @@
             <fieldset>
                 <legend class="mb-4 text-lg font-bold text-green-800">Login credentials</legend>
                 <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700">Password</label>
-                        <input type="password" name="password" autocomplete="new-password" value="{{ old('password') }}" class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700" />
-                        <p class="mt-1 text-xs text-gray-500">12+ chars with upper, lower, number and symbol. Leave blank to receive a reset link by email after approval.</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700">Confirm Password</label>
-                        <input type="password" name="password_confirmation" autocomplete="new-password" value="{{ old('password_confirmation') }}" class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700" />
-                    </div>
+                    <x-ui.password-input name="password" label="Password" placeholder="Enter a strong password" required autocomplete="new-password" />
+                    <x-ui.password-input name="password_confirmation" label="Confirm Password" placeholder="Re-enter password" required autocomplete="new-password" />
                 </div>
             </fieldset>
 

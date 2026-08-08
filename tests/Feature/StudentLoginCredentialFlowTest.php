@@ -14,9 +14,10 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Tests\TestCase;
 
 /**
- * Verifies the student credential flow the support ticket is about:
+ * Verifies the student credential flow:
  *  - a public applicant starts inactive;
- *  - approval activates the account AND lets them recover a password via a reset link;
+ *  - approval activates the account (no reset link needed — the applicant
+ *    set their own password at admission time);
  *  - rejection does NOT grant login.
  */
 class StudentLoginCredentialFlowTest extends TestCase
@@ -45,7 +46,7 @@ class StudentLoginCredentialFlowTest extends TestCase
             'email' => $email,
             'password' => Hash::make('old-password'),
             'is_active' => false,
-            'must_change_password' => true,
+            'must_change_password' => false,
         ]);
         $studentRole = Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
         $user->roles()->attach($studentRole);
@@ -69,7 +70,7 @@ class StudentLoginCredentialFlowTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_approve_sends_reset_link_and_activates_account(): void
+    public function test_approve_activates_account_without_reset_link(): void
     {
         Notification::fake();
 
@@ -88,11 +89,8 @@ class StudentLoginCredentialFlowTest extends TestCase
         $this->assertSame('approved', $student->admission_status);
         $this->assertSame('active', $student->status);
 
-        // A real, signed password-reset link must be queued for the student.
-        Notification::assertSentTo(
-            $student->user,
-            ResetPassword::class
-        );
+        // No reset link: the student already has a known password.
+        Notification::assertNotSentTo($student->user, ResetPassword::class);
     }
 
     public function test_reject_does_not_send_reset_link_and_keeps_inactive(): void

@@ -14,7 +14,6 @@ use App\Services\StudentService;
 use App\Services\StudentIdGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -108,10 +107,8 @@ class StudentController extends Controller
             }
         }
 
-        // Use a password the admin supplied, otherwise generate one and have
-        // the broker email a reset link so the student sets it themselves.
-        $password = $validated['password'] ?? \Illuminate\Support\Str::random(12);
-        $hasOwnPassword = !empty($validated['password']);
+        // The admin always sets a login password for the student (required field).
+        $password = $validated['password'];
 
         // Handle profile image - file upload takes priority over URL
         $imagePath = $this->handleImageInput($request, 'profile_image', 'students/profiles');
@@ -127,13 +124,13 @@ class StudentController extends Controller
             }
         }
 
-        DB::transaction(function () use ($validated, $request, $password, $hasOwnPassword) {
+        DB::transaction(function () use ($validated, $request, $password) {
             $user = User::create([
                 'name' => $request->input('name') ?: $validated['name_bn'],
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
                 'is_active' => true,
-                'must_change_password' => ! $hasOwnPassword,
+                'must_change_password' => false,
             ]);
 
             $studentRole = Role::where('slug', 'student')->first();
@@ -148,16 +145,8 @@ class StudentController extends Controller
             $this->studentService->create($validated);
         });
 
-        // Only email a reset link when the student was NOT given a known password.
-        if (! $hasOwnPassword) {
-            Password::sendResetLink(['email' => $validated['email']]);
-            $message = 'Student created successfully. A secure password setup link was sent by email.';
-        } else {
-            $message = 'Student created successfully. The student can log in with their email and the password you set.';
-        }
-
         return redirect()->route('dashboard.students.index')
-            ->with('success', $message);
+            ->with('success', 'Student created successfully. The student can log in with their email and the password you set.');
     }
 
     /**
@@ -366,7 +355,6 @@ class StudentController extends Controller
         ]);
 
         $student = Student::findOrFail($request->student_id);
-        $wasInactive = !$student->user?->is_active;
         $approved = (bool) $request->batch_id;
         $student->update([
             'batch_id' => $request->batch_id,
@@ -374,11 +362,6 @@ class StudentController extends Controller
             'status' => $approved ? 'active' : 'pending',
         ]);
         $student->user?->update(['is_active' => $approved]);
-        // Only send a reset link when the student doesn't already have a usable
-        // password of their own (i.e. must_change_password is still true).
-        if ($approved && $wasInactive && $student->user && $student->user->must_change_password) {
-            Password::sendResetLink(['email' => $student->user->email]);
-        }
 
         return redirect()->route('dashboard.students.batch-assignment')
             ->with('success', 'Student batch assignment updated successfully.');
@@ -406,18 +389,11 @@ class StudentController extends Controller
 
         if ($status === 'approved' && $student->user) {
             $student->load('user');
-            // Only send a password-reset link when the student does NOT already
-            // have a usable password (i.e. one they set themselves or the admin
-            // chose one). Otherwise they can just log in with their known creds.
-            if ($student->user->must_change_password) {
-                Password::sendResetLink(['email' => $student->user->email]);
-            }
+            // The student already has a known password (required at creation),
+            // so no password-reset link is sent — they log in with it directly.
+            $resetLine = 'Your account is now active. Log in with your registered email address and the password you set.';
 
             try {
-                $courseName = $student->batch?->course?->name ?? $student->course_name ?? 'your selected course';
-                $resetLine = $student->user->must_change_password
-                    ? 'A secure password reset link has been sent to this email — click it to set your password, then log in with your registered email address.'
-                    : 'Your account is now active. Log in with your registered email address and the password you set.';
                 $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
                     . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
                     . '<h2 style="color:#fff;margin:0;">Admission Approved</h2></div>'
@@ -453,8 +429,6 @@ class StudentController extends Controller
             'batch_id' => 'nullable|exists:batches,id',
         ]);
 
-        $usersToInvite = User::whereHas('student', fn ($query) => $query->whereIn('id', $request->student_ids))
-            ->where('is_active', false)->get();
         $approved = (bool) $request->batch_id;
         Student::whereIn('id', $request->student_ids)
             ->update([
@@ -464,9 +438,6 @@ class StudentController extends Controller
             ]);
         User::whereHas('student', fn ($query) => $query->whereIn('id', $request->student_ids))
             ->update(['is_active' => $approved]);
-        if ($approved) {
-            $usersToInvite->each(fn (User $user) => Password::sendResetLink(['email' => $user->email]));
-        }
 
         $count = count($request->student_ids);
         return redirect()->route('dashboard.students.batch-assignment')

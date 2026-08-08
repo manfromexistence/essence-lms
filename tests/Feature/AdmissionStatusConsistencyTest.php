@@ -44,6 +44,8 @@ class AdmissionStatusConsistencyTest extends TestCase
             'phone' => '01911009999',
             'admission_mode' => 'online',
             'course_id' => $course->id,
+            'password' => 'Strong!Pass123',
+            'password_confirmation' => 'Strong!Pass123',
         ])->assertRedirect('/login');
 
         // Single source of truth: admission_status AND status both pending,
@@ -91,6 +93,8 @@ class AdmissionStatusConsistencyTest extends TestCase
             'phone' => '01911008888',
             'admission_mode' => 'offline',
             'course_id' => $course->id,
+            'password' => 'Strong!Pass123',
+            'password_confirmation' => 'Strong!Pass123',
         ]);
 
         $student = Student::whereHas('user', fn ($q) => $q->where('email', 'approve.me@example.com'))->first();
@@ -129,6 +133,8 @@ class AdmissionStatusConsistencyTest extends TestCase
             'phone' => '01911007777',
             'admission_mode' => 'offline',
             'course_id' => $course->id,
+            'password' => 'Strong!Pass123',
+            'password_confirmation' => 'Strong!Pass123',
         ]);
 
         $student = Student::whereHas('user', fn ($q) => $q->where('email', 'reject.me@example.com'))->first();

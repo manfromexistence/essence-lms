@@ -97,9 +97,9 @@ class StoreStudentRequest extends FormRequest
             'paid_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string|max:50',
 
-            // Login credentials (optional)
-            'password' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
-            'password_confirmation' => ['nullable', 'same:password'],
+            // Login credentials (required — the creator always sets the password)
+            'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
+            'password_confirmation' => ['required', 'same:password'],
 
             // Other
             'featured' => 'nullable|boolean',

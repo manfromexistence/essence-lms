@@ -34,7 +34,14 @@
                     <x-ui.text-input name="email" label="Email Address" type="email" required persist />
                     <x-ui.text-input name="phone" label="Phone Number" type="tel" persist />
                     <x-ui.date-picker name="dob" label="Date of Birth" placeholder="Select Birth Date" persist />
-                    
+
+                    <div class="md:col-span-2">
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <x-ui.password-input name="password" label="Password" placeholder="Enter a strong password" required autocomplete="new-password" />
+                            <x-ui.password-input name="password_confirmation" label="Confirm Password" placeholder="Re-enter password" required autocomplete="new-password" />
+                        </div>
+                    </div>
+
                     <x-ui.select name="gender" label="Gender" persist>
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
