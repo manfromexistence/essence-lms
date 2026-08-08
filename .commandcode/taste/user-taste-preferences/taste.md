@@ -30,7 +30,7 @@
 - Expects tasks fully completed and verified (tests green + Blade compiles) before accepting — repeats "please complete this" until verification confirms the fix works, not just a summary. Confidence: 0.85
 - Prefers root-cause fixes over band-aids — asks to "fix it correctly" and accepts deep tracing through test/env tooling (e.g. CSRF/APP_ENV precedence) to the real cause. Confidence: 0.80
 - Prefers graceful empty states (HTTP 200 with an empty-state message) over hard 403 Forbidden responses when a user lacks required profile data, reserving 403 for genuine authorization/ownership violations only. Confidence: 0.70
-- Wants completed, verified work committed to git with a descriptive commit message and pushed to the remote as part of the standard completion workflow. Confidence: 0.8
+- Wants completed, verified work committed to git with a descriptive commit message and pushed to the remote as part of the standard completion workflow. Confidence: 0.85
 - Operates with multiple GitHub accounts; expects the agent to use `gh auth switch` to the repo-owner account before pushing to a repo owned by a different account, then switch back to the default account afterward so it stays as the default. Confidence: 0.9
 - Operates on Windows — expects Windows file paths and cmd/PowerShell-compatible shell commands; avoids bash-specific constructs such as heredocs. Confidence: 0.9
 - Prefers commenting out navigation/UI elements (rather than deleting them) when they need to be hidden, preserving the code so they can be re-enabled later. Confidence: 0.85

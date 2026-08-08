@@ -37,8 +37,8 @@
                 <div class="md:col-span-3">
                     <label class="block text-sm font-semibold text-gray-700">Password</label>
                     <div class="mt-2 grid gap-4 md:grid-cols-2">
-                        <input type="password" name="password" autocomplete="new-password" class="w-full rounded-lg border border-gray-300 focus:border-green-700 focus:ring-green-700" placeholder="12+ chars, upper+lower+num+symbol" />
-                        <input type="password" name="password_confirmation" autocomplete="new-password" class="w-full rounded-lg border border-gray-300 focus:border-green-700 focus:ring-green-700" placeholder="Confirm password" />
+                        <input type="password" name="password" autocomplete="new-password" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700" placeholder="12+ chars, upper+lower+num+symbol" />
+                        <input type="password" name="password_confirmation" autocomplete="new-password" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700" placeholder="Confirm password" />
                     </div>
                     <p class="mt-1 text-xs text-gray-500">Optional. Leave blank to email the student a password-reset link instead.</p>
                 </div>
