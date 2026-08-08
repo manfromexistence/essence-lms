@@ -41,10 +41,14 @@ class AdmissionController extends Controller
     public function store(StoreStudentRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-        $password = Str::password(12);
+        // If the applicant supplied their own password they can log in directly
+        // after approval (no reset email needed); otherwise generate one so the
+        // account exists securely and a reset link is sent on approval.
+        $password = $validated['password'] ?? Str::password(12);
+        $hasOwnPassword = !empty($validated['password']);
         $course = null;
 
-        DB::transaction(function () use ($validated, $password, &$course) {
+        DB::transaction(function () use ($validated, $password, $hasOwnPassword, &$course) {
             $course = !empty($validated['course_id']) ? Course::findOrFail($validated['course_id']) : null;
             abort_if($course && $course->delivery_mode !== $validated['admission_mode'], 422, 'Selected course does not match the admission mode.');
 
@@ -53,7 +57,7 @@ class AdmissionController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
                 'is_active' => false,
-                'must_change_password' => true,
+                'must_change_password' => ! $hasOwnPassword,
             ]);
             $studentRole = Role::where('slug', 'student')->first();
             abort_unless($studentRole, 500, 'The "student" role is missing. Run the role seeder first.');

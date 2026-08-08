@@ -23,6 +23,12 @@ class StudentLoginCredentialFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
+    }
+
     private function createAdmin(): User
     {
         $role = Role::firstOrCreate(['slug' => 'super-admin'], ['name' => 'Super Admin']);
@@ -109,5 +115,50 @@ class StudentLoginCredentialFlowTest extends TestCase
         $this->assertSame('rejected', $student->status); // status mirrors rejected
 
         Notification::assertNotSentTo($student->user, ResetPassword::class);
+    }
+
+    public function test_applicant_sets_own_password_can_log_in_directly_after_approval(): void
+    {
+        Notification::fake();
+
+        // Applicant supplies their own login password on the public admission form.
+        $course = Course::factory()->active()->create(['delivery_mode' => 'online']);
+        $chosenPassword = 'MyOwnPassword-123';
+
+        $this->post('/admission', [
+            'name_bn' => 'Self Setter',
+            'email' => 'self.setter@example.com',
+            'phone' => '01911005500',
+            'admission_mode' => 'online',
+            'course_id' => $course->id,
+            'password' => $chosenPassword,
+            'password_confirmation' => $chosenPassword,
+        ])->assertRedirect('/login');
+
+        $student = Student::whereHas('user', fn ($q) => $q->where('email', 'self.setter@example.com'))->first();
+        $this->assertNotNull($student);
+
+        // They cannot log in yet (pending office approval).
+        $this->assertFalse((bool) $student->user->is_active);
+
+        $admin = $this->createAdmin();
+        $this->actingAs($admin)
+            ->post("/dashboard/students/{$student->id}/admission-status", [
+                'admission_status' => 'approved',
+            ])->assertRedirect();
+
+        $student->user->refresh();
+        $this->assertTrue((bool) $student->user->is_active);
+        $this->assertFalse((bool) $student->user->must_change_password); // they set their own password
+
+        // No reset email is needed — they know their password.
+        Notification::assertNotSentTo($student->user, ResetPassword::class);
+
+        // And they can actually log in with the password they chose.
+        $this->post('/login', [
+            'email' => $student->user->email,
+            'password' => $chosenPassword,
+        ])->assertRedirect(); // authenticated -> redirect to dashboard/intended
+        $this->assertAuthenticatedAs($student->user);
     }
 }

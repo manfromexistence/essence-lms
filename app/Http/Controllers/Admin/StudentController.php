@@ -108,9 +108,11 @@ class StudentController extends Controller
             }
         }
 
-        // Generate secure random password
-        $password = \Illuminate\Support\Str::random(12);
-        
+        // Use a password the admin supplied, otherwise generate one and have
+        // the broker email a reset link so the student sets it themselves.
+        $password = $validated['password'] ?? \Illuminate\Support\Str::random(12);
+        $hasOwnPassword = !empty($validated['password']);
+
         // Handle profile image - file upload takes priority over URL
         $imagePath = $this->handleImageInput($request, 'profile_image', 'students/profiles');
         if ($imagePath) {
@@ -125,13 +127,13 @@ class StudentController extends Controller
             }
         }
 
-        DB::transaction(function () use ($validated, $request, $password) {
+        DB::transaction(function () use ($validated, $request, $password, $hasOwnPassword) {
             $user = User::create([
                 'name' => $request->input('name') ?: $validated['name_bn'],
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
                 'is_active' => true,
-                'must_change_password' => true,
+                'must_change_password' => ! $hasOwnPassword,
             ]);
 
             $studentRole = Role::where('slug', 'student')->first();
@@ -146,10 +148,16 @@ class StudentController extends Controller
             $this->studentService->create($validated);
         });
 
-        Password::sendResetLink(['email' => $validated['email']]);
+        // Only email a reset link when the student was NOT given a known password.
+        if (! $hasOwnPassword) {
+            Password::sendResetLink(['email' => $validated['email']]);
+            $message = 'Student created successfully. A secure password setup link was sent by email.';
+        } else {
+            $message = 'Student created successfully. The student can log in with their email and the password you set.';
+        }
 
         return redirect()->route('dashboard.students.index')
-            ->with('success', 'Student created successfully. A secure password setup link was sent by email.');
+            ->with('success', $message);
     }
 
     /**
@@ -366,7 +374,9 @@ class StudentController extends Controller
             'status' => $approved ? 'active' : 'pending',
         ]);
         $student->user?->update(['is_active' => $approved]);
-        if ($approved && $wasInactive && $student->user) {
+        // Only send a reset link when the student doesn't already have a usable
+        // password of their own (i.e. must_change_password is still true).
+        if ($approved && $wasInactive && $student->user && $student->user->must_change_password) {
             Password::sendResetLink(['email' => $student->user->email]);
         }
 
@@ -395,21 +405,26 @@ class StudentController extends Controller
         ]);
 
         if ($status === 'approved' && $student->user) {
-            // Send a REAL, signed password-reset link via Laravel's broker so the
-            // student can always set a password and log in — this works with
-            // whatever mail driver is configured (does not depend on Brevo).
-            Password::sendResetLink(['email' => $student->user->email]);
+            $student->load('user');
+            // Only send a password-reset link when the student does NOT already
+            // have a usable password (i.e. one they set themselves or the admin
+            // chose one). Otherwise they can just log in with their known creds.
+            if ($student->user->must_change_password) {
+                Password::sendResetLink(['email' => $student->user->email]);
+            }
 
             try {
-                $student->load('user');
                 $courseName = $student->batch?->course?->name ?? $student->course_name ?? 'your selected course';
+                $resetLine = $student->user->must_change_password
+                    ? 'A secure password reset link has been sent to this email — click it to set your password, then log in with your registered email address.'
+                    : 'Your account is now active. Log in with your registered email address and the password you set.';
                 $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
                     . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
                     . '<h2 style="color:#fff;margin:0;">Admission Approved</h2></div>'
                     . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
                     . '<p>Dear <strong>' . e($student->user?->name ?? 'Student') . '</strong>,</p>'
                     . '<p>Congratulations! Your admission to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute has been approved.</p>'
-                    . '<p>Your account is now active. A secure password reset link has been sent to this email — click it to set your password, then log in with your registered email address.</p>'
+                    . '<p>' . $resetLine . '</p>'
                     . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
                     . '</div></div>';
 

@@ -34,6 +34,15 @@
                 <x-ui.text-input name="email" label="Email Address" type="email" placeholder="john@example.com" required persist />
                 <x-ui.text-input name="phone" label="Mobile No." type="tel" placeholder="017xxxxxxxx" max="20" required persist />
 
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-semibold text-gray-700">Password</label>
+                    <div class="mt-2 grid gap-4 md:grid-cols-2">
+                        <input type="password" name="password" autocomplete="new-password" class="w-full rounded-lg border-gray-300 focus:border-green-700 focus:ring-green-700" placeholder="12+ chars, upper+lower+num+symbol" />
+                        <input type="password" name="password_confirmation" autocomplete="new-password" class="w-full rounded-lg border-gray-300 focus:border-green-700 focus:ring-green-700" placeholder="Confirm password" />
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Optional. Leave blank to email the student a password-reset link instead.</p>
+                </div>
+
                 <x-ui.date-picker name="dob" label="Date of Birth (Optional)" placeholder="Select Birth Date" persist />
                 <x-ui.select name="gender" label="Gender" persist>
                     <option value="">Select Gender</option>

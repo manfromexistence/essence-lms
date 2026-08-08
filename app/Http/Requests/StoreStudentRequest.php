@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class StoreStudentRequest extends FormRequest
 {
@@ -95,6 +96,10 @@ class StoreStudentRequest extends FormRequest
             'total_amount' => 'nullable|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string|max:50',
+
+            // Login credentials (optional)
+            'password' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
+            'password_confirmation' => ['nullable', 'same:password'],
 
             // Other
             'featured' => 'nullable|boolean',
