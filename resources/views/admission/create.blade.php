@@ -42,12 +42,12 @@
                 <div class="grid gap-4 md:grid-cols-2">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700">Password</label>
-                        <input type="password" name="password" autocomplete="new-password" value="{{ old('password') }}" class="mt-2 w-full rounded-lg border-gray-300 focus:border-green-700 focus:ring-green-700" />
+                        <input type="password" name="password" autocomplete="new-password" value="{{ old('password') }}" class="mt-2 w-full rounded-lg border border-gray-300 focus:border-green-700 focus:ring-green-700" />
                         <p class="mt-1 text-xs text-gray-500">12+ chars with upper, lower, number and symbol. Leave blank to receive a reset link by email after approval.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700">Confirm Password</label>
-                        <input type="password" name="password_confirmation" autocomplete="new-password" value="{{ old('password_confirmation') }}" class="mt-2 w-full rounded-lg border-gray-300 focus:border-green-700 focus:ring-green-700" />
+                        <input type="password" name="password_confirmation" autocomplete="new-password" value="{{ old('password_confirmation') }}" class="mt-2 w-full rounded-lg border border-gray-300 focus:border-green-700 focus:ring-green-700" />
                     </div>
                 </div>
             </fieldset>

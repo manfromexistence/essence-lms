@@ -8,9 +8,9 @@
     <form method="POST" action="{{ route('password.update') }}" class="mt-6 space-y-4">
         @csrf
         <input type="hidden" name="token" value="{{ $token }}">
-        <label class="block text-sm font-semibold">Email<input type="email" name="email" value="{{ old('email', $email) }}" required class="mt-2 w-full rounded-lg border-gray-300"></label>
-        <label class="block text-sm font-semibold">New password<input type="password" name="password" required autocomplete="new-password" class="mt-2 w-full rounded-lg border-gray-300"></label>
-        <label class="block text-sm font-semibold">Confirm password<input type="password" name="password_confirmation" required autocomplete="new-password" class="mt-2 w-full rounded-lg border-gray-300"></label>
+        <label class="block text-sm font-semibold">Email<input type="email" name="email" value="{{ old('email', $email) }}" required class="mt-2 w-full rounded-lg border border-gray-300"></label>
+        <label class="block text-sm font-semibold">New password<input type="password" name="password" required autocomplete="new-password" class="mt-2 w-full rounded-lg border border-gray-300"></label>
+        <label class="block text-sm font-semibold">Confirm password<input type="password" name="password_confirmation" required autocomplete="new-password" class="mt-2 w-full rounded-lg border border-gray-300"></label>
         <p class="text-xs text-gray-500">Use at least 12 characters with upper/lowercase letters, a number, and a symbol.</p>
         <button class="w-full rounded-lg bg-primary px-4 py-3 font-semibold text-white">Save password</button>
     </form>
