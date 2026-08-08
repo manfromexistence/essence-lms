@@ -394,7 +394,12 @@ class StudentController extends Controller
             'is_active' => $status === 'approved',
         ]);
 
-        if ($status === 'approved') {
+        if ($status === 'approved' && $student->user) {
+            // Send a REAL, signed password-reset link via Laravel's broker so the
+            // student can always set a password and log in — this works with
+            // whatever mail driver is configured (does not depend on Brevo).
+            Password::sendResetLink(['email' => $student->user->email]);
+
             try {
                 $student->load('user');
                 $courseName = $student->batch?->course?->name ?? $student->course_name ?? 'your selected course';
@@ -404,7 +409,7 @@ class StudentController extends Controller
                     . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
                     . '<p>Dear <strong>' . e($student->user?->name ?? 'Student') . '</strong>,</p>'
                     . '<p>Congratulations! Your admission to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute has been approved.</p>'
-                    . '<p>Your account is now active. Please use your registered email to <a href="' . route('password.request') . '">set your password</a> and log in to your dashboard.</p>'
+                    . '<p>Your account is now active. A secure password reset link has been sent to this email — click it to set your password, then log in with your registered email address.</p>'
                     . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
                     . '</div></div>';
 
