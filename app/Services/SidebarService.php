@@ -884,7 +884,7 @@ class SidebarService
                 'children' => [
                     ['title' => 'Exams', 'icon' => 'exams', 'route' => 'student.exams', 'roles' => [self::ROLE_STUDENT]],
                     ['title' => 'Results', 'icon' => 'document-text', 'route' => 'student.results', 'roles' => [self::ROLE_STUDENT]],
-                    ['title' => 'Performance Trends', 'icon' => 'trending-up', 'route' => 'student.performance-trends', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'Performance & Results', 'icon' => 'trending-up', 'route' => 'student.results', 'roles' => [self::ROLE_STUDENT]],
                     ['title' => 'My Certificates', 'icon' => 'academic-cap', 'route' => 'student.certificates.index', 'roles' => [self::ROLE_STUDENT]],
                 ],
             ],

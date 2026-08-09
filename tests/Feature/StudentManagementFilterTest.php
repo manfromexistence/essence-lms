@@ -8,6 +8,8 @@ use App\Models\Role;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class StudentManagementFilterTest extends TestCase
@@ -170,6 +172,28 @@ class StudentManagementFilterTest extends TestCase
             ->assertSee($course->name)
             ->assertSee('value="offline" selected', false)
             ->assertSee('Batch (Optional)');
+    }
+
+    public function test_admin_can_create_student_with_profile_image_upload(): void
+    {
+        Storage::fake('public');
+        $admin = $this->createSuperAdmin();
+        Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
+
+        $response = $this->actingAs($admin)->post('/dashboard/students', [
+            'name_bn' => 'Uploaded Student',
+            'email' => 'uploaded.student@example.com',
+            'phone' => '01700000000',
+            'admission_mode' => 'offline',
+            'password' => 'Strong!Pass123',
+            'password_confirmation' => 'Strong!Pass123',
+            'profile_image_file' => UploadedFile::fake()->image('student.jpg', 400, 400),
+        ]);
+
+        $response->assertRedirect('/dashboard/students');
+        $student = Student::where('phone', '01700000000')->firstOrFail();
+        $this->assertStringStartsWith('students/profiles/', $student->profile_image);
+        Storage::disk('public')->assertExists($student->profile_image);
     }
 
     private function createSuperAdmin(): User

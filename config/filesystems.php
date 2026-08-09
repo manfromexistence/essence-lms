@@ -13,9 +13,12 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DISK', 'local'),
+    // A Render deployment may still carry FILESYSTEM_DISK=s3 without an
+    // actual bucket configured. Fall back to the persistent public disk so
+    // image uploads and URL generation never crash the portal.
+    'default' => env('FILESYSTEM_DISK') === 's3' && env('AWS_BUCKET') ? 's3' : (env('FILESYSTEM_DISK') === 's3' ? 'public' : env('FILESYSTEM_DISK', 'public')),
 
-    'private' => env('PRIVATE_FILESYSTEM_DISK', 'local'),
+    'private' => env('PRIVATE_FILESYSTEM_DISK') === 's3' && env('AWS_BUCKET') ? 's3' : (env('PRIVATE_FILESYSTEM_DISK') === 's3' ? 'local' : env('PRIVATE_FILESYSTEM_DISK', 'local')),
 
     /*
     |--------------------------------------------------------------------------

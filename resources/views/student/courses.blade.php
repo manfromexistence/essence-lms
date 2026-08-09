@@ -58,7 +58,7 @@
                 <!-- Course Image -->
                 @if($course->image)
                 <div class="h-48 bg-gradient-to-br from-indigo-500 to-purple-600 relative">
-                    <img src="{{ Storage::url($course->image) }}" alt="{{ $course->name }}" class="w-full h-full object-cover">
+                    <img src="{{ $course->image_url }}" alt="{{ $course->name }}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';">
                     <!-- Status Badge -->
                     @if(in_array($course->id, $enrolledCourseIds))
                     <span class="absolute top-4 right-4 px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full shadow-lg">

@@ -81,7 +81,7 @@ class CourseBusinessExperienceTest extends TestCase
 
         foreach ([
             'My Learning', 'Student Dashboard', 'My Courses', 'Learning Materials', 'Class Schedule',
-            'Progress & Certificates', 'Exams', 'Results', 'Performance Trends', 'My Certificates',
+            'Progress & Certificates', 'Exams', 'Results', 'Performance & Results', 'My Certificates',
             'Payments', 'Payment Dashboard', 'Payment History', 'Account & Support',
             'Change Password', 'Contact Support',
         ] as $label) {
@@ -90,12 +90,31 @@ class CourseBusinessExperienceTest extends TestCase
 
         foreach ([
             'student.dashboard', 'student.courses', 'student.materials', 'student.schedule',
-            'student.exams', 'student.results', 'student.performance-trends',
+            'student.exams', 'student.results',
             'student.certificates.index', 'student.payment.dashboard', 'student.payments',
             'password.change', 'contact',
         ] as $route) {
             $this->assertTrue(Route::has($route), "Sidebar route [{$route}] must exist.");
         }
+    }
+
+    public function test_student_courses_page_renders_local_course_images_without_cloud_storage(): void
+    {
+        $studentUser = $this->makeUserWithRole('student');
+        Student::factory()->create(['user_id' => $studentUser->id, 'batch_id' => null]);
+        $course = Course::factory()->active()->create([
+            'name' => 'Local Image Course',
+            'delivery_mode' => 'online',
+            'image' => 'courses/local-image.jpg',
+        ]);
+
+        config(['filesystems.default' => 's3']);
+
+        $this->actingAs($studentUser)
+            ->get('/student/courses')
+            ->assertSuccessful()
+            ->assertSee($course->name)
+            ->assertSee('storage/courses/local-image.jpg', false);
     }
 
     public function test_dashboard_select_hover_keeps_full_opacity(): void
