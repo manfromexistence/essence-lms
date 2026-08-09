@@ -870,8 +870,38 @@ class SidebarService
             ],
             ['title' => 'Users & Roles', 'icon' => 'users', 'route' => 'dashboard.users.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
             ['title' => 'Settings', 'icon' => 'settings', 'route' => 'dashboard.settings.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
-            ['title' => 'My Courses', 'icon' => 'courses', 'route' => 'student.courses', 'roles' => [self::ROLE_STUDENT]],
-            ['title' => 'My Certificates', 'icon' => 'academic-cap', 'route' => 'student.certificates.index', 'roles' => [self::ROLE_STUDENT]],
+            [
+                'title' => 'My Learning', 'icon' => 'courses', 'route' => null, 'roles' => [self::ROLE_STUDENT],
+                'children' => [
+                    ['title' => 'Student Dashboard', 'icon' => 'dashboard', 'route' => 'student.dashboard', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'My Courses', 'icon' => 'courses', 'route' => 'student.courses', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'Learning Materials', 'icon' => 'document', 'route' => 'student.materials', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'Class Schedule', 'icon' => 'calendar', 'route' => 'student.schedule', 'roles' => [self::ROLE_STUDENT]],
+                ],
+            ],
+            [
+                'title' => 'Progress & Certificates', 'icon' => 'chart-bar', 'route' => null, 'roles' => [self::ROLE_STUDENT],
+                'children' => [
+                    ['title' => 'Exams', 'icon' => 'exams', 'route' => 'student.exams', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'Results', 'icon' => 'document-text', 'route' => 'student.results', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'Performance Trends', 'icon' => 'trending-up', 'route' => 'student.performance-trends', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'My Certificates', 'icon' => 'academic-cap', 'route' => 'student.certificates.index', 'roles' => [self::ROLE_STUDENT]],
+                ],
+            ],
+            [
+                'title' => 'Payments', 'icon' => 'payments', 'route' => null, 'roles' => [self::ROLE_STUDENT],
+                'children' => [
+                    ['title' => 'Payment Dashboard', 'icon' => 'chart-bar', 'route' => 'student.payment.dashboard', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'Payment History', 'icon' => 'clock', 'route' => 'student.payments', 'roles' => [self::ROLE_STUDENT]],
+                ],
+            ],
+            [
+                'title' => 'Account & Support', 'icon' => 'user', 'route' => null, 'roles' => [self::ROLE_STUDENT],
+                'children' => [
+                    ['title' => 'Change Password', 'icon' => 'key', 'route' => 'password.change', 'roles' => [self::ROLE_STUDENT]],
+                    ['title' => 'Contact Support', 'icon' => 'envelope', 'route' => 'contact', 'roles' => [self::ROLE_STUDENT]],
+                ],
+            ],
         ];
     }
 

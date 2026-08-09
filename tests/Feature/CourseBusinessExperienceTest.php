@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Services\SidebarService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class CourseBusinessExperienceTest extends TestCase
@@ -71,6 +72,30 @@ class CourseBusinessExperienceTest extends TestCase
         // Legacy school-only modules that have no routes stay hidden
         $this->assertStringNotContainsString('All Classes', $menu);
         $this->assertStringNotContainsString('Class 12', $menu);
+    }
+
+    public function test_student_sidebar_exposes_complete_learning_portal(): void
+    {
+        $student = $this->makeUserWithRole('student');
+        $menu = json_encode(app(SidebarService::class)->getMenuItems($student));
+
+        foreach ([
+            'My Learning', 'Student Dashboard', 'My Courses', 'Learning Materials', 'Class Schedule',
+            'Progress & Certificates', 'Exams', 'Results', 'Performance Trends', 'My Certificates',
+            'Payments', 'Payment Dashboard', 'Payment History', 'Account & Support',
+            'Change Password', 'Contact Support',
+        ] as $label) {
+            $this->assertStringContainsString($label, $menu);
+        }
+
+        foreach ([
+            'student.dashboard', 'student.courses', 'student.materials', 'student.schedule',
+            'student.exams', 'student.results', 'student.performance-trends',
+            'student.certificates.index', 'student.payment.dashboard', 'student.payments',
+            'password.change', 'contact',
+        ] as $route) {
+            $this->assertTrue(Route::has($route), "Sidebar route [{$route}] must exist.");
+        }
     }
 
     public function test_dashboard_select_hover_keeps_full_opacity(): void
