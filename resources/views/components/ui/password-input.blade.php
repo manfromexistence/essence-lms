@@ -36,8 +36,10 @@
         >
 
         <button type="button" data-password-toggle="{{ $name }}" aria-label="Show password" aria-pressed="false"
-            class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-green-800 focus:outline-none focus:ring-2 focus:ring-green-700">
-            <span data-password-toggle-label>Show</span>
+            onclick="togglePasswordVisibility('{{ $name }}', this)"
+            class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-green-800 focus:outline-none focus:ring-2 focus:ring-green-700">
+            <svg data-password-eye="show" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <svg data-password-eye="hide" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.828M9.88 9.88A3 3 0 0114.12 14.12M6.228 6.228C4.476 7.602 3.2 9.558 2.458 12c1.274 4.057 5.064 7 9.542 7 1.337 0 2.609-.274 3.77-.772M17.772 17.772C19.524 16.398 20.8 14.442 21.542 12c-.743-2.441-2.018-4.398-3.77-5.772A9.953 9.953 0 0012 5c-.932 0-1.833.133-2.685.383"/></svg>
         </button>
 
         {{-- In-box colored strength meter: a filled bar + label, no text below the input --}}
@@ -93,23 +95,24 @@
         label.className = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold tracking-wide uppercase ' + meta.text;
     };
 
+    window.togglePasswordVisibility = function (id, button) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const visible = input.type === 'text';
+        input.type = visible ? 'password' : 'text';
+        button.setAttribute('aria-pressed', String(!visible));
+        button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+        const show = button.querySelector('[data-password-eye="show"]');
+        const hide = button.querySelector('[data-password-eye="hide"]');
+        if (show) show.classList.toggle('hidden', !visible);
+        if (hide) hide.classList.toggle('hidden', visible);
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('input[type="password"]').forEach(input => {
             input.dispatchEvent(new Event('input'));
         });
 
-        document.querySelectorAll('[data-password-toggle]').forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                const input = document.getElementById(toggle.dataset.passwordToggle);
-                if (!input) return;
-                const visible = input.type === 'text';
-                input.type = visible ? 'password' : 'text';
-                toggle.setAttribute('aria-pressed', String(!visible));
-                toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
-                const label = toggle.querySelector('[data-password-toggle-label]');
-                if (label) label.textContent = visible ? 'Show' : 'Hide';
-            });
-        });
     });
 </script>
 @endpush
