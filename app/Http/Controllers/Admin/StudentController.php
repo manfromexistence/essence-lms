@@ -388,7 +388,10 @@ class StudentController extends Controller
         ]);
 
         if ($status === 'approved' && $student->user) {
-            $student->load('user');
+            $student->load(['user', 'batch.course']);
+            $courseName = $student->batch?->course?->name
+                ?? $student->course_name
+                ?? 'your selected course';
             // The student already has a known password (required at creation),
             // so no password-reset link is sent — they log in with it directly.
             $resetLine = 'Your account is now active. Log in with your registered email address and the password you set.';

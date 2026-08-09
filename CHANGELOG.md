@@ -4,6 +4,13 @@ All notable changes to the Dhaka IT Institute LMS are documented here.
 
 ## [Unreleased] - 2026-08-05
 
+### Production hardening — 2026-08-09
+
+- Fixed admission approval emails using an undefined course name; emails now resolve the student's enrolled course safely.
+- Added a deterministic encryption key to the testing environment so CI and local test runs work without manual overrides.
+- Upgraded `league/commonmark` to 2.9.0 and verified Composer security advisories are clear.
+- Revalidated the complete LMS suite (65 tests, 315 assertions), production asset build, and dependency audits.
+
 ### Added
 
 - Automatic, verifiable course-completion certificates with student access, printable certificate layout, public verification, and admin issuance/revocation management.
