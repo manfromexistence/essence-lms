@@ -32,7 +32,7 @@
             @endif
             @if($required) required @endif
             oninput="updatePasswordStrength(this)"
-            {{ $attributes->merge(['class' => 'w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-24 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700 transition-all outline-none']) }}
+            {{ $attributes->merge(['class' => 'w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-14 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700 transition-all outline-none']) }}
         >
 
         <button type="button" data-password-toggle="{{ $name }}" aria-label="Show password" aria-pressed="false"
@@ -46,7 +46,6 @@
         <div class="absolute bottom-0 left-0 right-0 mx-4 h-1 overflow-hidden rounded-b-lg">
             <div id="{{ $name }}-strength-bar" class="h-full w-0 rounded-b-lg transition-all duration-300"></div>
         </div>
-        <span id="{{ $name }}-strength-label" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold tracking-wide uppercase"></span>
     </div>
 
     @if($helperText)
@@ -83,16 +82,13 @@
 
     window.updatePasswordStrength = function (input) {
         const bar = document.getElementById(input.id + '-strength-bar');
-        const label = document.getElementById(input.id + '-strength-label');
-        if (!bar || !label) return;
+        if (!bar) return;
 
         const level = window.passwordStrength(input.value || '');
         const meta = window.passwordStrengthMeta[level];
 
         bar.className = 'h-full rounded-b-lg transition-all duration-300 ' + meta.color;
         bar.style.width = meta.pct + '%';
-        label.textContent = meta.label;
-        label.className = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold tracking-wide uppercase ' + meta.text;
     };
 
     window.togglePasswordVisibility = function (id, button) {

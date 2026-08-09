@@ -36,6 +36,8 @@ class ProductionSecurityTest extends TestCase
             ->assertSee('data-password-toggle', false)
             ->assertSee('data-password-eye="show"', false)
             ->assertSee('togglePasswordVisibility', false)
+            ->assertSee('pr-14', false)
+            ->assertDontSee('password-strength-label', false)
             ->assertSee('(?=.*[^A-Za-z0-9])', false)
             ->assertSee('one symbol', false);
     }
