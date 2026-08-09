@@ -51,6 +51,11 @@ class ProductionSecurityTest extends TestCase
         $this->assertFileExists(public_path('apple-touch-icon.png'));
     }
 
+    public function test_s3_filesystem_adapter_is_available_for_render_storage(): void
+    {
+        $this->assertTrue(class_exists(\League\Flysystem\AwsS3V3\PortableVisibilityConverter::class));
+    }
+
     public function test_debug_upload_routes_are_not_exposed(): void
     {
         $this->get('/test-upload')->assertNotFound();
