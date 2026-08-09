@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-10
+
+- Added idempotent default accounts for super-admin, admin, teacher, student, and parent roles; startup seeding now preserves changed passwords and never overwrites admissions.
+- Fixed Render startup user counting to use Laravel's configured database connection instead of a hard-coded SQLite PDO.
+
 All notable changes to the Dhaka IT Institute LMS are documented here.
 
 ## [Unreleased] - 2026-08-05

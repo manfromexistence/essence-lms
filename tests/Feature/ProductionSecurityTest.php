@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\DefaultRoleAccountsSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -54,6 +56,28 @@ class ProductionSecurityTest extends TestCase
     public function test_s3_filesystem_adapter_is_available_for_render_storage(): void
     {
         $this->assertTrue(class_exists(\League\Flysystem\AwsS3V3\PortableVisibilityConverter::class));
+    }
+
+    public function test_default_role_accounts_are_idempotent_and_have_required_profiles(): void
+    {
+        $this->seed([RoleSeeder::class, DefaultRoleAccountsSeeder::class]);
+
+        foreach (['super-admin', 'admin', 'teacher', 'student', 'parent'] as $role) {
+            $this->assertDatabaseHas('roles', ['slug' => $role]);
+        }
+
+        $student = User::where('email', 'student@dhakaitinstitute.com')->firstOrFail();
+        $this->assertTrue($student->hasRole('student'));
+        $this->assertNotNull($student->student);
+        $this->assertSame('approved', $student->student->admission_status);
+
+        $parent = User::where('email', 'parent@dhakaitinstitute.com')->firstOrFail();
+        $this->assertTrue($parent->hasRole('parent'));
+        $this->assertDatabaseHas('parents', ['email' => 'parent@dhakaitinstitute.com']);
+
+        $originalHash = $student->password;
+        $this->seed(DefaultRoleAccountsSeeder::class);
+        $this->assertSame($originalHash, User::find($student->id)->password);
     }
 
     public function test_debug_upload_routes_are_not_exposed(): void

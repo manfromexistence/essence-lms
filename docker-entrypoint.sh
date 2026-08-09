@@ -10,7 +10,9 @@ chown -R www-data:www-data database 2>/dev/null || true
 php artisan migrate --force
 
 # Seed only when the database is empty (first boot / fresh deploy)
-COUNT=$(php -r 'require "vendor/autoload.php"; $db = new PDO("sqlite:" . (getenv("DB_DATABASE") ?: "database/database.sqlite")); echo (int) $db->query("SELECT COUNT(*) FROM users")->fetchColumn();')
+# Use Laravel's configured connection instead of opening a hard-coded SQLite
+# database. This works with SQLite, MySQL, and PostgreSQL alike.
+COUNT=$(php artisan tinker --execute='echo (int) \App\Models\User::count();' 2>/dev/null || echo 0)
 
 if [ "$COUNT" = "0" ]; then
     echo "Fresh database - running seeders..."
@@ -18,6 +20,11 @@ if [ "$COUNT" = "0" ]; then
 else
     echo "Database already seeded - skipping db:seed"
 fi
+
+# Keep portal verification accounts present on every boot without changing
+# passwords or touching user-created students/admissions.
+php artisan db:seed --class=RoleSeeder --force
+php artisan db:seed --class=DefaultRoleAccountsSeeder --force
 
 php artisan optimize
 

@@ -13,6 +13,7 @@ This file contains work that requires the client's infrastructure, credentials, 
 
 - [ ] Enter the real bKash merchant/personal number and final payment instructions in Admin Settings; test one real low-value transaction and refund.
 - [ ] Configure the production domain, HTTPS, PostgreSQL, S3-compatible private storage, SMTP, and a persistent queue worker.
+- [ ] Render currently uses free-plan SQLite at `/var/www/html/database/database.sqlite`; attach a paid persistent disk at `/var/www/html/database` (and `/var/www/html/storage`) or migrate to managed PostgreSQL/object storage before accepting real admissions. Redeploys cannot preserve data on the current ephemeral filesystem.
 - [ ] Set a unique `APP_KEY`; rotate any key or credential that ever appeared in Git history and remove the old secret from repository history.
 - [ ] Set `INITIAL_ADMIN_EMAIL` and a unique 16+ character `INITIAL_ADMIN_PASSWORD` for the first deployment, sign in, change it, then remove those variables.
 - [ ] Configure automated encrypted off-site database/object-storage backups and complete a documented restore drill.
