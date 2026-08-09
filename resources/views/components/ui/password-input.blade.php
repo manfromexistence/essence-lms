@@ -25,9 +25,11 @@
             value="{{ old($name, $value) }}"
             placeholder="{{ $placeholder }}"
             autocomplete="{{ $autocomplete }}"
-            minlength="12"
-            pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{12,}"
-            title="Use at least 12 characters with uppercase, lowercase, a number, and a symbol."
+            @if($name !== 'current_password')
+                minlength="12"
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{12,}"
+                title="Use at least 12 characters with uppercase, lowercase, a number, and a symbol."
+            @endif
             @if($required) required @endif
             oninput="updatePasswordStrength(this)"
             {{ $attributes->merge(['class' => 'w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-24 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700 transition-all outline-none']) }}
@@ -47,7 +49,7 @@
 
     @if($helperText)
         <p class="text-xs text-gray-500 mt-1">{{ $helperText }}</p>
-    @elseif($showRequirements)
+    @elseif($showRequirements && $name !== 'current_password')
         <p class="text-xs text-gray-500 mt-1">At least 12 characters with uppercase, lowercase, a number, and one symbol (e.g. ! @ # $).</p>
     @endif
 
