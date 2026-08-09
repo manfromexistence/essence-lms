@@ -51,7 +51,7 @@
 
     @if($helperText)
         <p class="text-xs text-gray-500 mt-1">{{ $helperText }}</p>
-    @elseif($showRequirements && $name !== 'current_password')
+    @elseif($showRequirements && $name === 'password')
         <p class="text-xs text-gray-500 mt-1">At least 12 characters with uppercase, lowercase, a number, and one symbol (e.g. ! @ # $).</p>
     @endif
 
