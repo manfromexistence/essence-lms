@@ -441,7 +441,7 @@
     @endif
 
     <!-- About & Notice Section -->
-    <section class="py-16 bg-gray-50">
+    <section id="notice-board" class="py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="grid md:grid-cols-3 gap-8 items-stretch">
                 <div class="md:col-span-2 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
@@ -493,7 +493,7 @@
                         @endforelse
                     </div>
                     <div class="mt-4 text-center">
-                        <a href="#"
+                        <a href="#notice-board"
                             class="inline-flex items-center gap-1 text-primary text-sm font-medium hover:underline"><span>{{ $page ? $page->getContent('notice_view_all', 'সকল নোটিশ') : 'সকল নোটিশ' }}</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg></a>
