@@ -7,6 +7,7 @@
     'required' => false,
     'autocomplete' => 'new-password',
     'helperText' => null,
+    'showRequirements' => true,
 ])
 
 <div class="space-y-1.5 input-group-{{ $name }}" id="input-group-{{ $name }}" data-name="{{ $name }}">
@@ -24,10 +25,18 @@
             value="{{ old($name, $value) }}"
             placeholder="{{ $placeholder }}"
             autocomplete="{{ $autocomplete }}"
+            minlength="12"
+            pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{12,}"
+            title="Use at least 12 characters with uppercase, lowercase, a number, and a symbol."
             @if($required) required @endif
             oninput="updatePasswordStrength(this)"
             {{ $attributes->merge(['class' => 'w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-24 text-gray-900 placeholder:text-gray-400 focus:border-green-700 focus:ring-green-700 transition-all outline-none']) }}
         >
+
+        <button type="button" data-password-toggle="{{ $name }}" aria-label="Show password" aria-pressed="false"
+            class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-green-800 focus:outline-none focus:ring-2 focus:ring-green-700">
+            <span data-password-toggle-label>Show</span>
+        </button>
 
         {{-- In-box colored strength meter: a filled bar + label, no text below the input --}}
         <div class="absolute bottom-0 left-0 right-0 mx-4 h-1 overflow-hidden rounded-b-lg">
@@ -38,6 +47,8 @@
 
     @if($helperText)
         <p class="text-xs text-gray-500 mt-1">{{ $helperText }}</p>
+    @elseif($showRequirements)
+        <p class="text-xs text-gray-500 mt-1">At least 12 characters with uppercase, lowercase, a number, and one symbol (e.g. ! @ # $).</p>
     @endif
 
     @error($name)
@@ -83,6 +94,19 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('input[type="password"]').forEach(input => {
             input.dispatchEvent(new Event('input'));
+        });
+
+        document.querySelectorAll('[data-password-toggle]').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const input = document.getElementById(toggle.dataset.passwordToggle);
+                if (!input) return;
+                const visible = input.type === 'text';
+                input.type = visible ? 'password' : 'text';
+                toggle.setAttribute('aria-pressed', String(!visible));
+                toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+                const label = toggle.querySelector('[data-password-toggle-label]');
+                if (label) label.textContent = visible ? 'Show' : 'Hide';
+            });
         });
     });
 </script>

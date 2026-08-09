@@ -29,6 +29,15 @@ class ProductionSecurityTest extends TestCase
             ->assertDontSee('via.placeholder.com', false);
     }
 
+    public function test_password_forms_expose_show_hide_control_and_symbol_requirement(): void
+    {
+        $this->get('/admission')
+            ->assertSuccessful()
+            ->assertSee('data-password-toggle', false)
+            ->assertSee('(?=.*[^A-Za-z0-9])', false)
+            ->assertSee('one symbol', false);
+    }
+
     public function test_dhaka_it_favicon_assets_are_present(): void
     {
         $this->assertFileExists(public_path('images/brand/dhaka-it-institute-favicon.png'));
