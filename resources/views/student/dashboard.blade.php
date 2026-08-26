@@ -33,11 +33,68 @@
 
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <!-- Payment Status -->
+                <!-- Enrolled Courses -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Enrolled Courses</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $course_progress->count() }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Videos Completed -->
                 <div class="bg-white overflow-hidden shadow rounded-lg">
                     <div class="p-5">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Videos Completed</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $course_progress->sum('completed_videos') }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certificates Earned -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Certificates Earned</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $certificates->count() }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Status -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
                                 <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
@@ -51,127 +108,71 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Attendance -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Attendance</dt>
-                                    <dd class="text-lg font-semibold text-gray-900">{{ $attendance['percentage'] }}%</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Upcoming Exams -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Upcoming Exams</dt>
-                                    <dd class="text-lg font-semibold text-gray-900">{{ $upcoming_exams->count() }}</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Classes Attended -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Classes</dt>
-                                    <dd class="text-lg font-semibold text-gray-900">{{ $attendance['present'] }}/{{ $attendance['total_classes'] }}</dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Upcoming Exams Section -->
+                <!-- My Courses Section -->
                 <div class="bg-white shadow rounded-lg">
                     <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Upcoming Exams</h3>
+                        <h3 class="text-lg font-medium text-gray-900">My Courses</h3>
                     </div>
                     <div class="divide-y divide-gray-200">
-                        @forelse($upcoming_exams as $exam)
-                        <div class="px-4 py-4 flex justify-between items-center">
-                            <div>
-                                <p class="text-sm font-medium text-gray-900">{{ $exam->title }}</p>
-                                <p class="text-sm text-gray-500">{{ $exam->start_time ? $exam->start_time->format('M d, Y h:i A') : 'Not scheduled' }}</p>
+                        @forelse($course_progress as $item)
+                        <div class="px-4 py-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ $item['course']->name }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ $item['completed_videos'] }}/{{ $item['total_videos'] }} videos completed</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-semibold text-gray-900">{{ $item['progress_percentage'] }}%</span>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <span class="px-2 py-1 text-xs rounded-full {{ $exam->type === 'mcq' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
-                                    {{ strtoupper($exam->type) }}
-                                </span>
-                                <p class="text-xs text-gray-500 mt-1">{{ $exam->duration_minutes }} mins</p>
+                            <div class="mt-2 bg-gray-200 rounded-full h-2">
+                                <div class="bg-indigo-600 rounded-full h-2" style="width: {{ $item['progress_percentage'] }}%"></div>
+                            </div>
+                            <div class="mt-3 text-right">
+                                @if($item['progress_percentage'] >= 100)
+                                    <a href="{{ route('student.courses') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Review course →</a>
+                                @else
+                                    <a href="{{ route('student.course.watch', $item['course']) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Continue learning →</a>
+                                @endif
                             </div>
                         </div>
                         @empty
                         <div class="px-4 py-8 text-center text-gray-500">
-                            No upcoming exams scheduled.
+                            No enrolled courses yet.
+                            <a href="{{ route('courses') }}" class="block mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-500">Browse courses →</a>
                         </div>
                         @endforelse
                     </div>
                     <div class="px-4 py-3 bg-gray-50 text-right">
-                        <a href="{{ route('student.exams') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">View all exams →</a>
+                        <a href="{{ route('student.courses') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">View all courses →</a>
                     </div>
                 </div>
 
-                <!-- Recent Results Section -->
+                <!-- Certificates Section -->
                 <div class="bg-white shadow rounded-lg">
                     <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Recent Results</h3>
+                        <h3 class="text-lg font-medium text-gray-900">My Certificates</h3>
                     </div>
                     <div class="divide-y divide-gray-200">
-                        @forelse($recent_results as $result)
+                        @forelse($certificates as $certificate)
                         <div class="px-4 py-4 flex justify-between items-center">
                             <div>
-                                <p class="text-sm font-medium text-gray-900">{{ $result->exam?->name ?? 'Exam' }}</p>
-                                <p class="text-sm text-gray-500">{{ $result->created_at->format('M d, Y') }}</p>
+                                <p class="text-sm font-medium text-gray-900">{{ $certificate->course?->name ?? 'Course Certificate' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Issued {{ $certificate->issued_at?->format('M d, Y') }}</p>
                             </div>
-                            <div class="text-right">
-                                <span class="px-2 py-1 text-xs rounded-full 
-                                    @if($result->percentage >= 80) bg-green-100 text-green-800
-                                    @elseif($result->percentage >= 60) bg-blue-100 text-blue-800
-                                    @elseif($result->percentage >= 40) bg-yellow-100 text-yellow-800
-                                    @else bg-red-100 text-red-800 @endif">
-                                    {{ $result->grade }}
-                                </span>
-                                <p class="text-sm font-semibold text-gray-900 mt-1">{{ $result->marks }}/{{ $result->total_marks }}</p>
-                            </div>
+                            <a href="{{ route('student.certificates.show', $certificate) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">View →</a>
                         </div>
                         @empty
                         <div class="px-4 py-8 text-center text-gray-500">
-                            No results yet.
+                            No certificates yet. Complete all videos of a course to earn one.
                         </div>
                         @endforelse
                     </div>
                     <div class="px-4 py-3 bg-gray-50 text-right">
-                        <a href="{{ route('student.results') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">View all results →</a>
+                        <a href="{{ route('student.certificates.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">View all certificates →</a>
                     </div>
                 </div>
             </div>
@@ -208,13 +209,13 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Join Our Groups</h3>
                 <div class="flex space-x-4">
                     @if($batch->telegram_link)
-                    <a href="{{ $batch->telegram_link }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+                    <a href="{{ $batch->telegram_link }}" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
                         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                         Telegram Group
                     </a>
                     @endif
                     @if($batch->facebook_link)
-                    <a href="{{ $batch->facebook_link }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg">
+                    <a href="{{ $batch->facebook_link }}" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg">
                         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         Facebook Group
                     </a>
@@ -225,23 +226,23 @@
 
             <!-- Quick Links -->
             <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="{{ route('student.courses') }}" class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-50 transition">
+                    <svg class="mx-auto h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    <span class="mt-2 block text-sm font-medium text-gray-900">My Courses</span>
+                </a>
                 <a href="{{ route('student.materials') }}" class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-50 transition">
                     <svg class="mx-auto h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                     </svg>
                     <span class="mt-2 block text-sm font-medium text-gray-900">Materials</span>
                 </a>
-                <a href="{{ route('student.schedule') }}" class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-50 transition">
+                <a href="{{ route('student.certificates.index') }}" class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-50 transition">
                     <svg class="mx-auto h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
-                    <span class="mt-2 block text-sm font-medium text-gray-900">Schedule</span>
-                </a>
-                <a href="{{ route('student.exams') }}" class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-50 transition">
-                    <svg class="mx-auto h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    <span class="mt-2 block text-sm font-medium text-gray-900">Exams</span>
+                    <span class="mt-2 block text-sm font-medium text-gray-900">Certificates</span>
                 </a>
                 <a href="{{ route('student.payments') }}" class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-50 transition">
                     <svg class="mx-auto h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

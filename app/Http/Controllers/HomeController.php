@@ -27,7 +27,7 @@ class HomeController extends Controller
             ->get();
 
         $popularCourses = \App\Models\Course::active()
-            ->with(['batches.students', 'videos'])
+            ->with(['batches' => fn($q) => $q->withCount('students'), 'videos'])
             ->withCount('videos')
             ->take(8)
             ->get();
@@ -101,16 +101,12 @@ class HomeController extends Controller
                   . "<p><strong>Subject:</strong> " . e($data['subject']) . "</p>"
                   . "<hr><p>" . nl2br(e($data['message'])) . "</p>";
 
-            try {
-                app(\App\Services\BrevoEmailService::class)->send(
-                    $to,
-                    'Contact form: ' . $data['subject'],
-                    $html,
-                    ['type' => 'contact']
-                );
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Contact form email failed (message stored)', ['error' => $e->getMessage()]);
-            }
+            \App\Jobs\SendEmailJob::dispatch(
+                $to,
+                'Contact form: ' . $data['subject'],
+                $html,
+                ['type' => 'contact']
+            );
 
             return back()->with('success', 'Your message has been sent. We will get back to you soon.');
         } catch (\Exception $e) {
@@ -164,7 +160,7 @@ class HomeController extends Controller
         $page = Page::findBySlug('courses');
         
         $query = \App\Models\Course::active()
-            ->with(['batches.students', 'videos'])
+            ->with(['batches' => fn($q) => $q->withCount('students'), 'videos'])
             ->withCount('videos');
 
         if (request()->filled('mode')) {
@@ -217,13 +213,13 @@ class HomeController extends Controller
         $maleStudents = Student::where('gender', 'Male')->count();
         $femaleStudents = Student::where('gender', 'Female')->count();
         
-        // Calculate attendance rate
+        // Calculate overall attendance rate (global present ratio — single query, no N+1)
         $attendanceRate = 0;
-        $studentsWithAttendance = Student::has('attendances')->get();
-        if ($studentsWithAttendance->count() > 0) {
-            $attendanceRate = round($studentsWithAttendance->avg(function($student) {
-                return $student->attendance_percentage;
-            }), 0);
+        $attendanceAgg = \Illuminate\Support\Facades\DB::table('attendances')
+            ->selectRaw("COUNT(*) as total, SUM(CASE WHEN status IN ('present','late') THEN 1 ELSE 0 END) as present")
+            ->first();
+        if ($attendanceAgg && $attendanceAgg->total > 0) {
+            $attendanceRate = round(($attendanceAgg->present / $attendanceAgg->total) * 100);
         }
         
         // Get class-wise distribution

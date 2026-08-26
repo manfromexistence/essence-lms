@@ -32,7 +32,10 @@ class StoreStudentRequest extends FormRequest
             'blood_group' => 'nullable|string|max:5',
             'religion' => 'nullable|string|max:50',
             // Use file validation with mimes instead of image rule for better compatibility
-            'profile_image_file' => 'nullable|file|mimes:jpeg,jpg,png,gif,webp|max:204800',
+            'profile_image_file' => [
+                'nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:204800',
+                new \App\Rules\SafeUpload(['jpeg', 'jpg', 'png', 'gif', 'webp']),
+            ],
             'profile_image_url' => 'nullable|string|max:500',
 
             // Academic Information

@@ -12,7 +12,7 @@
     $selectedValue = old($name, $selected);
 @endphp
 
-<div class="{{ $label ? 'space-y-1.5' : '' }} custom-select-group relative" id="select-group-{{ $name }}" data-persist="{{ $persist ? 'true' : 'false' }}" data-name="{{ $name }}">
+<div {{ $attributes->merge(['class' => ($label ? 'space-y-1.5 ' : '') . 'custom-select-group relative']) }} id="select-group-{{ $name }}" data-persist="{{ $persist ? 'true' : 'false' }}" data-name="{{ $name }}">
     @if($label)
         <label for="{{ $name }}" class="block text-sm font-semibold text-gray-700">
             {{ $label }} @if($required)<span class="text-red-500">*</span>@endif

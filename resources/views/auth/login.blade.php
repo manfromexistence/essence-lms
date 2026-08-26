@@ -82,7 +82,7 @@
                 $institutionName = $settingsService->get('institution_name', 'Dhaka IT Institute');
             @endphp
             <div class="inline-flex items-center justify-center mb-4">
-                <img src="{{ $logoUrl }}" alt="{{ $institutionName }} Logo" class="h-16 w-auto">
+                <img src="{{ $logoUrl }}" alt="{{ $institutionName }} Logo" class="h-28 w-auto">
             </div>
             <!-- <h1 class="text-3xl font-bold text-gray-900">{{ $institutionName }}</h1> -->
             <p class="text-gray-600 mt-2">Sign in to your account</p>

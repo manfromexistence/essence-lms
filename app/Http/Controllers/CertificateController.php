@@ -19,7 +19,11 @@ class CertificateController extends Controller
             return view('student.certificates.index', compact('certificates'));
         }
 
-        $certificates = Certificate::with('course')->where('student_id', $student->id)->latest('issued_at')->get();
+        $certificates = Certificate::with('course')
+            ->where('student_id', $student->id)
+            ->where('status', 'active')
+            ->latest('issued_at')
+            ->get();
 
         return view('student.certificates.index', compact('certificates'));
     }
@@ -35,6 +39,7 @@ class CertificateController extends Controller
         }
 
         abort_unless($certificate->student_id === $student->id, 403);
+        abort_unless($certificate->status === 'active', 404, 'This certificate has been revoked.');
         $certificate->load(['student.user', 'course', 'issuer']);
 
         return view('certificates.show', compact('certificate'));

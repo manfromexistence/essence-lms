@@ -40,15 +40,12 @@ class SidebarService
     public function getMenuItems(User $user): array
     {
         $menuItems = $this->getFullMenuStructure();
-        
-        // Super Admin sees all menu items
-        if ($user->isSuperAdmin()) {
-            return $menuItems;
-        }
 
         // Get user's role slugs
         $userRoles = $user->roles->pluck('slug')->toArray();
 
+        // Filter for every role — returning everything to super-admins would
+        // also show student/teacher sections and duplicate admin ones.
         return $this->filterByRole($menuItems, $userRoles);
     }
 
@@ -864,8 +861,8 @@ class SidebarService
                 'title' => 'Website Content', 'icon' => 'globe', 'route' => null, 'roles' => [self::ROLE_SUPER_ADMIN],
                 'children' => [
                     ['title' => 'All Pages', 'icon' => 'document', 'route' => 'dashboard.cms.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                    ['title' => 'Services Page', 'icon' => 'briefcase', 'route' => 'dashboard.cms.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
-                    ['title' => 'Team Page', 'icon' => 'users', 'route' => 'dashboard.cms.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
+                    ['title' => 'Services Page', 'icon' => 'briefcase', 'route' => 'dashboard.cms.services', 'roles' => [self::ROLE_SUPER_ADMIN]],
+                    ['title' => 'Team Page', 'icon' => 'users', 'route' => 'dashboard.cms.team', 'roles' => [self::ROLE_SUPER_ADMIN]],
                 ],
             ],
             ['title' => 'Users & Roles', 'icon' => 'users', 'route' => 'dashboard.users.index', 'roles' => [self::ROLE_SUPER_ADMIN]],
@@ -876,15 +873,11 @@ class SidebarService
                     ['title' => 'Student Dashboard', 'icon' => 'dashboard', 'route' => 'student.dashboard', 'roles' => [self::ROLE_STUDENT]],
                     ['title' => 'My Courses', 'icon' => 'courses', 'route' => 'student.courses', 'roles' => [self::ROLE_STUDENT]],
                     ['title' => 'Learning Materials', 'icon' => 'document', 'route' => 'student.materials', 'roles' => [self::ROLE_STUDENT]],
-                    ['title' => 'Class Schedule', 'icon' => 'calendar', 'route' => 'student.schedule', 'roles' => [self::ROLE_STUDENT]],
                 ],
             ],
             [
-                'title' => 'Progress & Certificates', 'icon' => 'chart-bar', 'route' => null, 'roles' => [self::ROLE_STUDENT],
+                'title' => 'Certificates', 'icon' => 'academic-cap', 'route' => null, 'roles' => [self::ROLE_STUDENT],
                 'children' => [
-                    ['title' => 'Exams', 'icon' => 'exams', 'route' => 'student.exams', 'roles' => [self::ROLE_STUDENT]],
-                    ['title' => 'Results', 'icon' => 'document-text', 'route' => 'student.results', 'roles' => [self::ROLE_STUDENT]],
-                    ['title' => 'Performance & Results', 'icon' => 'trending-up', 'route' => 'student.results', 'roles' => [self::ROLE_STUDENT]],
                     ['title' => 'My Certificates', 'icon' => 'academic-cap', 'route' => 'student.certificates.index', 'roles' => [self::ROLE_STUDENT]],
                 ],
             ],
@@ -915,11 +908,6 @@ class SidebarService
     public function getMenuItemsForRole(string $role): array
     {
         $menuItems = $this->getFullMenuStructure();
-
-        // Super Admin sees all menu items
-        if ($role === self::ROLE_SUPER_ADMIN) {
-            return $menuItems;
-        }
 
         return $this->filterByRole($menuItems, [$role]);
     }

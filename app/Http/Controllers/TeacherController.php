@@ -36,27 +36,20 @@ class TeacherController extends Controller
 
         // Get teacher's batches
         $batches = $teacher->batches()->with('course')->get();
-        
+
         // Get today's schedule
         $todaySchedule = ClassSchedule::whereHas('batch.teachers', function($query) use ($teacher) {
             $query->where('teachers.id', $teacher->id);
         })
-        ->where('day_of_week', Carbon::now()->dayOfWeek)
+        ->where('day_of_week', strtolower(Carbon::now()->format('l')))
         ->with(['batch.course'])
         ->orderBy('start_time')
         ->get();
 
-        // Get upcoming exams
-        $upcomingExams = Exam::whereIn('batch_id', $batches->pluck('id'))
-            ->where('start_time', '>=', Carbon::now())
-            ->orderBy('start_time')
-            ->limit(5)
-            ->get();
-
         // Get statistics
         $totalStudents = Student::whereIn('batch_id', $batches->pluck('id'))->count();
         $totalBatches = $batches->count();
-        $totalExams = Exam::whereIn('batch_id', $batches->pluck('id'))->count();
+        $totalCourses = $batches->pluck('course_id')->filter()->unique()->count();
         
         // Get recent attendance
         $recentAttendance = Attendance::whereIn('batch_id', $batches->pluck('id'))
@@ -69,10 +62,9 @@ class TeacherController extends Controller
             'teacher',
             'batches',
             'todaySchedule',
-            'upcomingExams',
             'totalStudents',
             'totalBatches',
-            'totalExams',
+            'totalCourses',
             'recentAttendance'
         ));
     }
@@ -226,19 +218,19 @@ class TeacherController extends Controller
             $query->where('teachers.id', $teacher->id);
         })
         ->with(['batch.course'])
-        ->orderBy('day_of_week')
+        ->orderByRaw("FIELD(day_of_week, 'sunday','monday','tuesday','wednesday','thursday','friday','saturday')")
         ->orderBy('start_time')
         ->get()
         ->groupBy('day_of_week');
 
         $days = [
-            0 => 'Sunday',
-            1 => 'Monday',
-            2 => 'Tuesday',
-            3 => 'Wednesday',
-            4 => 'Thursday',
-            5 => 'Friday',
-            6 => 'Saturday',
+            'sunday' => 'Sunday',
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
         ];
 
         return view('teacher.schedule', compact('teacher', 'schedules', 'days'));

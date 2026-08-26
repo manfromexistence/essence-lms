@@ -1,6 +1,7 @@
 @extends('layouts.frontend')
 
-@section('title', ($page ? $page->getContent('page_title', 'Services') : 'Services') . ' - Dhaka IT Institute')
+@section('title', ($page && $page->meta_title ? $page->meta_title : ($page ? $page->getContent('page_title', 'Services') : 'Services')))
+@section('meta_description', ($page ? $page->getContent('page_subtitle', 'Training, digital solutions and practical support for students, freelancers and growing businesses.') : 'Training, digital solutions and practical support for students, freelancers and growing businesses.'))
 
 @section('content')
 <section class="hero hero--solid hero--dark">

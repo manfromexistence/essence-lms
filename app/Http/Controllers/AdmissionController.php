@@ -67,29 +67,26 @@ class AdmissionController extends Controller
             $this->studentService->create($validated);
         });
 
-        // Notify the applicant by email (Brevo)
-        try {
-            $applicantName = ($validated['name'] ?? null) ?: ($validated['name_bn'] ?? 'Applicant');
-            $courseName = $course?->name ?? 'your selected course';
-            $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
-                . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
-                . '<h2 style="color:#fff;margin:0;">Admission Received</h2></div>'
-                . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
-                . '<p>Dear <strong>' . e($applicantName) . '</strong>,</p>'
-                . '<p>Thank you for applying to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute.</p>'
-                . '<p>Your application is now under review. Once your admission is approved by our office, you will receive an email with your login details and course access.</p>'
-                . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
-                . '</div></div>';
+        // Notify the applicant by email (Brevo) — queued so the request
+        // returns immediately even when the mail API is slow.
+        $applicantName = ($validated['name'] ?? null) ?: ($validated['name_bn'] ?? 'Applicant');
+        $courseName = $course?->name ?? 'your selected course';
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
+            . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
+            . '<h2 style="color:#fff;margin:0;">Admission Received</h2></div>'
+            . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
+            . '<p>Dear <strong>' . e($applicantName) . '</strong>,</p>'
+            . '<p>Thank you for applying to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute.</p>'
+            . '<p>Your application is now under review. Once your admission is approved by our office, you will receive an email with your login details and course access.</p>'
+            . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
+            . '</div></div>';
 
-            app(\App\Services\BrevoEmailService::class)->send(
-                $validated['email'],
-                'Admission Received — ' . $courseName,
-                $html,
-                ['type' => 'admission']
-            );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Admission email failed', ['error' => $e->getMessage()]);
-        }
+        \App\Jobs\SendEmailJob::dispatch(
+            $validated['email'],
+            'Admission Received — ' . $courseName,
+            $html,
+            ['type' => 'admission']
+        );
 
         return redirect()->route('login')->with(
             'success',

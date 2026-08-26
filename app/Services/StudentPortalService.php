@@ -8,6 +8,11 @@ use App\Models\ExamResult;
 use App\Models\Attendance;
 use App\Models\Payment;
 use App\Models\Announcement;
+use App\Models\Certificate;
+use App\Models\Course;
+use App\Models\CourseEnrollment;
+use App\Models\CourseVideo;
+use App\Models\VideoView;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -25,11 +30,64 @@ class StudentPortalService
             'batch' => $student->batch,
             'course' => $student->batch?->course,
             'payment_summary' => $this->getPaymentSummary($student),
-            'attendance' => $this->getAttendancePercentage($student),
-            'upcoming_exams' => $this->getUpcomingExams($student),
-            'recent_results' => $this->getRecentResults($student),
+            'course_progress' => $this->getCourseProgress($student),
+            'certificates' => $this->getCertificates($student),
             'announcements' => $this->getAnnouncements($student),
         ];
+    }
+
+    /**
+     * Get per-course learning progress for a student.
+     */
+    public function getCourseProgress(Student $student): Collection
+    {
+        $enrollments = CourseEnrollment::with(['course.videos'])
+            ->where('student_id', $student->id)
+            ->orderBy('enrolled_at', 'desc')
+            ->get();
+
+        $progress = [];
+        foreach ($enrollments as $enrollment) {
+            $course = $enrollment->course;
+            if (!$course) {
+                continue;
+            }
+
+            $videos = $course->videos;
+            $completedVideos = VideoView::where('student_id', $student->id)
+                ->whereIn('course_video_id', $videos->pluck('id'))
+                ->where('completed', true)
+                ->pluck('course_video_id')
+                ->toArray();
+
+            $nextVideo = $videos->first(fn ($item) => !in_array($item->id, $completedVideos));
+
+            $progress[] = [
+                'course' => $course,
+                'enrollment' => $enrollment,
+                'total_videos' => $videos->count(),
+                'completed_videos' => count($completedVideos),
+                'progress_percentage' => $videos->count() > 0
+                    ? (int) round((count($completedVideos) / $videos->count()) * 100)
+                    : 0,
+                'next_video' => $nextVideo,
+            ];
+        }
+
+        return collect($progress);
+    }
+
+    /**
+     * Get the student's own certificates.
+     */
+    public function getCertificates(Student $student): Collection
+    {
+        return Certificate::with('course')
+            ->where('student_id', $student->id)
+            ->where('status', 'active')
+            ->orderBy('issued_at', 'desc')
+            ->limit(5)
+            ->get();
     }
 
     /**
@@ -37,8 +95,22 @@ class StudentPortalService
      */
     public function getPaymentSummary(Student $student): array
     {
-        $totalFee = $student->batch?->course?->fee ?? 0;
-        $paidAmount = $student->payments()->whereIn('status', Payment::settledStatuses())->sum('amount');
+        $courseIds = CourseEnrollment::where('student_id', $student->id)->pluck('course_id')
+            ->merge(
+                Payment::where('student_id', $student->id)
+                    ->whereNotNull('course_id')
+                    ->pluck('course_id')
+            )
+            ->unique()
+            ->values();
+
+        $totalFee = Course::whereIn('id', $courseIds)->sum('price');
+        $paidAmount = $courseIds->isNotEmpty()
+            ? Payment::where('student_id', $student->id)
+                ->whereIn('status', Payment::settledStatuses())
+                ->whereIn('course_id', $courseIds)
+                ->sum('amount')
+            : $student->payments()->whereIn('status', Payment::settledStatuses())->sum('amount');
         $dueAmount = max(0, $totalFee - $paidAmount);
 
         return [
@@ -198,13 +270,19 @@ class StudentPortalService
      */
     public function getMaterials(Student $student): Collection
     {
-        $courseId = $student->batch?->course_id;
+        $courseIds = CourseEnrollment::where('student_id', $student->id)->pluck('course_id');
 
-        if (!$courseId) {
+        if ($student->batch_id && $student->batch?->course_id) {
+            $courseIds->push($student->batch->course_id);
+        }
+
+        $courseIds = $courseIds->unique();
+
+        if ($courseIds->isEmpty()) {
             return collect();
         }
 
-        return \App\Models\CourseMaterial::where('course_id', $courseId)
+        return \App\Models\CourseMaterial::whereIn('course_id', $courseIds)
             ->orderBy('order')
             ->get()
             ->groupBy('type');

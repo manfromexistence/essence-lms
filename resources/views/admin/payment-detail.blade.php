@@ -131,7 +131,7 @@
                                 </svg>
                                 <p class="mt-2 text-gray-700 font-semibold">PDF Document</p>
                                 <a href="{{ route('payment.proof', $payment) }}"
-                                    target="_blank" 
+                                    target="_blank" rel="noopener"
                                     class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition">
                                     View PDF
                                 </a>

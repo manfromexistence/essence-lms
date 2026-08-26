@@ -27,7 +27,11 @@ class MaterialController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:pdf,video,document,link,image',
-            'file' => 'required_unless:type,link|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip|max:51200',
+            'file' => [
+                'required_unless:type,link', 'file',
+                'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip', 'max:51200',
+                new \App\Rules\SafeUpload,
+            ],
             'file_path' => 'required_if:type,link|nullable|url',
         ]);
 
@@ -63,7 +67,11 @@ class MaterialController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:pdf,video,document,link,image',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip|max:51200',
+            'file' => [
+                'nullable', 'file',
+                'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip', 'max:51200',
+                new \App\Rules\SafeUpload,
+            ],
             'file_path' => 'required_if:type,link|nullable|url',
         ]);
 

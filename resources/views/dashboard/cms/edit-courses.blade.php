@@ -21,7 +21,7 @@
         </x-ui.alert>
     @endif
 
-    <form action="{{ route('dashboard.cms.update', $page) }}" method="POST" class="space-y-6">
+    <form action="{{ route('dashboard.cms.update', $page) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
 
@@ -57,7 +57,7 @@
                     </div>
                     <div class="space-y-2">
                         <x-ui.label>All Subjects Label</x-ui.label>
-                        <x-ui.input name="content[all_subjects]" :value="$page->getContent('all_subjects')" />
+                        <x-ui.input name="content[all_categories]" :value="$page->getContent('all_categories')" />
                     </div>
                     <div class="space-y-2">
                         <x-ui.label>Search Button Text</x-ui.label>

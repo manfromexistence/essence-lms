@@ -1,6 +1,7 @@
 @extends('layouts.frontend')
 
-@section('title', ($page ? $page->getContent('page_title', 'কোর্সসমূহ') : 'কোর্সসমূহ') . ' - Dhaka IT Institute')
+@section('title', ($page && $page->meta_title ? $page->meta_title : ($page ? $page->getContent('page_title', 'কোর্সসমূহ') : 'কোর্সসমূহ')))
+@section('meta_description', ($page ? $page->getContent('page_subtitle', 'Practical IT and freelancing courses in Dhaka') : 'Practical IT and freelancing courses in Dhaka'))
 
 @push('styles')
     <style>
@@ -71,7 +72,7 @@
                                     <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
-                                    {{ $course->batches->sum(function($batch) { return $batch->students->count(); }) }}
+                                    {{ $course->batches->sum('students_count') }}
                                 </span>
                                 <span class="flex items-center">
                                     <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,13 +106,6 @@
             @endif
         </div>
     </section>
-
-    <div class="max-w-7xl mx-auto px-4 pt-6">
-        <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Course fees, syllabus and batch schedules may change. Please confirm the latest details with Dhaka IT Institute at
-            <a class="font-semibold underline" href="tel:+880168271557">0168271557</a>.
-        </div>
-    </div>
 
     </div>
     <!-- Course Details Modal -->
@@ -158,8 +152,9 @@
             const demoButton = demoVideo
                 ? `<a href="{{ url('/courses') }}/${course.id}/demo" class="mb-3 block w-full rounded-lg border-2 border-primary px-6 py-3 text-center font-semibold text-primary transition hover:bg-green-50">ফ্রি ডেমো ক্লাস দেখুন</a>`
                 : '';
-            const demoPlayer = demoVideo?.video_type === 'youtube' && demoVideo.external_id
-                ? `<div class="mb-6 overflow-hidden rounded-xl bg-black shadow-lg"><div class="aspect-video"><iframe class="h-full w-full" src="https://www.youtube-nocookie.com/embed/${demoVideo.external_id}?rel=0&modestbranding=1" title="${demoVideo.title || course.name}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><p class="px-4 py-3 text-sm text-white">ফ্রি ডেমো ক্লাস</p></div>`
+            const hasEmbed = demoVideo?.video_type === 'youtube' && demoVideo.external_id;
+            const embedUrl = hasEmbed
+                ? `https://www.youtube-nocookie.com/embed/${demoVideo.external_id}?rel=0&modestbranding=1`
                 : '';
             
             let enrollButton = '';
@@ -172,11 +167,21 @@
             }
 
             const imageUrl = course.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
-            const imageHtml = `<img src="${imageUrl}" alt="${course.name}" class="w-full h-64 object-cover rounded-lg mb-6">`;
+            const mediaHtml = hasEmbed
+                ? `<div class="relative mb-6 rounded-xl overflow-hidden bg-black shadow-lg">
+                    <img src="${imageUrl}" alt="${course.name}" class="w-full aspect-video object-cover">
+                    <button type="button" onclick="playDemoVideo(this)" data-embed="${embedUrl}" aria-label="Play demo video" class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition group">
+                        <span class="flex items-center justify-center w-16 h-16 rounded-full bg-white/95 shadow-xl transition group-hover:scale-110 group-hover:bg-white">
+                            <svg class="w-7 h-7 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        </span>
+                        <span class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">ডেমো ক্লাস দেখুন</span>
+                    </button>
+                    <div data-player class="hidden aspect-video"><iframe class="h-full w-full" src="" title="${demoVideo.title || course.name}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+                </div>`
+                : `<div class="mb-6 overflow-hidden rounded-xl bg-black shadow-lg"><img src="${imageUrl}" alt="${course.name}" class="w-full aspect-video object-cover"></div>`;
 
             const content = `
-                ${imageHtml}
-                ${demoPlayer}
+                ${mediaHtml}
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-blue-50 p-4 rounded-lg text-center">
@@ -185,7 +190,7 @@
                     </div>
                     <div class="bg-purple-50 p-4 rounded-lg text-center">
                         <p class="text-sm text-gray-600">শিক্ষার্থী</p>
-                        <p class="text-2xl font-bold text-purple-600">${course.batches?.reduce((sum, batch) => sum + (batch.students?.length || 0), 0) || 0}</p>
+                        <p class="text-2xl font-bold text-purple-600">${course.batches?.reduce((sum, batch) => sum + (batch.students_count || 0), 0) || 0}</p>
                     </div>
                     <div class="bg-green-50 p-4 rounded-lg text-center">
                         <p class="text-sm text-gray-600">ভিডিও</p>
@@ -215,8 +220,21 @@
             modal.classList.remove('hidden');
         }
 
+        function playDemoVideo(btn) {
+            const media = btn.parentElement;
+            const img = media.querySelector('img');
+            const player = media.querySelector('[data-player]');
+            const frame = player?.querySelector('iframe');
+            if (!player || !frame || !btn.dataset.embed) return;
+            frame.src = `${btn.dataset.embed}&autoplay=1`;
+            btn.classList.add('hidden');
+            if (img) img.classList.add('hidden');
+            player.classList.remove('hidden');
+        }
+
         function closeCourseModal() {
             document.getElementById('courseModal').classList.add('hidden');
+            document.querySelectorAll('#modalContent iframe').forEach(f => { f.src = ''; });
         }
 
         function enrollCourse(courseId) {

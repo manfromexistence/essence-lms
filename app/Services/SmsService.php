@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\SmsLog;
 use App\Models\Student;
 use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -23,9 +24,9 @@ class SmsService
 
     public function __construct()
     {
-        $this->gateway = Setting::where('key', 'sms_gateway')->value('value');
-        $this->apiKey = Setting::where('key', 'sms_api_key')->value('value');
-        $this->senderId = Setting::where('key', 'sms_sender_id')->value('value');
+        $this->gateway = Setting::getValue('sms_gateway');
+        $this->apiKey = Setting::getValue('sms_api_key');
+        $this->senderId = Setting::getValue('sms_sender_id');
         
         // Load SMS configuration
         $this->driver = config('sms.driver', 'mock');

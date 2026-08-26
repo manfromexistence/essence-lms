@@ -34,7 +34,7 @@ class EmailController extends Controller
     }
 
     /**
-     * Send a single email.
+     * Send a single email (queued for background delivery).
      */
     public function send(Request $request): RedirectResponse
     {
@@ -45,17 +45,14 @@ class EmailController extends Controller
         ]);
 
         $html = $this->wrapHtml($data['message']);
-        $log = $this->emailService->send($data['email'], $data['subject'], $html, ['type' => 'general']);
+        \App\Jobs\SendEmailJob::dispatch($data['email'], $data['subject'], $html, ['type' => 'general']);
 
-        if ($log->isSent()) {
-            return back()->with('success', "Email sent to {$data['email']}.");
-        }
-
-        return back()->with('error', 'Failed to send email: ' . ($log->error_message ?? 'unknown error'));
+        return back()->with('success', "Email queued for delivery to {$data['email']}.");
     }
 
     /**
      * Send bulk emails to students (all / batch / course / with dues / custom).
+     * The campaign is queued so large recipient lists never block the request.
      */
     public function sendBulk(Request $request): JsonResponse
     {
@@ -78,12 +75,12 @@ class EmailController extends Controller
         }
 
         $html = $this->wrapHtml($data['message']);
-        $result = $this->emailService->sendBulk($recipients, $data['subject'], $html, ['type' => 'bulk']);
+        \App\Jobs\SendBulkEmailsJob::dispatch($recipients, $data['subject'], $html, ['type' => 'bulk']);
 
         return response()->json([
             'success' => true,
-            'message' => "Emails sent to {$result['successful']} recipients. Failed: {$result['failed']}",
-            'data' => $result,
+            'message' => count($recipients) . ' emails queued for background delivery. Track progress in the email logs.',
+            'data' => ['total' => count($recipients), 'queued' => true],
         ]);
     }
 

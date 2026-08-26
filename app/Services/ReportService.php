@@ -561,7 +561,7 @@ class ReportService
                 case 'completed':
                     // Students in completed batches
                     $query->whereHas('batch', function ($q) {
-                        $q->whereIn('status', Payment::settledStatuses());
+                        $q->where('status', 'completed');
                     });
                     break;
                 case 'inactive':

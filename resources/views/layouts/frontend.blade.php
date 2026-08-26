@@ -5,6 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dhaka IT Institute')</title>
+    <meta name="description" content="@yield('meta_description', 'Dhaka IT Institute — Practical IT and freelancing training in Mirpur, Dhaka. Build real-world skills with expert mentors.')">
+    <meta property="og:site_name" content="Dhaka IT Institute">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="@yield('title', 'Dhaka IT Institute')">
+    <meta property="og:description" content="@yield('meta_description', 'Dhaka IT Institute — Practical IT and freelancing training in Mirpur, Dhaka. Build real-world skills with expert mentors.')">
+    @hasSection('og_image')
+        <meta property="og:image" content="@yield('og_image')">
+    @endif
 
     @php
         $settingsService = app(\App\Services\SettingsService::class);
@@ -21,6 +30,13 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js (required by x-ui components: tabs, dialogs, dropdowns...) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />

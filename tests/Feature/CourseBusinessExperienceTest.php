@@ -61,13 +61,10 @@ class CourseBusinessExperienceTest extends TestCase
         $this->assertStringContainsString('Team Members', $menu);
         $this->assertStringContainsString('Batches', $menu);
 
-        // School/class modules are commented out (not needed for course LMS)
-        $this->assertStringNotContainsString('MCQ Exams', $menu);
-        $this->assertStringNotContainsString('Attendance', $menu);
-        $this->assertStringNotContainsString('Accounts', $menu);
-        $this->assertStringNotContainsString('Communication', $menu);
-        $this->assertStringNotContainsString('Inventory', $menu);
-        $this->assertStringNotContainsString('Reports', $menu);
+        // School/class modules are hidden from the admin menu (code kept)
+        foreach (['MCQ Exams', 'Accounts', 'Communication', 'Inventory', 'Reports', 'Class Schedules'] as $label) {
+            $this->assertStringNotContainsString($label, $menu);
+        }
 
         // Legacy school-only modules that have no routes stay hidden
         $this->assertStringNotContainsString('All Classes', $menu);
@@ -80,17 +77,21 @@ class CourseBusinessExperienceTest extends TestCase
         $menu = json_encode(app(SidebarService::class)->getMenuItems($student));
 
         foreach ([
-            'My Learning', 'Student Dashboard', 'My Courses', 'Learning Materials', 'Class Schedule',
-            'Progress & Certificates', 'Exams', 'Results', 'Performance & Results', 'My Certificates',
+            'My Learning', 'Student Dashboard', 'My Courses', 'Learning Materials',
+            'Certificates', 'My Certificates',
             'Payments', 'Payment Dashboard', 'Payment History', 'Account & Support',
             'Change Password', 'Contact Support',
         ] as $label) {
             $this->assertStringContainsString($label, $menu);
         }
 
+        // School/class modules are hidden from the student menu (code kept)
+        foreach (['Class Schedule', 'Exams', 'Results', 'Performance & Results'] as $label) {
+            $this->assertStringNotContainsString($label, $menu);
+        }
+
         foreach ([
-            'student.dashboard', 'student.courses', 'student.materials', 'student.schedule',
-            'student.exams', 'student.results',
+            'student.dashboard', 'student.courses', 'student.materials',
             'student.certificates.index', 'student.payment.dashboard', 'student.payments',
             'password.change', 'contact',
         ] as $route) {

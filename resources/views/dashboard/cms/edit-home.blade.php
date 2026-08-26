@@ -21,7 +21,7 @@
         </x-ui.alert>
     @endif
 
-    <form action="{{ route('dashboard.cms.update', $page) }}" method="POST" class="space-y-6">
+    <form action="{{ route('dashboard.cms.update', $page) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
 
@@ -112,6 +112,14 @@
                     <div class="space-y-2">
                         <x-ui.label>Students Section Subtitle</x-ui.label>
                         <x-ui.input name="content[students_section_subtitle]" :value="$page->getContent('students_section_subtitle')" />
+                    </div>
+                    <div class="space-y-2">
+                        <x-ui.label>Student Gallery Title</x-ui.label>
+                        <x-ui.input name="content[random_students_title]" :value="$page->getContent('random_students_title')" />
+                    </div>
+                    <div class="space-y-2">
+                        <x-ui.label>Student Gallery Subtitle</x-ui.label>
+                        <x-ui.input name="content[random_students_subtitle]" :value="$page->getContent('random_students_subtitle')" />
                     </div>
                 </div>
             </x-ui.card-content>

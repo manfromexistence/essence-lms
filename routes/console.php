@@ -1,8 +1,63 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Models\Notification;
+use App\Models\ReportExport;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Storage;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+/*
+|--------------------------------------------------------------------------
+| Queue monitoring
+|--------------------------------------------------------------------------
+|
+| Fail closed loudly: when the default database queue grows beyond the
+| threshold, queue:monitor exits non-zero and the failure handler raises a
+| dashboard notification for admins so a stalled worker is noticed.
+|
+*/
+
+Schedule::command('queue:monitor database:default --max=200')
+    ->everyFifteenMinutes()
+    ->onFailure(function () {
+        Log::critical('Queue backlog exceeds threshold — check that a queue worker is running.');
+
+        try {
+            User::whereHas('roles', fn ($query) => $query->whereIn('slug', ['admin', 'super-admin']))
+                ->pluck('id')
+                ->each(fn ($userId) => Notification::create([
+                    'user_id' => $userId,
+                    'user_type' => 'admin',
+                    'type' => 'queue_backlog_alert',
+                    'title' => 'Queue backlog alert',
+                    'message' => 'The background job queue has more than 200 pending jobs. Check that a queue worker is running.',
+                    'data' => ['threshold' => 200],
+                ]));
+        } catch (\Throwable $e) {
+            Log::error('Failed to create queue backlog notification', ['error' => $e->getMessage()]);
+        }
+    });
+
+Schedule::command('queue:prune-failed --hours=720')->daily();
+
+/*
+|--------------------------------------------------------------------------
+| Report export housekeeping
+|--------------------------------------------------------------------------
+|
+| Generated export files contain student/payment data; they and their
+| database rows are removed after 7 days to limit data retention exposure.
+|
+*/
+
+Schedule::call(function () {
+    ReportExport::where('created_at', '<', now()->subDays(7))
+        ->get()
+        ->each(function (ReportExport $export) {
+            if ($export->path) {
+                Storage::disk($export->disk)->delete($export->path);
+            }
+            $export->delete();
+        });
+})->dailyAt('02:30')->name('prune-report-exports');

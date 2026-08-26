@@ -75,7 +75,7 @@
                         <div>
                             @if($student)
                                 @if($type === 'link')
-                                <x-ui.button variant="outline" size="sm" as="a" href="{{ route('student.materials.download', $material) }}" target="_blank">
+                                <x-ui.button variant="outline" size="sm" as="a" href="{{ route('student.materials.download', $material) }}" target="_blank" rel="noopener">
                                     <i class="fas fa-external-link-alt mr-1"></i> Open
                                 </x-ui.button>
                                 @else

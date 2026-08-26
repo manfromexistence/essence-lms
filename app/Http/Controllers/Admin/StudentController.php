@@ -142,7 +142,10 @@ class StudentController extends Controller
             $approved = !empty($validated['batch_id']);
             $validated['admission_status'] = $approved ? 'approved' : 'pending';
             $validated['status'] = $approved ? 'active' : 'pending';
-            $this->studentService->create($validated);
+            $student = $this->studentService->create($validated);
+            if ($approved) {
+                $this->studentService->syncEnrollment($student);
+            }
         });
 
         return redirect()->route('dashboard.students.index')
@@ -227,6 +230,11 @@ class StudentController extends Controller
         // Update student using service
         $this->studentService->update($student, $validated);
 
+        // Keep course access in sync with any batch assignment.
+        if (!empty($validated['batch_id'])) {
+            $this->studentService->syncEnrollment($student->fresh());
+        }
+
         return redirect()->route('dashboard.students.index')
             ->with('success', 'Student updated successfully.');
     }
@@ -296,8 +304,8 @@ class StudentController extends Controller
 
         // Sorting functionality
         if ($request->filled('sort')) {
-            $direction = $request->get('direction', 'asc');
-            
+            $direction = $request->get('direction', 'asc') === 'desc' ? 'desc' : 'asc';
+
             switch ($request->sort) {
                 case 'student':
                     $query->join('users', 'students.user_id', '=', 'users.id')
@@ -311,10 +319,17 @@ class StudentController extends Controller
                         ->select('students.*');
                     break;
                 case 'admission_date':
+                case 'created_at':
                     $query->orderBy('created_at', $direction);
                     break;
+                case 'name':
+                    $query->orderBy('name_bn', $direction);
+                    break;
+                case 'phone':
+                    $query->orderBy('phone', $direction);
+                    break;
                 default:
-                    $query->orderBy($request->sort, $direction);
+                    $query->orderBy('created_at', $direction);
             }
         }
 
@@ -362,6 +377,9 @@ class StudentController extends Controller
             'status' => $approved ? 'active' : 'pending',
         ]);
         $student->user?->update(['is_active' => $approved]);
+        if ($approved) {
+            $this->studentService->syncEnrollment($student);
+        }
 
         return redirect()->route('dashboard.students.batch-assignment')
             ->with('success', 'Student batch assignment updated successfully.');
@@ -387,6 +405,11 @@ class StudentController extends Controller
             'is_active' => $status === 'approved',
         ]);
 
+        if ($status === 'approved') {
+            // Batch-assigned students get course access immediately.
+            $this->studentService->syncEnrollment($student);
+        }
+
         if ($status === 'approved' && $student->user) {
             $student->load(['user', 'batch.course']);
             $courseName = $student->batch?->course?->name
@@ -396,26 +419,22 @@ class StudentController extends Controller
             // so no password-reset link is sent — they log in with it directly.
             $resetLine = 'Your account is now active. Log in with your registered email address and the password you set.';
 
-            try {
-                $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
-                    . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
-                    . '<h2 style="color:#fff;margin:0;">Admission Approved</h2></div>'
-                    . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
-                    . '<p>Dear <strong>' . e($student->user?->name ?? 'Student') . '</strong>,</p>'
-                    . '<p>Congratulations! Your admission to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute has been approved.</p>'
-                    . '<p>' . $resetLine . '</p>'
-                    . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
-                    . '</div></div>';
+            $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
+                . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
+                . '<h2 style="color:#fff;margin:0;">Admission Approved</h2></div>'
+                . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
+                . '<p>Dear <strong>' . e($student->user?->name ?? 'Student') . '</strong>,</p>'
+                . '<p>Congratulations! Your admission to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute has been approved.</p>'
+                . '<p>' . $resetLine . '</p>'
+                . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
+                . '</div></div>';
 
-                app(\App\Services\BrevoEmailService::class)->send(
-                    $student->user->email,
-                    'Admission Approved — ' . $courseName,
-                    $html,
-                    ['type' => 'admission']
-                );
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Approval email failed', ['error' => $e->getMessage()]);
-            }
+            \App\Jobs\SendEmailJob::dispatch(
+                $student->user->email,
+                'Admission Approved — ' . $courseName,
+                $html,
+                ['type' => 'admission']
+            );
         }
 
         return back()->with('success', 'Admission status updated to ' . ucfirst($status) . '.');
@@ -441,6 +460,11 @@ class StudentController extends Controller
             ]);
         User::whereHas('student', fn ($query) => $query->whereIn('id', $request->student_ids))
             ->update(['is_active' => $approved]);
+
+        if ($approved) {
+            Student::whereIn('id', $request->student_ids)->get()
+                ->each(fn (Student $student) => $this->studentService->syncEnrollment($student));
+        }
 
         $count = count($request->student_ids);
         return redirect()->route('dashboard.students.batch-assignment')
@@ -663,6 +687,17 @@ class StudentController extends Controller
                 \Log::error("Image upload failed for {$name}", [
                     'error_code' => $file->getError(),
                     'error_message' => $this->getUploadErrorMessage($file->getError()),
+                ]);
+                return null;
+            }
+
+            if ($rejection = app(\App\Services\FileScanService::class)->inspect(
+                $file,
+                ['jpeg', 'jpg', 'png', 'gif', 'webp']
+            )) {
+                \Log::warning("Image upload rejected for {$name}", [
+                    'original_name' => $file->getClientOriginalName(),
+                    'reason' => $rejection,
                 ]);
                 return null;
             }

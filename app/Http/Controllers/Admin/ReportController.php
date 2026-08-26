@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateReportExportJob;
 use App\Models\Batch;
 use App\Models\Course;
 use App\Models\Exam;
+use App\Models\ReportExport;
 use App\Services\ExportService;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * ReportController handles all report generation, display, and export operations.
@@ -93,16 +97,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return BinaryFileResponse
      */
-    public function exportAttendanceExcel(Request $request): BinaryFileResponse
+    public function exportAttendanceExcel(Request $request): RedirectResponse
     {
-        $filters = $this->extractAttendanceFilters($request);
-        $report = $this->reportService->generateAttendanceReport($filters);
-        
-        return $this->exportService->exportToExcel(
-            'attendance',
-            collect($report['data'] ?? []),
-            $filters
-        );
+        return $this->queueExport($request, 'attendance', 'xlsx', $this->extractAttendanceFilters($request));
     }
 
     /**
@@ -116,16 +113,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return Response
      */
-    public function exportAttendancePdf(Request $request): Response
+    public function exportAttendancePdf(Request $request): RedirectResponse
     {
-        $filters = $this->extractAttendanceFilters($request);
-        $report = $this->reportService->generateAttendanceReport($filters);
-        
-        return $this->exportService->exportToPdf(
-            'attendance',
-            collect($report['data'] ?? []),
-            array_merge($filters, ['summary' => $report['summary'] ?? []])
-        );
+        return $this->queueExport($request, 'attendance', 'pdf', $this->extractAttendanceFilters($request));
     }
 
     // =========================================================================
@@ -169,16 +159,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return BinaryFileResponse
      */
-    public function exportPaymentExcel(Request $request): BinaryFileResponse
+    public function exportPaymentExcel(Request $request): RedirectResponse
     {
-        $filters = $this->extractPaymentFilters($request);
-        $report = $this->reportService->generatePaymentReport($filters);
-        
-        return $this->exportService->exportToExcel(
-            'payment',
-            collect($report['data'] ?? []),
-            $filters
-        );
+        return $this->queueExport($request, 'payment', 'xlsx', $this->extractPaymentFilters($request));
     }
 
     /**
@@ -192,16 +175,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return Response
      */
-    public function exportPaymentPdf(Request $request): Response
+    public function exportPaymentPdf(Request $request): RedirectResponse
     {
-        $filters = $this->extractPaymentFilters($request);
-        $report = $this->reportService->generatePaymentReport($filters);
-        
-        return $this->exportService->exportToPdf(
-            'payment',
-            collect($report['data'] ?? []),
-            array_merge($filters, ['summary' => $report['summary'] ?? []])
-        );
+        return $this->queueExport($request, 'payment', 'pdf', $this->extractPaymentFilters($request));
     }
 
     // =========================================================================
@@ -254,16 +230,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return BinaryFileResponse
      */
-    public function exportPerformanceExcel(Request $request): BinaryFileResponse
+    public function exportPerformanceExcel(Request $request): RedirectResponse
     {
-        $filters = $this->extractPerformanceFilters($request);
-        $report = $this->reportService->generatePerformanceReport($filters);
-        
-        return $this->exportService->exportToExcel(
-            'performance',
-            collect($report['data'] ?? []),
-            $filters
-        );
+        return $this->queueExport($request, 'performance', 'xlsx', $this->extractPerformanceFilters($request));
     }
 
     /**
@@ -277,16 +246,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return Response
      */
-    public function exportPerformancePdf(Request $request): Response
+    public function exportPerformancePdf(Request $request): RedirectResponse
     {
-        $filters = $this->extractPerformanceFilters($request);
-        $report = $this->reportService->generatePerformanceReport($filters);
-        
-        return $this->exportService->exportToPdf(
-            'performance',
-            collect($report['data'] ?? []),
-            array_merge($filters, ['summary' => $report['summary'] ?? []])
-        );
+        return $this->queueExport($request, 'performance', 'pdf', $this->extractPerformanceFilters($request));
     }
 
     // =========================================================================
@@ -332,16 +294,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return BinaryFileResponse
      */
-    public function exportStudentExcel(Request $request): BinaryFileResponse
+    public function exportStudentExcel(Request $request): RedirectResponse
     {
-        $filters = $this->extractStudentFilters($request);
-        $students = $this->reportService->getStudentReport($filters);
-        
-        return $this->exportService->exportToExcel(
-            'student',
-            $students,
-            $filters
-        );
+        return $this->queueExport($request, 'student', 'xlsx', $this->extractStudentFilters($request));
     }
 
     /**
@@ -355,17 +310,9 @@ class ReportController extends Controller
      * @param Request $request
      * @return Response
      */
-    public function exportStudentPdf(Request $request): Response
+    public function exportStudentPdf(Request $request): RedirectResponse
     {
-        $filters = $this->extractStudentFilters($request);
-        $students = $this->reportService->getStudentReport($filters);
-        $stats = $this->reportService->calculateStudentReportStats($students);
-        
-        return $this->exportService->exportToPdf(
-            'student',
-            $students,
-            array_merge($filters, ['stats' => $stats])
-        );
+        return $this->queueExport($request, 'student', 'pdf', $this->extractStudentFilters($request));
     }
 
     // =========================================================================
@@ -462,25 +409,29 @@ class ReportController extends Controller
     {
         $batches = Batch::all();
         $courses = Course::all();
-        
-        return view('dashboard.reports.export', compact('batches', 'courses'));
+        $exports = ReportExport::where('requested_by', Auth::id())
+            ->latest()
+            ->limit(20)
+            ->get();
+
+        return view('dashboard.reports.export', compact('batches', 'courses', 'exports'));
     }
 
     /**
      * Generic PDF export (legacy endpoint).
-     * 
+     *
      * @deprecated Use specific export methods instead
      * @param Request $request
-     * @return Response
+     * @return RedirectResponse
      */
-    public function exportPdf(Request $request): Response
+    public function exportPdf(Request $request): RedirectResponse
     {
         $request->validate([
             'report_type' => 'required|in:attendance,payment,performance,student',
         ]);
 
         $reportType = $request->input('report_type');
-        
+
         return match ($reportType) {
             'attendance' => $this->exportAttendancePdf($request),
             'payment' => $this->exportPaymentPdf($request),
@@ -491,25 +442,70 @@ class ReportController extends Controller
 
     /**
      * Generic Excel export (legacy endpoint).
-     * 
+     *
      * @deprecated Use specific export methods instead
      * @param Request $request
-     * @return BinaryFileResponse
+     * @return RedirectResponse
      */
-    public function exportExcel(Request $request): BinaryFileResponse
+    public function exportExcel(Request $request): RedirectResponse
     {
         $request->validate([
             'report_type' => 'required|in:attendance,payment,performance,student',
         ]);
 
         $reportType = $request->input('report_type');
-        
+
         return match ($reportType) {
             'attendance' => $this->exportAttendanceExcel($request),
             'payment' => $this->exportPaymentExcel($request),
             'performance' => $this->exportPerformanceExcel($request),
             'student' => $this->exportStudentExcel($request),
         };
+    }
+
+    /**
+     * Queue a report export for background generation.
+     *
+     * The file is rendered by GenerateReportExportJob onto private storage and
+     * the requester receives a dashboard notification with a download link.
+     */
+    private function queueExport(Request $request, string $reportType, string $format, array $filters): RedirectResponse
+    {
+        $export = ReportExport::create([
+            'uuid' => (string) Str::uuid(),
+            'requested_by' => Auth::id(),
+            'report_type' => $reportType,
+            'format' => $format,
+            'filters' => array_filter($filters, fn ($value) => $value !== null && $value !== ''),
+            'status' => ReportExport::STATUS_PENDING,
+            'disk' => config('filesystems.private'),
+            'filename' => ucfirst($reportType) . '_Report_' . now()->format('Y-m-d_His') . '.' . ($format === 'pdf' ? 'pdf' : 'xlsx'),
+        ]);
+
+        GenerateReportExportJob::dispatch($export);
+
+        return back()->with(
+            'success',
+            "Your {$format} export is being generated in the background. You will receive a notification with a download link when it is ready."
+        );
+    }
+
+    /**
+     * Stream a completed export file to its requester.
+     */
+    public function downloadExport(ReportExport $export)
+    {
+        abort_unless(
+            $export->requested_by === Auth::id() || Auth::user()->isSuperAdmin(),
+            403,
+            'You can only download your own exports.'
+        );
+        abort_unless($export->isCompleted(), 404, 'This export is not available.');
+
+        $disk = Storage::disk($export->disk);
+        abort_unless($export->path && $disk->exists($export->path), 404, 'The export file is no longer available.');
+
+        return $disk->download($export->path, $export->filename);
     }
 
     // =========================================================================

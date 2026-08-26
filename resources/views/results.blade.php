@@ -1,6 +1,7 @@
 @extends('layouts.frontend')
 
-@section('title', ($page ? $page->getContent('page_title', 'পরীক্ষার ফলাফল') : 'পরীক্ষার ফলাফল') . ' - Dhaka IT Institute')
+@section('title', ($page && $page->meta_title ? $page->meta_title : ($page ? $page->getContent('page_title', 'পরীক্ষার ফলাফল') : 'পরীক্ষার ফলাফল')))
+@section('meta_description', ($page ? $page->getContent('page_subtitle', 'ফলাফল অনুসন্ধান করুন') : 'ফলাফল অনুসন্ধান করুন'))
 
 @section('content')
     <!-- Page Header -->

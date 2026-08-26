@@ -93,35 +93,40 @@ class CommunicationController extends Controller
     }
 
     /**
-     * Send bulk SMS to multiple recipients with progress tracking.
+     * Send bulk SMS to multiple recipients. The campaign is queued so large
+     * recipient lists never block the HTTP request; delivery results land in
+     * the SMS logs.
      */
     public function bulkSend(BulkSmsRequest $request): JsonResponse
     {
         $message = $request->validated('message');
         $recipientType = $request->validated('recipient_type');
         $includeParents = $request->boolean('include_parents', false);
-        
-        $recipients = $this->getRecipientsForBulkSend($request, $includeParents);
-        
+
+        // Direct recipients array takes precedence over criteria selection.
+        $directRecipients = $request->validated('recipients') ?? [];
+        $recipients = $directRecipients !== []
+            ? array_map(fn ($phone) => ['phone' => $phone, 'name' => null, 'recipient_type' => 'custom'], $directRecipients)
+            : $this->getRecipientsForBulkSend($request, $includeParents);
+
         if (empty($recipients)) {
             return response()->json([
                 'success' => false,
                 'message' => 'No recipients found for the selected criteria.',
             ], 422);
         }
-        
-        $result = $this->smsService->sendBulk($recipients, $message, [
+
+        \App\Jobs\SendBulkSmsJob::dispatch($recipients, $message, [
             'type' => 'bulk',
             'recipient_type' => $recipientType,
         ]);
-        
+
         return response()->json([
             'success' => true,
-            'message' => "SMS sent to {$result['successful']} recipients. Failed: {$result['failed']}",
+            'message' => count($recipients) . ' SMS messages queued for background delivery. Track progress in the SMS logs.',
             'data' => [
-                'total' => $result['total'],
-                'successful' => $result['successful'],
-                'failed' => $result['failed'],
+                'total' => count($recipients),
+                'queued' => true,
             ],
         ]);
     }

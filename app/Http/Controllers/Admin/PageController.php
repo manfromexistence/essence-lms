@@ -57,7 +57,7 @@ class PageController extends Controller
 
         // Handle content from specific page editors (home, about, contact)
         $content = $request->input('content', []);
-        
+
         // Handle content from generic editor with key-value pairs
         if ($request->has('content_keys')) {
             $keys = $request->input('content_keys', []);
@@ -68,8 +68,22 @@ class PageController extends Controller
                     $content[$key] = $values[$index] ?? '';
                 }
             }
+        } else {
+            // Page editors only submit changed fields — keep everything else.
+            $content = array_merge($page->content ?? [], $content);
         }
-        
+
+        // Image inputs submit URL text (or a filename when a file is picked) as content[<key>].
+        // Wherever a file was actually uploaded, store it and replace the value with the storage path.
+        foreach (array_keys($content) as $key) {
+            if ($request->hasFile('content.' . $key)) {
+                $content[$key] = 'storage/' . $request->file('content.' . $key)->store('cms', 'public');
+            }
+        }
+
+        // Cleared fields fall back to view defaults instead of rendering empty.
+        $content = array_filter($content, fn ($v) => trim((string) $v) !== '');
+
         $sections = $request->input('sections', []);
 
         $page->update([
@@ -143,32 +157,61 @@ class PageController extends Controller
         return view('dashboard.cms.edit-courses', compact('page'));
     }
 
+    public function editServices()
+    {
+        $page = Page::firstOrCreate(
+            ['slug' => 'services'],
+            [
+                'title' => 'Services Page',
+                'content' => $this->getDefaultServicesContent(),
+                'sections' => [],
+            ]
+        );
+        return view('dashboard.cms.edit-services', compact('page'));
+    }
+
+    public function editTeam()
+    {
+        $page = Page::firstOrCreate(
+            ['slug' => 'team'],
+            [
+                'title' => 'Team Page',
+                'content' => $this->getDefaultTeamContent(),
+                'sections' => [],
+            ]
+        );
+        return view('dashboard.cms.edit-team', compact('page'));
+    }
+
     protected function getDefaultHomeContent(): array
     {
         return [
             // Hero Slider
             'slide1_title' => 'Dhaka IT Institute-এ স্বাগতম',
-            'slide1_subtitle' => 'কলেজে এর পক্ষ থেকে!',
-            'slide1_image' => 'https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=1172&auto=format&fit=crop',
-            'slide2_title' => 'শিক্ষার আলোয় আলোকিত',
-            'slide2_subtitle' => 'ভবিষ্যৎ প্রজন্ম',
-            'slide2_image' => 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920',
-            'slide3_title' => 'মানসম্মত শিক্ষা',
-            'slide3_subtitle' => 'আধুনিক শিক্ষা ব্যবস্থা',
-            'slide3_image' => 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1920',
+            'slide1_subtitle' => 'প্র্যাকটিক্যাল স্কিল থেকে ফ্রিল্যান্সিং ক্যারিয়ার',
+            'slide1_image' => 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=80',
+            'slide2_title' => 'শিখুন, অনুশীলন করুন, আয় করুন',
+            'slide2_subtitle' => 'রিয়েল প্রজেক্ট নিয়ে হাতে-কলমে প্রশিক্ষণ',
+            'slide2_image' => 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1600&q=80',
+            'slide3_title' => 'ফ্রিল্যান্সিং ও জব মার্কেটে প্রস্তুতি',
+            'slide3_subtitle' => 'এক্সপার্ট মেন্টরশিপে আপনার ক্যারিয়ার গড়ুন',
+            'slide3_image' => 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80',
             // Banner Section
             'banner_image' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800',
             'banner_title' => 'Dhaka IT Institute',
-            'banner_title_highlight' => 'এর সাথেই শিখাছে',
-            'banner_subtitle' => 'সবাই, জিতছে সবাই',
-            'banner_description' => 'এখন তুমি যেখানেই থাকো, ম্যাচার কথা না কিছু! কারণ সবাই শিখাছে আর জিতছে দেশের সবচেয়ে বিশ্বস্ত ডিজিটাল লার্নিং প্ল্যাটফর্ম শিখোতে।',
-            'banner_button' => 'আমাদের সম্পর্কে জেনে নাও',
+            'banner_title_highlight' => '— Let’s Build Your Dream',
+            'banner_subtitle' => 'স্কিল শিখুন, প্রজেক্ট করুন, ক্যারিয়ার গড়ুন',
+            'banner_description' => 'ওয়েব ডেভেলপমেন্ট, Microsoft Office, digital marketing ও freelancing-এ হাতে-কলমে প্রশিক্ষণ। বাস্তব প্রজেক্ট, marketplace workflow এবং client communication-এর মাধ্যমে সফল ক্যারিয়ার শুরু করুন।',
+            'banner_button' => 'কোর্সসমূহ দেখুন',
             // Courses Section
             'courses_section_title' => 'জনপ্রিয় কোর্সসমূহ',
             'courses_section_subtitle' => 'আমাদের সবচেয়ে জনপ্রিয় এবং চাহিদা সম্পন্ন কোর্সগুলি দেখুন',
             // Students Section
             'students_section_title' => 'আমাদের সেরা শিক্ষার্থীরা',
             'students_section_subtitle' => 'যারা এক্সেলেন্স এবং ডেডিকেশনের সাথে তাদের শিক্ষাজীবন অতিবাহিত করছেন',
+            // Random Students Section
+            'random_students_title' => 'আমাদের শিক্ষার্থীরা',
+            'random_students_subtitle' => 'আমাদের প্রতিষ্ঠানের মেধাবী ও পরিশ্রমী শিক্ষার্থীদের সাথে পরিচিত হন',
             // About Section
             'about_section_image' => 'https://images.unsplash.com/photo-1562774053-701939374585?w=600',
             'about_section_title' => 'প্রতিষ্ঠান সম্পর্কে',
@@ -177,7 +220,7 @@ class PageController extends Controller
             'about_section_button' => 'বিস্তারিত পড়ুন',
             // Notice Section
             'notice_title' => 'নোটিশ বোর্ড',
-            'notice_1' => 'নতুন শিক্ষাবর্ষের ভর্তি কার্যক্রম শুরু...',
+            'notice_1' => 'নতুন ব্যাচের ভর্তি কার্যক্রম শুরু হয়েছে — আসন সীমিত!',
             'notice_view_all' => 'সকল নোটিশ',
         ];
     }
@@ -221,8 +264,28 @@ class PageController extends Controller
             'page_title' => 'Explore Our Courses',
             'page_subtitle' => 'Enhance your skills with our expert-led programs designed for the modern world.',
             'search_placeholder' => 'কোর্সের নাম লিখুন...',
-            'all_subjects' => 'সকল বিষয়',
+            'all_categories' => 'সকল ক্যাটাগরি',
             'search_button' => 'খুঁজুন',
+        ];
+    }
+
+    protected function getDefaultServicesContent(): array
+    {
+        return [
+            'page_title' => 'Our Services',
+            'page_subtitle' => 'Training, digital solutions and practical support for students, freelancers and growing businesses.',
+            'cta_title' => 'আজই শুরু করুন আপনার যাত্রা',
+            'cta_text' => 'আমাদের সাথে যোগাযোগ করুন এবং সঠিক কোর্স বেছে নিন — আপনার ক্যারিয়ারের পরবর্তী ধাপ শুরু হোক এখানেই।',
+            'cta_button' => 'যোগাযোগ করুন',
+        ];
+    }
+
+    protected function getDefaultTeamContent(): array
+    {
+        return [
+            'page_title' => 'Meet Our Team',
+            'page_subtitle' => 'Expert instructors and support professionals committed to hands-on mentorship and student outcomes.',
+            'team_intro' => 'আমাদের অভিজ্ঞ প্রশিক্ষকরা আপনার প্রতিটি ধাপে পাশে আছেন — ক্লাসরুম থেকে মার্কেটপ্লেস পর্যন্ত।',
         ];
     }
 

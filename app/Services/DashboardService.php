@@ -172,7 +172,8 @@ class DashboardService
         // Real counts from the course-business data
         $batchIds = $teacher->batches()->pluck('batches.id');
         $studentCount = \App\Models\Batch::whereIn('id', $batchIds)->withCount('students')->get()->sum('students_count');
-        $todayDay = now()->dayOfWeek; // 0=Sunday ... 6=Saturday
+        // day_of_week is a lowercase string enum: 'sunday' ... 'saturday'
+        $todayDay = strtolower(now()->format('l'));
         $todayClasses = \App\Models\ClassSchedule::where('teacher_id', $teacher->id)
             ->where('day_of_week', $todayDay)
             ->count();

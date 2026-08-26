@@ -15,9 +15,9 @@ class BrevoEmailService
 
     public function __construct()
     {
-        $this->apiKey = Setting::where('key', 'brevo_api_key')->value('value');
-        $this->senderEmail = Setting::where('key', 'brevo_sender_email')->value('value') ?: 'ajju40959@gmail.com';
-        $this->senderName = Setting::where('key', 'brevo_sender_name')->value('value') ?: 'Dhaka IT Institute';
+        $this->apiKey = Setting::getValue('brevo_api_key');
+        $this->senderEmail = Setting::getValue('brevo_sender_email', 'ajju40959@gmail.com');
+        $this->senderName = Setting::getValue('brevo_sender_name', 'Dhaka IT Institute');
     }
 
     /**

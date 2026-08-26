@@ -69,7 +69,7 @@
         @php
             $style .= 'width:' . ($el['width'] ?? 700) . 'px;';
             $style .= 'font-size:' . ($el['fontSize'] ?? 20) . 'px;';
-            $style .= 'font-family:' . ($fontMap[$el['fontFamily']] ?? $el['fontFamily'] ?? 'Georgia, serif') . ';';
+            $style .= 'font-family:' . ($fontMap[$el['fontFamily']] ?? 'Georgia, serif') . ';';
             $style .= 'color:' . ($el['color'] ?? '#111827') . ';';
             $style .= 'text-align:' . ($el['align'] ?? 'center') . ';';
             if (!empty($el['bold'])) $style .= 'font-weight:bold;';

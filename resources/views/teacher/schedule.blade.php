@@ -63,7 +63,7 @@
 
     <!-- Today's Highlight -->
     @php
-        $today = \Carbon\Carbon::now()->dayOfWeek;
+        $today = strtolower(\Carbon\Carbon::now()->format('l'));
         $todaySchedules = $schedules[$today] ?? collect();
     @endphp
     

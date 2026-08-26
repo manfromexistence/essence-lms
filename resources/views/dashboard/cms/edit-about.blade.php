@@ -21,7 +21,7 @@
         </x-ui.alert>
     @endif
 
-    <form action="{{ route('dashboard.cms.update', $page) }}" method="POST" class="space-y-6">
+    <form action="{{ route('dashboard.cms.update', $page) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
 

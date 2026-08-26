@@ -27,9 +27,13 @@ class CourseVideoController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'video_type' => 'required|in:upload,youtube,vimeo,facebook',
-            'video_file' => 'required_if:video_type,upload|nullable|file|mimetypes:video/mp4,video/quicktime,video/x-msvideo|max:512000', // 500MB
+            'video_file' => [
+                'required_if:video_type,upload', 'nullable', 'file',
+                'mimetypes:video/mp4,video/quicktime,video/x-msvideo', 'max:512000', // 500MB
+                new \App\Rules\SafeUpload(['mp4', 'm4v', 'mov', 'webm']),
+            ],
             'external_id' => 'required_if:video_type,youtube,vimeo,facebook|nullable|string',
-            'thumbnail_file' => 'nullable|image|max:2048',
+            'thumbnail_file' => ['nullable', 'image', 'max:2048', new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'gif', 'webp'])],
             'duration' => 'nullable|integer|min:0',
             'is_preview' => 'nullable|boolean',
         ]);
@@ -94,9 +98,12 @@ class CourseVideoController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'video_type' => 'required|in:upload,youtube,vimeo,facebook',
-            'video_file' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-msvideo|max:512000',
+            'video_file' => [
+                'nullable', 'file', 'mimetypes:video/mp4,video/quicktime,video/x-msvideo', 'max:512000',
+                new \App\Rules\SafeUpload(['mp4', 'm4v', 'mov', 'webm']),
+            ],
             'external_id' => 'required_if:video_type,youtube,vimeo,facebook|nullable|string',
-            'thumbnail_file' => 'nullable|image|max:2048',
+            'thumbnail_file' => ['nullable', 'image', 'max:2048', new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'gif', 'webp'])],
             'duration' => 'nullable|integer|min:0',
             'is_preview' => 'nullable|boolean',
         ]);

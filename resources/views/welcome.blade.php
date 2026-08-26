@@ -1,6 +1,7 @@
 @extends('layouts.frontend')
 
-@section('title', 'Dhaka IT Institute - Practical IT & Freelancing Training')
+@section('title', ($page && $page->meta_title ? $page->meta_title : 'Dhaka IT Institute - Practical IT & Freelancing Training'))
+@section('meta_description', 'Dhaka IT Institute — Practical IT and freelancing training in Mirpur, Dhaka. Web development, Microsoft Office, digital marketing and more with expert mentors.')
 
 @push('styles')
     <style>
@@ -53,7 +54,7 @@
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
                 <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
                     <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-xl leading-tight">{{ $page ? $page->getContent('slide1_title', 'Dhaka IT Institute-এ স্বাগতম') : 'Dhaka IT Institute-এ স্বাগতম' }}</h2>
-                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-lg">{{ $page ? $page->getContent('slide1_subtitle', 'কলেজে এর পক্ষ থেকে!') : 'কলেজে এর পক্ষ থেকে!' }}</h3>
+                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-lg">{{ $page ? $page->getContent('slide1_subtitle', 'প্র্যাকটিক্যাল স্কিল থেকে ফ্রিল্যান্সিং ক্যারিয়ার') : 'প্র্যাকটিক্যাল স্কিল থেকে ফ্রিল্যান্সিং ক্যারিয়ার' }}</h3>
                 </div>
             </div>
 
@@ -63,8 +64,8 @@
                     class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
                 <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
-                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-lg leading-tight">{{ $page ? $page->getContent('slide2_title', 'শিক্ষার আলোয় আলোকিত') : 'শিক্ষার আলোয় আলোকিত' }}</h2>
-                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-md">{{ $page ? $page->getContent('slide2_subtitle', 'ভবিষ্যৎ প্রজন্ম') : 'ভবিষ্যৎ প্রজন্ম' }}</h3>
+                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-lg leading-tight">{{ $page ? $page->getContent('slide2_title', 'শিখুন, অনুশীলন করুন, আয় করুন') : 'শিখুন, অনুশীলন করুন, আয় করুন' }}</h2>
+                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-md">{{ $page ? $page->getContent('slide2_subtitle', 'রিয়েল প্রজেক্ট নিয়ে হাতে-কলমে প্রশিক্ষণ') : 'রিয়েল প্রজেক্ট নিয়ে হাতে-কলমে প্রশিক্ষণ' }}</h3>
                 </div>
             </div>
 
@@ -74,8 +75,8 @@
                     class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
                 <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
-                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-lg leading-tight">{{ $page ? $page->getContent('slide3_title', 'মানসম্মত শিক্ষা') : 'মানসম্মত শিক্ষা' }}</h2>
-                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-md">{{ $page ? $page->getContent('slide3_subtitle', 'আধুনিক শিক্ষা ব্যবস্থা') : 'আধুনিক শিক্ষা ব্যবস্থা' }}</h3>
+                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-lg leading-tight">{{ $page ? $page->getContent('slide3_title', 'ফ্রিল্যান্সিং ও জব মার্কেটে প্রস্তুতি') : 'ফ্রিল্যান্সিং ও জব মার্কেটে প্রস্তুতি' }}</h2>
+                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-md">{{ $page ? $page->getContent('slide3_subtitle', 'এক্সপার্ট মেন্টরশিপে আপনার ক্যারিয়ার গড়ুন') : 'এক্সপার্ট মেন্টরশিপে আপনার ক্যারিয়ার গড়ুন' }}</h3>
                 </div>
             </div>
 
@@ -120,17 +121,17 @@
                                 {{ $page ? $page->getContent('banner_title', 'Dhaka IT Institute') : 'Dhaka IT Institute' }} <span class="text-primary">{{ $page ? $page->getContent('banner_title_highlight', '— Let’s Build Your Dream') : '— Let’s Build Your Dream' }}</span>
                             </h2>
                             <h3 class="text-2xl md:text-3xl font-bold text-primary mb-4">
-                                {{ $page ? $page->getContent('banner_subtitle', 'সবাই, জিতছে সবাই') : 'সবাই, জিতছে সবাই' }}
+                                {{ $page ? $page->getContent('banner_subtitle', 'স্কিল শিখুন, প্রজেক্ট করুন, ক্যারিয়ার গড়ুন') : 'স্কিল শিখুন, প্রজেক্ট করুন, ক্যারিয়ার গড়ুন' }}
                             </h3>
                         </div>
 
                         <p class="text-gray-700 leading-relaxed mb-6">
-                            {{ $page ? $page->getContent('banner_description', 'এখন তুমি যেখানেই থাকো, ম্যাচার কথা না কিছু! কারণ সবাই শিখাছে আর জিতছে দেশের সবচেয়ে বিশ্বস্ত ডিজিটাল লার্নিং প্ল্যাটফর্ম শিখোতে।') : 'এখন তুমি যেখানেই থাকো, ম্যাচার কথা না কিছু! কারণ সবাই শিখাছে আর জিতছে দেশের সবচেয়ে বিশ্বস্ত ডিজিটাল লার্নিং প্ল্যাটফর্ম শিখোতে।' }}
+                            {{ $page ? $page->getContent('banner_description', 'ওয়েব ডেভেলপমেন্ট, Microsoft Office, digital marketing ও freelancing-এ হাতে-কলমে প্রশিক্ষণ। বাস্তব প্রজেক্ট, marketplace workflow এবং client communication-এর মাধ্যমে সফল ক্যারিয়ার শুরু করুন।') : 'ওয়েব ডেভেলপমেন্ট, Microsoft Office, digital marketing ও freelancing-এ হাতে-কলমে প্রশিক্ষণ। বাস্তব প্রজেক্ট, marketplace workflow এবং client communication-এর মাধ্যমে সফল ক্যারিয়ার শুরু করুন।' }}
                         </p>
 
                         <a href="{{ route('courses') }}"
                             class="inline-block bg-primary hover:opacity-90 text-white font-semibold px-8 py-3 rounded-lg transition-all shadow-lg hover:shadow-xl">
-                            {{ $page ? $page->getContent('banner_button', 'আমাদের সম্পর্কে জেনে নাও') : 'আমাদের সম্পর্কে জেনে নাও' }}
+                            {{ $page ? $page->getContent('banner_button', 'কোর্সসমূহ দেখুন') : 'কোর্সসমূহ দেখুন' }}
                         </a>
                     </div>
                 </div>
@@ -443,9 +444,9 @@
     <!-- About & Notice Section -->
     <section id="notice-board" class="py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="grid md:grid-cols-3 gap-8 items-stretch">
+            <div class="grid md:grid-cols-3 gap-8 items-start">
                 <div class="md:col-span-2 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-                    <div class="grid md:grid-cols-2 gap-6 p-6 flex-1">
+                    <div class="grid md:grid-cols-2 gap-6 p-6">
                         <div>
                             <img src="{{ $page ? $page->getContent('about_section_image', 'https://images.unsplash.com/photo-1562774053-701939374585?w=600') : 'https://images.unsplash.com/photo-1562774053-701939374585?w=600' }}" alt="School Building"
                                 class="w-full h-full object-cover rounded-lg">
@@ -455,6 +456,72 @@
                                 <h2 class="text-2xl font-bold text-gray-800 mb-4">{{ $page ? $page->getContent('about_section_title', 'প্রতিষ্ঠান সম্পর্কে') : 'প্রতিষ্ঠান সম্পর্কে' }}</h2>
                                 <p class="text-gray-600 leading-relaxed mb-4 text-sm">{{ $page ? $page->getContent('about_section_text1', 'Dhaka IT Institute মিরপুর-১০-এ অবস্থিত একটি প্র্যাকটিক্যাল IT ও freelancing training center।') : 'Dhaka IT Institute মিরপুর-১০-এ অবস্থিত একটি প্র্যাকটিক্যাল IT ও freelancing training center।' }}</p>
                                 <p class="text-gray-600 leading-relaxed mb-4 text-sm">{{ $page ? $page->getContent('about_section_text2', 'আমাদের লক্ষ্য শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।') : 'আমাদের লক্ষ্য শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।' }}</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-green-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">হাতে-কলমে প্রজেক্ট</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">মার্কেটপ্লেস প্রস্তুতি</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-purple-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">ক্লায়েন্ট কমিউনিকেশন</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-orange-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">অভিজ্ঞ মেন্টর সাপোর্ট</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">কোর্স শেষে সার্টিফিকেট</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-cyan-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">ফ্রিল্যান্সিং গাইডলাইন</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">লাইভ প্র্যাকটিক্যাল ক্লাস</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">জব প্লেসমেন্ট সাপোর্ট</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">৫০০০+ সফল শিক্ষার্থী</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">আপডেটেড কারিকুলাম</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">মক ইন্টারভিউ সেশন</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-sky-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">লাইফটাইম সাপোর্ট</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-violet-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">রিয়েল ক্লায়েন্ট প্রজেক্ট</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-fuchsia-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">পোর্টফোলিও বিল্ডিং</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-yellow-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">অনলাইন ও অফলাইন ব্যাচ</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                        <svg class="w-4 h-4 text-lime-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span class="text-xs font-medium text-gray-700">প্রবলেম সলভিং সেশন</span>
+                                    </div>
+                                </div>
                             </div>
                             <a href="{{ route('about') }}"
                                 class="block w-full text-center bg-primary text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary transition mt-4">
@@ -522,9 +589,19 @@
                         <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
                             <h3 class="text-xl leading-6 font-bold text-gray-900 mb-4" id="modal-title">Course Title</h3>
                             <div class="mt-2">
-                                <img id="modal-image" src="" alt="Course Image" class="w-full h-48 object-cover rounded-lg mb-4 shadow-sm">
-                                <div id="modal-video-player" class="mb-4 hidden overflow-hidden rounded-lg bg-black shadow-sm">
-                                    <div class="aspect-video"><iframe id="modal-video-frame" class="h-full w-full" src="" title="Course demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+                                <div class="relative mb-4 rounded-lg overflow-hidden bg-black shadow-sm">
+                                    <img id="modal-image" src="" alt="Course Image" class="w-full aspect-video object-cover">
+                                    <button type="button" id="modal-play-btn" class="absolute inset-0 hidden items-center justify-center bg-black/30 hover:bg-black/40 transition group" onclick="playModalVideo()" aria-label="Play demo video">
+                                        <span class="flex items-center justify-center w-16 h-16 rounded-full bg-white/95 shadow-xl transition group-hover:scale-110 group-hover:bg-white">
+                                            <svg class="w-7 h-7 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z" />
+                                            </svg>
+                                        </span>
+                                        <span class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">ডেমো ক্লাস দেখুন</span>
+                                    </button>
+                                    <div id="modal-video-player" class="hidden aspect-video">
+                                        <iframe id="modal-video-frame" class="h-full w-full" src="" title="Course demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    </div>
                                 </div>
                                 <div class="prose prose-sm text-gray-500">
                                     <p id="modal-description">Course Description</p>
@@ -622,6 +699,7 @@
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         const dots = document.querySelectorAll('.dot');
+        let modalPreviewUrl = null;
 
         function showSlide(index) {
             slides.forEach((slide, i) => {
@@ -769,16 +847,24 @@
                 const imageUrl = course.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
                 document.getElementById('modal-image').src = imageUrl;
 
-                // Embed the free preview lesson (YouTube) directly in the modal
+                // Show thumbnail as poster; load & play the preview video only on click
                 const videoPlayer = document.getElementById('modal-video-player');
                 const videoFrame = document.getElementById('modal-video-frame');
+                const playBtn = document.getElementById('modal-play-btn');
+                const modalImage = document.getElementById('modal-image');
+                videoFrame.src = '';
+                videoPlayer.classList.add('hidden');
+                modalImage.classList.remove('hidden');
+
                 const previewVideo = (course.videos || []).find(v => v.is_preview) || (course.videos || [])[0];
                 if (previewVideo && previewVideo.video_type === 'youtube' && previewVideo.external_id) {
-                    videoFrame.src = `https://www.youtube-nocookie.com/embed/${previewVideo.external_id}?rel=0&modestbranding=1`;
-                    videoPlayer.classList.remove('hidden');
+                    modalPreviewUrl = `https://www.youtube-nocookie.com/embed/${previewVideo.external_id}?rel=0&modestbranding=1`;
+                    playBtn.classList.remove('hidden');
+                    playBtn.classList.add('flex');
                 } else {
-                    videoFrame.src = '';
-                    videoPlayer.classList.add('hidden');
+                    modalPreviewUrl = null;
+                    playBtn.classList.add('hidden');
+                    playBtn.classList.remove('flex');
                 }
 
                 if (course.videos_count) {
@@ -814,10 +900,32 @@
             }
         }
 
+        function playModalVideo() {
+            if (!modalPreviewUrl) return;
+            const playBtn = document.getElementById('modal-play-btn');
+            const modalImage = document.getElementById('modal-image');
+            const videoPlayer = document.getElementById('modal-video-player');
+            document.getElementById('modal-video-frame').src = `${modalPreviewUrl}&autoplay=1`;
+            playBtn.classList.add('hidden');
+            playBtn.classList.remove('flex');
+            modalImage.classList.add('hidden');
+            videoPlayer.classList.remove('hidden');
+        }
+
         function closeCourseModal() {
             document.getElementById('courseModal').classList.add('hidden');
             const frame = document.getElementById('modal-video-frame');
             if (frame) frame.src = '';
+            // Reset back to the thumbnail/poster view
+            const videoPlayer = document.getElementById('modal-video-player');
+            const modalImage = document.getElementById('modal-image');
+            const playBtn = document.getElementById('modal-play-btn');
+            if (videoPlayer) videoPlayer.classList.add('hidden');
+            if (modalImage) modalImage.classList.remove('hidden');
+            if (playBtn && modalPreviewUrl) {
+                playBtn.classList.remove('hidden');
+                playBtn.classList.add('flex');
+            }
             document.body.style.overflow = 'auto';
         }
 

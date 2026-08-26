@@ -35,6 +35,26 @@ class AuthController extends Controller
                 : redirect()->intended('dashboard');
         }
 
+        // The credentials were correct but the account is inactive: tell the
+        // applicant why (pending/rejected) instead of a generic credential error.
+        $user = User::where('email', $request->email)->first();
+        if ($user && Hash::check($request->password, $user->password)) {
+            if (! $user->hasRole('student')) {
+                return back()->withErrors([
+                    'email' => 'Your account has been deactivated. Please contact the office.',
+                ])->onlyInput('email');
+            }
+
+            $status = $user->student?->admission_status ?? 'pending';
+            $message = match ($status) {
+                'rejected' => 'Your admission application was not approved. Please contact the office for details.',
+                'approved' => 'Your account is being finalized. Please try again shortly or contact the office.',
+                default => 'Your admission is still awaiting approval. You will be able to log in once the office approves your account.',
+            };
+
+            return back()->withErrors(['email' => $message])->onlyInput('email');
+        }
+
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');

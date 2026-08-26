@@ -42,12 +42,12 @@
             <div class="flex items-center">
                 <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
                     <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Total Exams</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $totalExams }}</p>
+                    <p class="text-sm font-medium text-gray-600">Total Courses</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ $totalCourses }}</p>
                 </div>
             </div>
         </div>
@@ -99,33 +99,33 @@
             </div>
         </div>
 
-        <!-- Upcoming Exams -->
+        <!-- My Batches -->
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Upcoming Exams</h2>
+                <h2 class="text-lg font-semibold text-gray-800">My Batches</h2>
             </div>
             <div class="p-6">
-                @if($upcomingExams->count() > 0)
+                @if($batches->count() > 0)
                     <div class="space-y-4">
-                        @foreach($upcomingExams as $exam)
+                        @foreach($batches as $batchItem)
                             <div class="flex items-center p-4 bg-gray-50 rounded-lg">
                                 <div class="flex-shrink-0">
-                                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                                         </svg>
                                     </div>
                                 </div>
                                 <div class="ml-4 flex-1">
-                                    <p class="text-sm font-medium text-gray-900">{{ $exam->title }}</p>
-                                    <p class="text-sm text-gray-600">{{ $exam->batch->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($exam->start_time)->format('M d, Y') }}</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ $batchItem->course?->name }}</p>
+                                    <p class="text-sm text-gray-600">{{ $batchItem->name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $batchItem->students_count ?? '' }}{{ $batchItem->status === 'active' ? 'Active' : ucfirst($batchItem->status) }}</p>
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-gray-500 text-center py-8">No upcoming exams</p>
+                    <p class="text-gray-500 text-center py-8">No batches assigned yet</p>
                 @endif
             </div>
         </div>
@@ -155,19 +155,6 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-900">View Batches</p>
-                </div>
-            </div>
-        </a>
-
-        <a href="{{ route('teacher.exams') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
-                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-900">View Exams</p>
                 </div>
             </div>
         </a>

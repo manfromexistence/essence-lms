@@ -41,6 +41,34 @@ class StudentPortalController extends Controller
     }
 
     /**
+     * Enforce the exam's scheduled time window before a student starts or submits.
+     */
+    private function assertExamAvailable(Exam $exam): void
+    {
+        $validator = app(\App\Services\ExamTimeValidator::class);
+
+        if (!$validator->canStartExam($exam)) {
+            abort(403, $validator->getTimeStatusMessage($exam) ?: 'This exam is not currently available.');
+        }
+    }
+
+    /**
+     * Ensure the student's batch has access to this exam.
+     */
+    private function assertExamAccess(Student $student, Exam $exam): void
+    {
+        if (!$exam->batch_id) {
+            return;
+        }
+
+        if ($exam->batch_id === $student->batch_id || $exam->batch_id === $student->batch?->id) {
+            return;
+        }
+
+        abort(403, 'You do not have access to this exam. Please contact your administrator.');
+    }
+
+    /**
      * Student dashboard.
      */
     public function dashboard()
@@ -97,13 +125,22 @@ class StudentPortalController extends Controller
     public function downloadMaterial(CourseMaterial $material)
     {
         $student = $this->getStudent();
-        
-        if (!$student || $student->batch?->course_id !== $material->course_id) {
+
+        $hasCourseAccess = $student && CourseEnrollment::where('student_id', $student->id)
+            ->where('course_id', $material->course_id)
+            ->exists();
+        $hasBatchAccess = $student && $student->batch?->course_id === $material->course_id;
+
+        if (!$hasCourseAccess && !$hasBatchAccess) {
             abort(403, 'Unauthorized access to this material.');
         }
 
         if ($material->type === 'link') {
-            return redirect()->away($material->file_path);
+            $url = $material->file_path;
+            if (!preg_match('#^https?://#i', $url)) {
+                abort(404, 'Invalid material link.');
+            }
+            return redirect()->away($url);
         }
 
         $disk = Storage::disk(config('filesystems.private'));
@@ -262,138 +299,14 @@ class StudentPortalController extends Controller
             abort(403, 'Student profile not found.');
         }
         
-        // Check if student has access to this exam
-        // Allow access if:
-        // 1. Exam has no batch restriction (batch_id is null), OR
-        // 2. Student's batch matches the exam's batch, OR
-        // 3. Student is enrolled in a batch that has access to this exam
-        $hasAccess = false;
-        
-        if (!$exam->batch_id) {
-            // Exam is available to all students
-            $hasAccess = true;
-        } elseif ($student->batch_id && $exam->batch_id === $student->batch_id) {
-            // Student's batch matches exam's batch
-            $hasAccess = true;
-        } elseif ($student->batches && $student->batches->contains('id', $exam->batch_id)) {
-            // Student is enrolled in the exam's batch (many-to-many relationship)
-            $hasAccess = true;
-        }
-        
-        if (!$hasAccess) {
-            abort(403, 'You do not have access to this exam. Please contact your administrator.');
-        }
+        $this->assertExamAccess($student, $exam);
+
+        $this->assertExamAvailable($exam);
 
         $attempt = $this->examService->startAttempt($student, $exam);
         $examData = $this->examService->getExamWithTimer($attempt);
 
         return view('student.exam-take', $examData);
-    }
-
-    /**
-     * Take an MCQ exam.
-     * 
-     * Requirements: 2.1, 5.1, 5.2
-     */
-    public function takeMCQ(Exam $exam)
-    {
-        $student = $this->getStudent();
-        
-        if (!$student) {
-            return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
-        }
-
-        // Check if student has access to this exam
-        // Allow access if:
-        // 1. Exam has no batch restriction (batch_id is null), OR
-        // 2. Student's batch matches the exam's batch, OR
-        // 3. Student is enrolled in a batch that has access to this exam
-        $hasAccess = false;
-        
-        if (!$exam->batch_id) {
-            // Exam is available to all students
-            $hasAccess = true;
-        } elseif ($student->batch_id && $exam->batch_id === $student->batch_id) {
-            // Student's batch matches exam's batch
-            $hasAccess = true;
-        } elseif ($student->batches && $student->batches->contains('id', $exam->batch_id)) {
-            // Student is enrolled in the exam's batch (many-to-many relationship)
-            $hasAccess = true;
-        }
-        
-        if (!$hasAccess) {
-            return redirect()->route('student.exams')
-                ->with('error', 'You do not have access to this exam. Please contact your administrator.');
-        }
-
-        // Validate exam time window using ExamTimeValidator
-        $timeValidator = app(\App\Services\ExamTimeValidator::class);
-        
-        if (!$timeValidator->canStartExam($exam)) {
-            $timeStatus = $timeValidator->getTimeStatus($exam);
-            $message = $timeValidator->getTimeStatusMessage($exam);
-            
-            return redirect()->route('student.exams')
-                ->with('error', $message);
-        }
-
-        // Create or retrieve ExamAttempt for student
-        // First, check if any attempt exists (regardless of status)
-        $attempt = ExamAttempt::where('student_id', $student->id)
-            ->where('exam_id', $exam->id)
-            ->first();
-        
-        // If no attempt exists, create one
-        if (!$attempt) {
-            $attempt = ExamAttempt::create([
-                'student_id' => $student->id,
-                'exam_id' => $exam->id,
-                'status' => 'in_progress',
-                'started_at' => now(),
-                'answers' => [],
-                'cheating_events' => [],
-                'ip_address' => request()->ip(),
-            ]);
-        }
-        
-        // If attempt is already submitted, redirect to results
-        if ($attempt->status === 'submitted') {
-            $result = ExamResult::where('student_id', $student->id)
-                ->where('exam_id', $exam->id)
-                ->first();
-            
-            if ($result) {
-                return redirect()->route('student.exam-result', $result->id)
-                    ->with('info', 'You have already submitted this exam.');
-            }
-        }
-        
-        // If attempt exists but has no started_at, set it
-        if (!$attempt->started_at) {
-            $attempt->update(['started_at' => now()]);
-        }
-
-        // Load exam questions with options
-        $questions = $exam->questions()
-            ->where('type', 'mcq')
-            ->orderBy('order')
-            ->get();
-
-        // Get saved answers from the attempt
-        $savedAnswers = $attempt->answers ?? [];
-
-        // Calculate remaining time
-        $remainingTime = $timeValidator->getRemainingTime($attempt);
-
-        // Pass data to view
-        return view('student.mcq-exam', [
-            'student' => $student,
-            'exam' => $exam,
-            'attempt' => $attempt,
-            'questions' => $questions,
-            'timeRemaining' => $remainingTime,
-            'savedAnswers' => $savedAnswers,
-        ]);
     }
 
     /**
@@ -546,224 +459,6 @@ class StudentPortalController extends Controller
     }
 
     /**
-     * View detailed exam results with performance analysis.
-     * 
-     * Requirements: 7.1, 7.2, 7.4
-     * 
-     * Task details:
-     * - Retrieve ExamResult for authenticated student
-     * - Load exam, attempt, questions, and answers
-     * - Calculate performance metrics (score, percentage, time taken, accuracy)
-     * - Fetch student's leaderboard rank
-     * - Pass data to view
-     */
-    public function viewResults(Exam $exam)
-    {
-        $student = $this->getStudent();
-        
-        if (!$student) {
-            return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
-        }
-
-        // Retrieve ExamResult for authenticated student
-        $result = ExamResult::where('student_id', $student->id)
-            ->where('exam_id', $exam->id)
-            ->first();
-
-        if (!$result) {
-            return redirect()->route('student.exams')->with('error', 'No result found for this exam.');
-        }
-
-        // Load exam with questions
-        $exam->load('questions');
-
-        // Load attempt with answers
-        $attempt = ExamAttempt::where('student_id', $student->id)
-            ->where('exam_id', $exam->id)
-            ->first();
-
-        if (!$attempt) {
-            return redirect()->route('student.exams')->with('error', 'No exam attempt found.');
-        }
-
-        // Get questions with student answers and correct answers
-        $questions = $exam->questions->map(function ($question) use ($attempt) {
-            $studentAnswer = $attempt->answers[$question->id] ?? null;
-            
-            return [
-                'id' => $question->id,
-                'question_text' => $question->question_text,
-                'type' => $question->type,
-                'options' => $question->options,
-                'correct_answer' => $question->correct_answer,
-                'student_answer' => $studentAnswer,
-                'is_correct' => $question->correct_answer && $studentAnswer 
-                    ? $question->isCorrectAnswer($studentAnswer) 
-                    : null,
-                'marks' => $question->marks,
-            ];
-        });
-
-        // Calculate performance metrics
-        $timeTaken = 0;
-        if ($attempt->started_at && $attempt->submitted_at) {
-            $timeTaken = $attempt->started_at->diffInSeconds($attempt->submitted_at);
-        }
-
-        // Calculate accuracy (percentage of correct answers)
-        $totalQuestions = $questions->count();
-        $correctAnswers = $questions->filter(function ($q) {
-            return $q['is_correct'] === true;
-        })->count();
-        
-        $accuracy = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
-
-        // Fetch student's leaderboard rank
-        $rank = ExamResult::where('exam_id', $exam->id)
-            ->where(function ($query) use ($result) {
-                $query->where('obtained_marks', '>', $result->obtained_marks)
-                    ->orWhere(function ($q) use ($result) {
-                        $q->where('obtained_marks', '=', $result->obtained_marks)
-                            ->where('id', '<', $result->id);
-                    });
-            })
-            ->count() + 1;
-
-        // Build performance metrics array
-        $performance = [
-            'score' => $result->obtained_marks,
-            'total_marks' => $result->total_marks,
-            'percentage' => $result->percentage,
-            'time_taken' => $timeTaken,
-            'time_taken_formatted' => gmdate('H:i:s', $timeTaken),
-            'accuracy' => $accuracy,
-            'rank' => $rank,
-            'total_students' => ExamResult::where('exam_id', $exam->id)->count(),
-            'passed' => $result->hasPassed(),
-            'grade' => $result->grade ?? $result->calculateGrade(),
-        ];
-
-        // Pass data to view
-        return view('student.exam-results', [
-            'student' => $student,
-            'result' => $result,
-            'attempt' => $attempt,
-            'exam' => $exam,
-            'questions' => $questions,
-            'performance' => $performance,
-        ]);
-    }
-
-    /**
-     * Take a CQ exam.
-     * 
-     * Requirements: 5.1, 5.2
-     * 
-     * Task details:
-     * - Validate exam time window
-     * - Create or retrieve ExamAttempt
-     * - Load CQ questions
-     * - Pass data to view
-     */
-    public function takeCQ(Exam $exam)
-    {
-        $student = $this->getStudent();
-        
-        if (!$student) {
-            return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
-        }
-
-        // Check if student has access to this exam
-        // Allow access if:
-        // 1. Exam has no batch restriction (batch_id is null), OR
-        // 2. Student's batch matches the exam's batch, OR
-        // 3. Student is enrolled in a batch that has access to this exam
-        $hasAccess = false;
-        
-        if (!$exam->batch_id) {
-            // Exam is available to all students
-            $hasAccess = true;
-        } elseif ($student->batch_id && $exam->batch_id === $student->batch_id) {
-            // Student's batch matches exam's batch
-            $hasAccess = true;
-        } elseif ($student->batches && $student->batches->contains('id', $exam->batch_id)) {
-            // Student is enrolled in the exam's batch (many-to-many relationship)
-            $hasAccess = true;
-        }
-        
-        if (!$hasAccess) {
-            return redirect()->route('student.exams')
-                ->with('error', 'You do not have access to this exam. Please contact your administrator.');
-        }
-
-        // Validate exam time window using ExamTimeValidator
-        $timeValidator = app(\App\Services\ExamTimeValidator::class);
-        
-        if (!$timeValidator->canStartExam($exam)) {
-            $timeStatus = $timeValidator->getTimeStatus($exam);
-            $message = $timeValidator->getTimeStatusMessage($exam);
-            
-            return redirect()->route('student.exams')
-                ->with('error', $message);
-        }
-
-        // Create or retrieve ExamAttempt for student
-        // First, check if any attempt exists (regardless of status)
-        $attempt = ExamAttempt::where('student_id', $student->id)
-            ->where('exam_id', $exam->id)
-            ->first();
-        
-        // If no attempt exists, create one
-        if (!$attempt) {
-            $attempt = ExamAttempt::create([
-                'student_id' => $student->id,
-                'exam_id' => $exam->id,
-                'status' => 'in_progress',
-                'started_at' => now(),
-                'answers' => [],
-                'cheating_events' => [],
-                'screenshots' => [],
-                'ip_address' => request()->ip(),
-            ]);
-        }
-        
-        // If attempt is already submitted, redirect to results
-        if ($attempt->status === 'submitted') {
-            $result = ExamResult::where('student_id', $student->id)
-                ->where('exam_id', $exam->id)
-                ->first();
-            
-            if ($result) {
-                return redirect()->route('student.exam-result', $result->id)
-                    ->with('info', 'You have already submitted this exam.');
-            }
-        }
-        
-        // If attempt exists but wasn't just created and has no started_at, set it
-        if (!$attempt->started_at) {
-            $attempt->update(['started_at' => now()]);
-        }
-
-        // Load CQ questions
-        $questions = $exam->questions()
-            ->where('type', 'cq')
-            ->orderBy('order')
-            ->get();
-
-        // Calculate remaining time
-        $remainingTime = $timeValidator->getRemainingTime($attempt);
-
-        // Pass data to view
-        return view('student.cq-exam', [
-            'student' => $student,
-            'exam' => $exam,
-            'attempt' => $attempt,
-            'questions' => $questions,
-            'timeRemaining' => $remainingTime,
-        ]);
-    }
-
-    /**
      * Upload screenshot for CQ exam answer.
      * 
      * Requirements: 3.3, 3.4
@@ -786,7 +481,10 @@ class StudentPortalController extends Controller
         $request->validate([
             'attempt_id' => 'required|exists:exam_attempts,id',
             'question_id' => 'required|integer',
-            'screenshot' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB = 5120KB
+            'screenshot' => [
+                'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120',
+                new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'pdf']),
+            ],
         ]);
 
         // Get the exam attempt
@@ -915,9 +613,40 @@ class StudentPortalController extends Controller
             && CourseEnrollment::where('student_id', $student->id)->where('course_id', $course->id)->exists(), 403);
 
         $data = $request->validate(['watched_seconds' => 'nullable|integer|min:0']);
+        $watchedSeconds = (int) ($data['watched_seconds'] ?? 0);
+
+        // Server-side playback verification: require a meaningful watch duration.
+        $minRequired = $video->duration
+            ? (int) floor($video->duration * 0.9)
+            : 15;
+        if ($watchedSeconds < max(1, $minRequired)) {
+            return response()->json([
+                'completed' => false,
+                'error' => 'Video was not fully watched. Progress not saved.',
+            ], 422);
+        }
+
+        // Sequential enforcement: all earlier videos must already be completed.
+        $previousIncomplete = $course->videos()
+            ->where(function ($query) use ($video) {
+                $query->where('order', '<', $video->order)
+                    ->orWhere(fn ($q) => $q->where('order', $video->order)->where('id', '<', $video->id));
+            })
+            ->whereNotIn('id', VideoView::where('student_id', $student->id)
+                ->where('completed', true)
+                ->pluck('course_video_id'))
+            ->exists();
+
+        if ($previousIncomplete) {
+            return response()->json([
+                'completed' => false,
+                'error' => 'Complete earlier videos before this one.',
+            ], 422);
+        }
+
         VideoView::updateOrCreate(
             ['student_id' => $student->id, 'course_video_id' => $video->id],
-            ['watched_seconds' => $data['watched_seconds'] ?? $video->duration ?? 0, 'completed' => true, 'last_watched_at' => now()]
+            ['watched_seconds' => $watchedSeconds, 'completed' => true, 'last_watched_at' => now()]
         );
 
         $next = $course->videos()->where(function ($query) use ($video) {
@@ -945,27 +674,9 @@ class StudentPortalController extends Controller
             abort(403, 'Student profile not found.');
         }
         
-        // Check if student has access to this exam
-        // Allow access if:
-        // 1. Exam has no batch restriction (batch_id is null), OR
-        // 2. Student's batch matches the exam's batch, OR
-        // 3. Student is enrolled in a batch that has access to this exam
-        $hasAccess = false;
-        
-        if (!$exam->batch_id) {
-            // Exam is available to all students
-            $hasAccess = true;
-        } elseif ($student->batch_id && $exam->batch_id === $student->batch_id) {
-            // Student's batch matches exam's batch
-            $hasAccess = true;
-        } elseif ($student->batches && $student->batches->contains('id', $exam->batch_id)) {
-            // Student is enrolled in the exam's batch (many-to-many relationship)
-            $hasAccess = true;
-        }
-        
-        if (!$hasAccess) {
-            abort(403, 'You do not have access to this exam. Please contact your administrator.');
-        }
+        $this->assertExamAccess($student, $exam);
+
+        $this->assertExamAvailable($exam);
 
         // Load CQ questions
         $questions = $exam->questions()
@@ -1035,27 +746,9 @@ class StudentPortalController extends Controller
             abort(403, 'Student profile not found.');
         }
         
-        // Check if student has access to this exam
-        // Allow access if:
-        // 1. Exam has no batch restriction (batch_id is null), OR
-        // 2. Student's batch matches the exam's batch, OR
-        // 3. Student is enrolled in a batch that has access to this exam
-        $hasAccess = false;
-        
-        if (!$exam->batch_id) {
-            // Exam is available to all students
-            $hasAccess = true;
-        } elseif ($student->batch_id && $exam->batch_id === $student->batch_id) {
-            // Student's batch matches exam's batch
-            $hasAccess = true;
-        } elseif ($student->batches && $student->batches->contains('id', $exam->batch_id)) {
-            // Student is enrolled in the exam's batch (many-to-many relationship)
-            $hasAccess = true;
-        }
-        
-        if (!$hasAccess) {
-            abort(403, 'You do not have access to this exam. Please contact your administrator.');
-        }
+        $this->assertExamAccess($student, $exam);
+
+        $this->assertExamAvailable($exam);
 
         $request->validate([
             'files' => 'required|array|min:1',

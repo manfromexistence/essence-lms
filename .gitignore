@@ -20,3 +20,8 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .env
+
+# Dusk runtime artifacts
+database/dusk.sqlite
+storage/logs/dusk-server.log
+

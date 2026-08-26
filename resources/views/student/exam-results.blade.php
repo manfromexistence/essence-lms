@@ -238,7 +238,7 @@
                                                          alt="Screenshot for question {{ $index + 1 }}" 
                                                          class="w-full h-48 object-cover rounded-lg border-2 border-gray-300 shadow-sm hover:shadow-lg transition-shadow duration-200">
                                                     <a href="{{ Storage::url($screenshot) }}" 
-                                                       target="_blank"
+                                                       target="_blank" rel="noopener"
                                                        class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg">
                                                         <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
@@ -252,7 +252,7 @@
                                                      alt="Screenshot for question {{ $index + 1 }}" 
                                                      class="w-full h-48 object-cover rounded-lg border-2 border-gray-300 shadow-sm hover:shadow-lg transition-shadow duration-200">
                                                 <a href="{{ Storage::url($attempt->screenshots[$question['id']]) }}" 
-                                                   target="_blank"
+                                                   target="_blank" rel="noopener"
                                                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg">
                                                     <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>

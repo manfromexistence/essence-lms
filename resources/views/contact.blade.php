@@ -1,6 +1,7 @@
 @extends('layouts.frontend')
 
-@section('title', ($page ? $page->getContent('page_title', 'যোগাযোগ করুন') : 'যোগাযোগ করুন') . ' - Dhaka IT Institute')
+@section('title', ($page && $page->meta_title ? $page->meta_title : ($page ? $page->getContent('page_title', 'যোগাযোগ করুন') : 'যোগাযোগ করুন')))
+@section('meta_description', ($page ? $page->getContent('page_subtitle', 'আমাদের সাথে যোগাযোগ করুন') : 'আমাদের সাথে যোগাযোগ করুন') . ' — Dhaka IT Institute')
 
 @section('content')
     <!-- Page Header -->
@@ -16,7 +17,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <!-- Contact Form -->
-                <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="bg-white rounded-lg shadow-lg p-8 flex flex-col">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">{{ $page ? $page->getContent('form_title', 'বার্তা পাঠান') : 'বার্তা পাঠান' }}</h2>
                     @if(session('success'))
                         <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -37,7 +38,7 @@
                             </ul>
                         </div>
                     @endif
-                    <form action="{{ route('contact.submit') }}" method="POST" class="space-y-6">
+                    <form action="{{ route('contact.submit') }}" method="POST" class="space-y-6 flex flex-col flex-1">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
@@ -56,10 +57,10 @@
                             <input type="text" name="subject" value="{{ old('subject') }}" placeholder="বিষয় লিখুন" required
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent">
                         </div>
-                        <div>
+                        <div class="flex-1 flex flex-col">
                             <label class="block text-gray-700 font-semibold mb-2">বার্তা</label>
-                            <textarea name="message" rows="5" placeholder="আপনার বার্তাটি এখানে লিখুন" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent">{{ old('message') }}</textarea>
+                            <textarea name="message" placeholder="আপনার বার্তাটি এখানে লিখুন" required
+                                class="w-full flex-1 min-h-[8rem] resize-y px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[{{ $primaryColor ?? '#3d59f9' }}] focus:border-transparent">{{ old('message') }}</textarea>
                         </div>
                         <button type="submit"
                             class="w-full bg-primary hover:opacity-90 text-white font-bold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl">
@@ -115,7 +116,7 @@
                     <!-- Google Map -->
                     <div class="bg-white p-2 rounded-lg shadow-lg aspect-video overflow-hidden border">
                         <iframe
-                            src="{{ $page ? $page->getContent('map_embed', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d116347.16843475968!2d89.9238384!3d24.9193214!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fdfe6e1476f535%3A0xe5a1c31276a66d0b!2sJamalpur%20Sadar%20Upazila!5e0!3m2!1sen!2sbd!4v1705220000000!5m2!1sen!2sbd') : 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d116347.16843475968!2d89.9238384!3d24.9193214!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fdfe6e1476f535%3A0xe5a1c31276a66d0b!2sJamalpur%20Sadar%20Upazila!5e0!3m2!1sen!2sbd!4v1705220000000!5m2!1sen!2sbd' }}"
+                            src="{{ $page ? $page->getContent('map_embed', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3650.3589547128417!2d90.36841027523685!3d23.806456578626807!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755c0f275c0c2e1%3A0x8d1f1c5f8c6a4a0b!2sMirpur%2010%2C%20Dhaka!5e0!3m2!1sen!2sbd!4v1700000000000!5m2!1sen!2sbd') : 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3650.3589547128417!2d90.36841027523685!3d23.806456578626807!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755c0f275c0c2e1%3A0x8d1f1c5f8c6a4a0b!2sMirpur%2010%2C%20Dhaka!5e0!3m2!1sen!2sbd!4v1700000000000!5m2!1sen!2sbd' }}"
                             class="w-full h-full border-0" allowfullscreen="" loading="lazy"></iframe>
                     </div>
                 </div>

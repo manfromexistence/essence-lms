@@ -134,6 +134,6 @@ class ExamAttempt extends Model
     public function scopeExpiredAndPending($query)
     {
         return $query->where('status', 'in_progress')
-            ->whereRaw('TIMESTAMPDIFF(SECOND, started_at, NOW()) > (SELECT duration * 60 FROM exams WHERE exams.id = exam_attempts.exam_id)');
+            ->whereRaw('TIMESTAMPDIFF(SECOND, started_at, NOW()) > (SELECT duration_minutes * 60 FROM exams WHERE exams.id = exam_attempts.exam_id)');
     }
 }

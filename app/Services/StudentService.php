@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Student;
 use App\Models\Batch;
+use App\Models\CourseEnrollment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -63,14 +64,37 @@ class StudentService
     public function delete(Student $student): bool
     {
         return DB::transaction(function () use ($student) {
-            // Delete related records if needed
+            // Delete related records if needed (exam attempts, CQ submissions
+            // and video views cascade automatically at the DB level).
             $student->attendances()->delete();
             $student->payments()->delete();
             $student->invoices()->delete();
             $student->results()->delete();
+            $student->courseEnrollments()->delete();
+            $student->incomes()->delete();
 
             return $student->delete();
         });
+    }
+
+    /**
+     * Keep course access in sync with the student's batch assignment.
+     * A batch-assigned student (offline or online) owns an enrollment for
+     * that batch's course, which gates video/materials access.
+     */
+    public function syncEnrollment(Student $student): ?CourseEnrollment
+    {
+        $student->load('batch');
+        $batch = $student->batch;
+
+        if (!$batch || !$batch->course_id) {
+            return null;
+        }
+
+        return CourseEnrollment::updateOrCreate(
+            ['student_id' => $student->id, 'course_id' => $batch->course_id],
+            ['batch_id' => $batch->id, 'enrolled_at' => $student->applied_at ?? now()]
+        );
     }
 
     /**

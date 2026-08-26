@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\Role;
 use App\Models\Student;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ImportService
@@ -169,14 +173,32 @@ class ImportService
 
     protected function importStudent(array $data): Student
     {
-        return Student::create([
-            'name' => $data['name'] ?? null,
-            'email' => $data['email'] ?? null,
-            'phone' => $data['phone'] ?? null,
-            'guardian_name' => $data['guardian_name'] ?? null,
-            'guardian_phone' => $data['guardian_phone'] ?? null,
-            'status' => 'active',
-        ]);
+        return DB::transaction(function () use ($data) {
+            $email = $data['email'] ?? null;
+            $name = $data['name'] ?? ($data['name_bn'] ?? 'Student');
+
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make(Str::random(16)),
+                'is_active' => true,
+            ]);
+
+            $studentRole = Role::where('slug', 'student')->first();
+            if ($studentRole) {
+                $user->roles()->attach($studentRole->id);
+            }
+
+            return Student::create([
+                'user_id' => $user->id,
+                'name_bn' => $data['name_bn'] ?? $name,
+                'phone' => $data['phone'] ?? null,
+                'guardian_name' => $data['guardian_name'] ?? null,
+                'guardian_phone' => $data['guardian_phone'] ?? null,
+                'admission_status' => 'pending',
+                'status' => 'active',
+            ]);
+        });
     }
 
     public function getImportTypes(): array

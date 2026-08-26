@@ -95,18 +95,14 @@ class CertificateController extends Controller
             . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">This certificate is verifiable online. Keep it safe and share it with pride!</p>'
             . '</div></div>';
 
-        $log = app(\App\Services\BrevoEmailService::class)->send(
+        \App\Jobs\SendEmailJob::dispatch(
             $certificate->student->user->email,
             "🎓 Your Course Certificate — {$courseName}",
             $html,
             ['type' => 'certificate', 'related' => $certificate->student]
         );
 
-        if ($log->isSent()) {
-            return back()->with('success', "Certificate emailed to {$certificate->student->user->email}.");
-        }
-
-        return back()->with('error', 'Failed to email certificate: ' . ($log->error_message ?? 'unknown error'));
+        return back()->with('success', "Certificate email queued for {$certificate->student->user->email}. It will be sent in the background.");
     }
 
     public function revoke(Request $request, Certificate $certificate)

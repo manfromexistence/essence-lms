@@ -205,7 +205,6 @@ Route::middleware('auth')->group(function () {
         // Class Schedules
         Route::resource('schedules', \App\Http\Controllers\Admin\ScheduleController::class);
         Route::post('schedules/check-conflict', [\App\Http\Controllers\Admin\ScheduleController::class, 'checkConflict'])->name('schedules.check-conflict');
-        Route::get('exams/routine', [\App\Http\Controllers\Admin\OnlineExamController::class, 'routine'])->name('exams.routine');
 
         // Teacher Salaries
         Route::resource('salaries', \App\Http\Controllers\Admin\SalaryController::class);
@@ -237,7 +236,7 @@ Route::middleware('auth')->group(function () {
         // Communication
         Route::get('communication', [\App\Http\Controllers\Admin\CommunicationController::class, 'index'])->name('communication.index');
         Route::post('communication/send', [\App\Http\Controllers\Admin\CommunicationController::class, 'send'])->name('communication.send');
-        Route::post('communication/send-bulk', [\App\Http\Controllers\Admin\CommunicationController::class, 'sendBulk'])->name('communication.send-bulk');
+        Route::post('communication/send-bulk', [\App\Http\Controllers\Admin\CommunicationController::class, 'bulkSend'])->name('communication.send-bulk');
         Route::match(['get', 'post'], 'communication/send-result', [\App\Http\Controllers\Admin\CommunicationController::class, 'sendResult'])->name('communication.send-result');
         Route::get('communication/logs', [\App\Http\Controllers\Admin\CommunicationController::class, 'logs'])->name('communication.logs');
         Route::post('communication/retry/{smsLog}', [\App\Http\Controllers\Admin\CommunicationController::class, 'retry'])->name('communication.retry');
@@ -266,6 +265,7 @@ Route::middleware('auth')->group(function () {
             Route::get('export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('export');
             Route::post('export-pdf', [\App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('export-pdf');
             Route::post('export-excel', [\App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('export-excel');
+            Route::get('exports/{export}/download', [\App\Http\Controllers\Admin\ReportController::class, 'downloadExport'])->name('exports.download');
             Route::get('dashboard-data', [\App\Http\Controllers\Admin\ReportController::class, 'dashboardData'])->name('dashboard-data');
         });
 
@@ -280,7 +280,10 @@ Route::middleware('auth')->group(function () {
         Route::get('payments/tracking', [AdminPaymentController::class, 'tracking'])->name('payments.tracking');
         Route::get('payments/{payment}/receipt', [AdminPaymentController::class, 'receipt'])->name('payments.receipt');
         Route::get('payments/student/{student}/history', [AdminPaymentController::class, 'history'])->name('payments.history');
-        Route::resource('payments', AdminPaymentController::class);
+        Route::get('payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+        Route::get('payments/create/{student?}', [AdminPaymentController::class, 'create'])->name('payments.create');
+        Route::post('payments', [AdminPaymentController::class, 'store'])->name('payments.store');
+        Route::get('payments/{payment}', [AdminPaymentController::class, 'show'])->name('payments.show');
 
         Route::resource('services', \App\Http\Controllers\Admin\ServiceController::class)->except(['show']);
 
@@ -315,6 +318,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/about', [\App\Http\Controllers\Admin\PageController::class, 'editAbout'])->name('about');
             Route::get('/contact', [\App\Http\Controllers\Admin\PageController::class, 'editContact'])->name('contact');
             Route::get('/courses', [\App\Http\Controllers\Admin\PageController::class, 'editCourses'])->name('courses');
+            Route::get('/services', [\App\Http\Controllers\Admin\PageController::class, 'editServices'])->name('services');
+            Route::get('/team', [\App\Http\Controllers\Admin\PageController::class, 'editTeam'])->name('team');
             Route::get('/teachers', [\App\Http\Controllers\Admin\PageController::class, 'editTeachers'])->name('teachers');
             Route::get('/students', [\App\Http\Controllers\Admin\PageController::class, 'editStudents'])->name('students');
             Route::get('/results', [\App\Http\Controllers\Admin\PageController::class, 'editResults'])->name('results');

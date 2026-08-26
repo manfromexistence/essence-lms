@@ -54,7 +54,10 @@ class PaymentController extends Controller
                 Rule::unique('payments')->where(fn ($query) => $query->where('payment_method', $request->payment_method)),
             ],
             'sender_number' => 'required_if:payment_method,bkash|nullable|regex:/^01[3-9][0-9]{8}$/',
-            'screenshot' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+            'screenshot' => [
+                'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120',
+                new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'pdf']),
+            ],
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -199,31 +202,28 @@ class PaymentController extends Controller
                 'action_url' => route('student.course.watch', $payment->course_id),
             ]);
 
-            // Notify the student by email (Brevo)
-            try {
-                $studentName = $payment->student?->user?->name ?? 'Student';
-                $studentEmail = $payment->student?->user?->email;
-                if ($studentEmail) {
-                    $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
-                        . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
-                        . '<h2 style="color:#fff;margin:0;">Payment Approved 🎉</h2></div>'
-                        . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
-                        . '<p>Dear <strong>' . e($studentName) . '</strong>,</p>'
-                        . '<p>Your payment of <strong>৳' . number_format($payment->amount, 2) . '</strong> for <strong>' . e($payment->course?->name ?? 'your course') . '</strong> has been verified and approved.</p>'
-                        . '<p>You now have full access to the course. Start learning today!</p>'
-                        . '<p style="margin-top:24px;"><a href="' . route('student.course.watch', $payment->course_id) . '" style="background:#168536;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">Go to Course</a></p>'
-                        . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
-                        . '</div></div>';
+            // Notify the student by email (Brevo) — queued so the HTTP worker
+            // never blocks on the third-party API.
+            $studentName = $payment->student?->user?->name ?? 'Student';
+            $studentEmail = $payment->student?->user?->email;
+            if ($studentEmail) {
+                $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
+                    . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
+                    . '<h2 style="color:#fff;margin:0;">Payment Approved 🎉</h2></div>'
+                    . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
+                    . '<p>Dear <strong>' . e($studentName) . '</strong>,</p>'
+                    . '<p>Your payment of <strong>৳' . number_format($payment->amount, 2) . '</strong> for <strong>' . e($payment->course?->name ?? 'your course') . '</strong> has been verified and approved.</p>'
+                    . '<p>You now have full access to the course. Start learning today!</p>'
+                    . '<p style="margin-top:24px;"><a href="' . route('student.course.watch', $payment->course_id) . '" style="background:#168536;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">Go to Course</a></p>'
+                    . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
+                    . '</div></div>';
 
-                    app(\App\Services\BrevoEmailService::class)->send(
-                        $studentEmail,
-                        'Payment Approved — ' . ($payment->course?->name ?? 'Course'),
-                        $html,
-                        ['type' => 'payment', 'related' => $payment->student]
-                    );
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Payment approval email failed', ['error' => $e->getMessage()]);
+                \App\Jobs\SendEmailJob::dispatch(
+                    $studentEmail,
+                    'Payment Approved — ' . ($payment->course?->name ?? 'Course'),
+                    $html,
+                    ['type' => 'payment', 'related' => $payment->student]
+                );
             }
         });
 
@@ -248,23 +248,28 @@ class PaymentController extends Controller
             'admin_notes' => 'required|string|max:1000',
         ]);
 
-        // Update payment status
-        $payment->update([
-            'status' => Payment::STATUS_REJECTED,
-            'reviewed_at' => now(),
-            'reviewed_by' => Auth::id(),
-            'admin_notes' => $request->input('admin_notes'),
-        ]);
+        // Update payment status (locked so approve/reject can't race)
+        DB::transaction(function () use ($payment, $request) {
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+            abort_unless($payment->isPending(), 409, 'Payment has already been processed.');
 
-        Notification::create([
-            'user_id' => $payment->student->user_id,
-            'user_type' => 'student',
-            'type' => 'course_payment_rejected',
-            'title' => 'Course payment needs attention',
-            'message' => "Your payment for {$payment->course->name} was not approved: {$request->input('admin_notes')}",
-            'data' => ['payment_id' => $payment->id, 'course_id' => $payment->course_id],
-            'action_url' => route('student.payment.dashboard'),
-        ]);
+            $payment->update([
+                'status' => Payment::STATUS_REJECTED,
+                'reviewed_at' => now(),
+                'reviewed_by' => Auth::id(),
+                'admin_notes' => $request->input('admin_notes'),
+            ]);
+
+            Notification::create([
+                'user_id' => $payment->student->user_id,
+                'user_type' => 'student',
+                'type' => 'course_payment_rejected',
+                'title' => 'Course payment needs attention',
+                'message' => "Your payment for {$payment->course->name} was not approved: {$request->input('admin_notes')}",
+                'data' => ['payment_id' => $payment->id, 'course_id' => $payment->course_id],
+                'action_url' => route('student.payment.dashboard'),
+            ]);
+        });
 
         return redirect()->route('payment.review.list')
             ->with('success', 'Payment rejected successfully.');

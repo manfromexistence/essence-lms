@@ -9,7 +9,7 @@
     <h2 class="text-lg font-bold">Issue certificate manually</h2>
     <p class="mt-1 text-sm text-gray-500">Certificates are also issued automatically after every course lesson is completed.</p>
     <form method="POST" action="{{ route('dashboard.certificates.store') }}" class="mt-4 flex flex-col gap-3 md:flex-row">@csrf
-        <x-ui.select name="enrollment_id" required class="min-w-0 flex-1">
+        <x-ui.select name="enrollment_id" required class="min-w-0 flex-1 rounded-xl border border-gray-300 px-4 py-2.5 focus:border-primary focus:ring-primary">
             <option value="">Select an enrolled student and course</option>
             @forelse($enrollments as $enrollment)
                 <option value="{{ $enrollment->id }}">{{ $enrollment->student->user->name }} — {{ $enrollment->course->name }}</option>

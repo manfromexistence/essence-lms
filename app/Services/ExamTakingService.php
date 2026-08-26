@@ -217,12 +217,18 @@ class ExamTakingService
     {
         $errors = [];
         $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+        $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
         $maxSize = 10 * 1024 * 1024; // 10MB
 
         foreach ($files as $index => $file) {
             if ($file instanceof UploadedFile) {
                 if (!in_array($file->getMimeType(), $allowedTypes)) {
                     $errors[] = "File {$index}: Invalid file type. Allowed: PDF, JPG, PNG.";
+                    continue;
+                }
+                if ($rejection = app(FileScanService::class)->inspect($file, $allowedExtensions)) {
+                    $errors[] = "File {$index}: {$rejection}";
+                    continue;
                 }
                 if ($file->getSize() > $maxSize) {
                     $errors[] = "File {$index}: File size exceeds 10MB limit.";

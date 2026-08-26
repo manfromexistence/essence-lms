@@ -216,6 +216,35 @@ class ExportService
     }
 
     /**
+     * Build (but do not stream) the PDF for a report type so queued jobs can
+     * persist it to a storage disk.
+     *
+     * @param string $reportType The type of report (attendance, payment, performance, student)
+     * @param Collection $data The data collection to export
+     * @param array $filters Filters applied to the report
+     */
+    public function buildPdf(string $reportType, Collection $data, array $filters = []): \Barryvdh\DomPDF\PDF
+    {
+        $view = $this->getPdfView($reportType);
+
+        if (!$view) {
+            throw new InvalidArgumentException("Unsupported report type for PDF: {$reportType}.");
+        }
+
+        $viewData = [
+            'data' => $data,
+            'filters' => $filters,
+            'reportType' => $reportType,
+            'generatedAt' => Carbon::now()->format('Y-m-d H:i:s'),
+            'title' => $this->getReportTitle($reportType),
+        ];
+
+        $pdf = Pdf::loadView($view, $viewData);
+
+        return $this->configurePdfSettings($pdf, $reportType);
+    }
+
+    /**
      * Get the appropriate Laravel Excel export class for a report type.
      * 
      * Returns the fully qualified class name of the export class

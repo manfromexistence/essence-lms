@@ -209,7 +209,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             @if($payment->screenshot_path)
                                 <a href="{{ route('student.payment.proof', $payment) }}"
-                                    target="_blank" 
+                                    target="_blank" rel="noopener" 
                                     class="text-blue-600 hover:text-blue-800">
                                     View
                                 </a>
