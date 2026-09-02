@@ -8,7 +8,7 @@
                     $institutionName = $settingsService->get('institution_name', 'Dhaka IT Institute');
                 @endphp
                 <div class="flex items-center gap-3 mb-4">
-                    <img src="{{ $logoUrl }}" alt="{{ $institutionName }}" class="h-8 md:h-10 w-auto object-contain">
+                    <img src="{{ $logoUrl }}" alt="{{ $institutionName }}" class="h-16 md:h-20 w-auto object-contain">
                 </div>
                 <p class="text-primary text-sm leading-relaxed mb-4">
                     প্র্যাকটিক্যাল IT, web development, digital marketing ও freelancing training—অনলাইন এবং অফলাইন।

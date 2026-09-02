@@ -49,35 +49,20 @@
             class="hero-inner relative h-[500px] lg:h-[700px] w-full max-w-[95%] 2xl:max-w-[90rem] mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl isolate transform translate-z-0">
             <!-- Slide 1 -->
             <div class="slide active absolute inset-0 w-full h-full">
-                <img src="{{ $page ? $page->getContent('slide1_image', '/images/homepage-banner.png') : '/images/homepage-banner.png' }}" alt="Students"
+                <img src="/images/page-banner.png" alt="Page Banner"
                     class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
-                <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
-                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-xl leading-tight">{{ $page ? $page->getContent('slide1_title', 'Dhaka IT Institute-এ স্বাগতম') : 'Dhaka IT Institute-এ স্বাগতম' }}</h2>
-                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-lg">{{ $page ? $page->getContent('slide1_subtitle', 'প্র্যাকটিক্যাল স্কিল থেকে ফ্রিল্যান্সিং ক্যারিয়ার') : 'প্র্যাকটিক্যাল স্কিল থেকে ফ্রিল্যান্সিং ক্যারিয়ার' }}</h3>
-                </div>
             </div>
 
             <!-- Slide 2 -->
             <div class="slide absolute inset-0 w-full h-full">
                 <img src="{{ $page ? $page->getContent('slide2_image', '/images/slide-classroom.png') : '/images/slide-classroom.png' }}" alt="Campus"
                     class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
-                <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
-                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-lg leading-tight">{{ $page ? $page->getContent('slide2_title', 'শিখুন, অনুশীলন করুন, আয় করুন') : 'শিখুন, অনুশীলন করুন, আয় করুন' }}</h2>
-                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-md">{{ $page ? $page->getContent('slide2_subtitle', 'রিয়েল প্রজেক্ট নিয়ে হাতে-কলমে প্রশিক্ষণ') : 'রিয়েল প্রজেক্ট নিয়ে হাতে-কলমে প্রশিক্ষণ' }}</h3>
-                </div>
             </div>
 
             <!-- Slide 3 -->
             <div class="slide absolute inset-0 w-full h-full">
-                <img src="{{ $page ? $page->getContent('slide3_image', '/images/slide-campus.png') : '/images/slide-campus.png' }}" alt="Learning"
+                <img src="/images/slide-learning.jpg" alt="Learning"
                     class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
-                <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
-                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 text-white drop-shadow-lg leading-tight">{{ $page ? $page->getContent('slide3_title', 'ফ্রিল্যান্সিং ও জব মার্কেটে প্রস্তুতি') : 'ফ্রিল্যান্সিং ও জব মার্কেটে প্রস্তুতি' }}</h2>
-                    <h3 class="text-xl md:text-3xl font-semibold text-white drop-shadow-md">{{ $page ? $page->getContent('slide3_subtitle', 'এক্সপার্ট মেন্টরশিপে আপনার ক্যারিয়ার গড়ুন') : 'এক্সপার্ট মেন্টরশিপে আপনার ক্যারিয়ার গড়ুন' }}</h3>
-                </div>
             </div>
 
             <!-- Controls (Bottom) -->

@@ -15,7 +15,7 @@
                 @endphp
                 <a href="{{ url('/') }}">
                     <img src="{{ $logoUrl }}" alt="{{ $institutionName }}"
-                        class="h-14 md:h-16 w-auto object-contain cursor-pointer hover:opacity-80 transition">
+                        class="h-20 md:h-24 w-auto object-contain cursor-pointer hover:opacity-80 transition">
                 </a>
             </div>
 
