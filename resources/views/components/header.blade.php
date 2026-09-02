@@ -5,7 +5,7 @@
 @endphp
 
 <header class="bg-white border-b sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="max-w-7xl mx-auto px-4 py-2">
         <div class="flex justify-between items-center">
             <div class="flex items-center gap-3">
                 @php
@@ -15,25 +15,25 @@
                 @endphp
                 <a href="{{ url('/') }}">
                     <img src="{{ $logoUrl }}" alt="{{ $institutionName }}"
-                        class="h-20 md:h-24 w-auto object-contain cursor-pointer hover:opacity-80 transition">
+                        class="h-16 md:h-20 w-auto object-contain cursor-pointer hover:opacity-80 transition">
                 </a>
             </div>
 
             <!-- Desktop Navigation -->
             <nav class="hidden md:flex items-center gap-0.5">
                 <a href="{{ url('/') }}"
-                    class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
+                    class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-80 transition"
                     style="{{ Request::is('/') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">
                     হোম
                 </a>
                 <a href="{{ route('courses') }}"
-                    class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
+                    class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('courses') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">কোর্স</a>
                 <a href="{{ route('services') }}"
-                    class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
+                    class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('services') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">সার্ভিসেস</a>
                 <a href="{{ route('team') }}"
-                    class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
+                    class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('team') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">টিম</a>
                 {{-- Teacher link hidden for now
                 <a href="{{ route('teachers') }}"
@@ -41,21 +41,21 @@
                     style="{{ Request::routeIs('teachers') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">শিক্ষক</a>
                 --}}
                 <a href="{{ route('about') }}"
-                    class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
+                    class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('about') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">পরিচিতি</a>
                 <a href="{{ route('contact') }}"
-                    class="px-4 py-2 rounded-md text-md font-medium hover:opacity-80 transition"
+                    class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-80 transition"
                     style="{{ Request::routeIs('contact') ? 'background-color: ' . $primaryColor . '; color: ' . $primaryForeground : 'color: ' . $primaryColor }}">যোগাযোগ</a>
                 @auth
                     @if(Auth::user()->isStudent())
                         <a href="{{ route('student.courses') }}"
-                            class="ml-2 inline-flex h-10 items-center justify-center rounded-md bg-black px-4 text-center text-sm font-semibold text-white transition hover:bg-green-800">
+                            class="ml-2 inline-flex h-8 items-center justify-center rounded-md bg-black px-3 text-center text-sm font-semibold text-white transition hover:bg-green-800">
                             Enroll in Course
                         </a>
                     @endif
                 @else
                     <a href="{{ route('admission.create') }}"
-                        class="ml-2 inline-flex h-10 items-center justify-center rounded-md bg-black px-5 text-sm font-semibold text-white transition hover:bg-green-800">
+                        class="ml-2 inline-flex h-8 items-center justify-center rounded-md bg-black px-4 text-sm font-semibold text-white transition hover:bg-green-800">
                         Admission
                     </a>
                 @endauth
@@ -65,13 +65,13 @@
             <div class="hidden md:block">
                 @auth
                     <a href="{{ route('dashboard') }}"
-                        class="px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition text-center"
+                        class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-90 transition text-center"
                         style="background-color: {{ $primaryColor }}; color: {{ $primaryForeground }}">
                         View Dashboard
                     </a>
                 @else
                     <a href="{{ route('login') }}"
-                        class="px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition text-center"
+                        class="px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-90 transition text-center"
                         style="background-color: {{ $primaryColor }}; color: {{ $primaryForeground }}">
                         Login
                     </a>
