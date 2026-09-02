@@ -33,10 +33,7 @@ class Teacher extends Model
     public function getAvatarUrlAttribute(): string
     {
         if ($this->profile_image) {
-            if (filter_var($this->profile_image, FILTER_VALIDATE_URL)) {
-                return $this->profile_image;
-            }
-            return asset('storage/' . ltrim($this->profile_image, '/'));
+            return media_url($this->profile_image);
         }
         $name = $this->user?->name ?? 'Team Member';
         return 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=168536&color=fff&size=512&bold=true';

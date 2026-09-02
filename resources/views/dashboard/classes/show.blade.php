@@ -163,7 +163,7 @@
                         <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                             <div class="flex items-center mb-3">
                                 @if($student->profile_image)
-                                    <img src="{{ asset('storage/' . $student->profile_image) }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-10 h-10 rounded-full mr-3">
+                                    <img src="{{ media_url($student->profile_image) }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-10 h-10 rounded-full mr-3">
                                 @else
                                     <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
                                         {{ substr($student->user->name ?? 'S', 0, 1) }}

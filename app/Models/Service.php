@@ -43,10 +43,9 @@ class Service extends Model
     public function getImageUrlAttribute(): string
     {
         if ($this->image) {
-            if (filter_var($this->image, FILTER_VALIDATE_URL)) return $this->image;
-            return asset('storage/' . ltrim($this->image, '/'));
+            return media_url($this->image);
         }
-        return 'https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=1200&q=82';
+        return '/images/course-laravel.jpg';
     }
 
     public function getDiscountPercentAttribute(): ?int

@@ -28,7 +28,7 @@
             <div class="grid md:grid-cols-2 gap-8 items-center">
                 <!-- Image -->
                 <div>
-                    <img src="{{ $page ? $page->getContent('about_image', 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80') : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80' }}" alt="Dhaka IT Institute training"
+                    <img src="{{ $page ? $page->getContent('about_image', '/images/team-hafez.jpg') : '/images/team-hafez.jpg' }}" alt="Dhaka IT Institute training"
                         class="rounded-lg shadow-lg w-full h-auto object-cover">
                 </div>
 
@@ -89,7 +89,7 @@
                 <!-- Vision -->
                 <div>
                     <div class="mb-8">
-                        <img src="{{ $page ? $page->getContent('vision_image', 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&q=80') : 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&q=80' }}" alt="Students"
+                        <img src="{{ $page ? $page->getContent('vision_image', '/images/team-galib.jpg') : '/images/team-galib.jpg' }}" alt="Students"
                             class="rounded-lg shadow-lg w-full h-auto object-cover">
                     </div>
                     <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ $page ? $page->getContent('vision_title', 'প্রতিষ্ঠানের ভিশন') : 'প্রতিষ্ঠানের ভিশন' }}</h2>

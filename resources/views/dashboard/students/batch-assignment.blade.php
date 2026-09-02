@@ -39,7 +39,7 @@
                                     <div class="shrink-0 w-8 h-8">
                                         @if ($student->profile_image)
                                             <img class="w-8 h-8 rounded-full object-cover border border-gray-100"
-                                                src="{{ Str::startsWith($student->profile_image, 'http') ? $student->profile_image : asset('storage/' . $student->profile_image) }}"
+                                                src="{{ media_url($student->profile_image) }}"
                                                 alt="{{ $student->user->name }}">
                                         @else
                                             <div class="w-8 h-8 bg-bd-green rounded-full flex items-center justify-center text-white text-xs font-bold">

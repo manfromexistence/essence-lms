@@ -56,11 +56,7 @@ class Course extends Model
     public function getImageUrlAttribute(): string
     {
         if ($this->image) {
-            if (filter_var($this->image, FILTER_VALIDATE_URL)) {
-                return $this->image;
-            }
-
-            return asset('storage/' . ltrim($this->image, '/'));
+            return media_url($this->image);
         }
 
         $searchableText = strtolower(implode(' ', array_filter([
@@ -70,10 +66,10 @@ class Course extends Model
         ])));
 
         $fallbacks = [
-            'office' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82',
-            'marketing' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=82',
-            'design' => 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=82',
-            'development' => 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=82',
+            'office' => '/images/course-job-banner.jpg',
+            'marketing' => '/images/course-digital-marketing.png',
+            'design' => '/images/course-laravel.jpg',
+            'development' => '/images/course-laravel-md.jpg',
         ];
 
         foreach ($fallbacks as $keyword => $url) {
@@ -82,7 +78,7 @@ class Course extends Model
             }
         }
 
-        return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
+        return '/images/slide-classroom.png';
     }
 
     /**

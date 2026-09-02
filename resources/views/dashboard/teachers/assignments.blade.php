@@ -42,7 +42,7 @@
                         <div class="flex items-center">
                             <div class="shrink-0 w-10 h-10">
                                 @if ($teacher->profile_image)
-                                    <img src="{{ Str::startsWith($teacher->profile_image ?? '', 'http') ? $teacher->profile_image : asset('storage/' . $teacher->profile_image) }}"
+                                    <img src="{{ media_url($teacher->profile_image ?? '') }}"
                                         alt="{{ $teacher->user->name }}"
                                         class="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm">
                                 @else

@@ -62,7 +62,7 @@
                     <div class="course-card bg-white rounded-xl shadow-md overflow-hidden transition-all cursor-pointer" onclick="openCourseModal({{ $course->id }})">
                         <img src="{{ $course->image_url }}" alt="{{ $course->name }}"
                             loading="lazy" decoding="async"
-                            onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';"
+                            onerror="this.onerror=null;this.src='/images/slide-classroom.png';"
                             class="w-full h-48 object-cover">
                         <div class="p-5">
                             <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{{ $course->name }}</h3>
@@ -166,7 +166,7 @@
                 enrollButton = `<p class="text-center text-gray-500 py-3">শুধুমাত্র শিক্ষার্থীরা কোর্সে ভর্তি হতে পারবেন</p>`;
             }
 
-            const imageUrl = course.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
+            const imageUrl = course.image_url || '/images/slide-classroom.png';
             const mediaHtml = hasEmbed
                 ? `<div class="relative mb-6 rounded-xl overflow-hidden bg-black shadow-lg">
                     <img src="${imageUrl}" alt="${course.name}" class="w-full aspect-video object-cover">

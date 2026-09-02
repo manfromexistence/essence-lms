@@ -189,15 +189,15 @@ class PageController extends Controller
             // Hero Slider
             'slide1_title' => 'Dhaka IT Institute-এ স্বাগতম',
             'slide1_subtitle' => 'প্র্যাকটিক্যাল স্কিল থেকে ফ্রিল্যান্সিং ক্যারিয়ার',
-            'slide1_image' => 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=80',
+            'slide1_image' => '/images/homepage-banner.png',
             'slide2_title' => 'শিখুন, অনুশীলন করুন, আয় করুন',
             'slide2_subtitle' => 'রিয়েল প্রজেক্ট নিয়ে হাতে-কলমে প্রশিক্ষণ',
-            'slide2_image' => 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1600&q=80',
+            'slide2_image' => '/images/slide-classroom.png',
             'slide3_title' => 'ফ্রিল্যান্সিং ও জব মার্কেটে প্রস্তুতি',
             'slide3_subtitle' => 'এক্সপার্ট মেন্টরশিপে আপনার ক্যারিয়ার গড়ুন',
-            'slide3_image' => 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80',
+            'slide3_image' => '/images/slide-campus.png',
             // Banner Section
-            'banner_image' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800',
+            'banner_image' => '/images/marketing-post-1.png',
             'banner_title' => 'Dhaka IT Institute',
             'banner_title_highlight' => '— Let’s Build Your Dream',
             'banner_subtitle' => 'স্কিল শিখুন, প্রজেক্ট করুন, ক্যারিয়ার গড়ুন',
@@ -213,7 +213,7 @@ class PageController extends Controller
             'random_students_title' => 'আমাদের শিক্ষার্থীরা',
             'random_students_subtitle' => 'আমাদের প্রতিষ্ঠানের মেধাবী ও পরিশ্রমী শিক্ষার্থীদের সাথে পরিচিত হন',
             // About Section
-            'about_section_image' => 'https://images.unsplash.com/photo-1562774053-701939374585?w=600',
+            'about_section_image' => '/images/course-laravel-lg.jpg',
             'about_section_title' => 'প্রতিষ্ঠান সম্পর্কে',
             'about_section_text1' => 'Dhaka IT Institute মিরপুর-১০-এ অবস্থিত একটি প্র্যাকটিক্যাল IT ও freelancing training center।',
             'about_section_text2' => 'আমাদের লক্ষ্য শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।',
@@ -229,7 +229,7 @@ class PageController extends Controller
     {
         return [
             'page_title' => 'প্রতিষ্ঠান পরিচিতি',
-            'about_image' => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80',
+            'about_image' => '/images/team-hafez.jpg',
             'about_title' => 'প্রতিষ্ঠান সম্পর্কে',
             'about_text' => 'Dhaka IT Institute একটি বেসরকারি IT ও freelancing training center, যেখানে অনলাইন ও অফলাইন প্র্যাকটিক্যাল প্রশিক্ষণ দেওয়া হয়।',
             'stats_students' => '৫২০',
@@ -239,7 +239,7 @@ class PageController extends Controller
             'stats_buildings' => '৬',
             'mission_title' => 'প্রতিষ্ঠানের মিশন',
             'mission_text' => 'শিক্ষার্থীদের বাস্তব প্রজেক্ট, marketplace workflow, client communication এবং সফল কাজ delivery-এর জন্য প্রস্তুত করা।',
-            'vision_image' => 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&q=80',
+            'vision_image' => '/images/team-galib.jpg',
             'vision_title' => 'প্রতিষ্ঠানের ভিশন',
             'vision_text' => 'প্র্যাকটিক্যাল IT দক্ষতা ও পেশাদার মানসিকতার মাধ্যমে কর্মসংস্থান এবং freelancing-এর জন্য আত্মবিশ্বাসী মানুষ তৈরি করা।',
         ];

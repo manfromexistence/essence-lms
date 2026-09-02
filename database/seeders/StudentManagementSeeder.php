@@ -38,18 +38,18 @@ class StudentManagementSeeder extends Seeder
                 continue; 
             }
 
-            // Unsplash Image List for Students
+            // Local images for students
             $studentImages = [
-                'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600', // Girl
-                'https://images.unsplash.com/photo-1491013516836-7dbc888c3867?w=600', // Girl 2
-                'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600', // Boy
-                'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600', // Boy 2
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600', // Girl 3
-                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600', // Boy 3
-                'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=600', // Girl 4
-                'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600', // Boy 4
-                'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600', // Man
-                'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600', // Girl 5
+                '/images/team-kawsar.jpg',
+                '/images/team-mikdad.jpg',
+                '/images/team-galib.jpg',
+                '/images/team-hasibur.jpg',
+                '/images/team-hafez.jpg',
+                '/images/team-happy.jpg',
+                '/images/team-member-1.jpg',
+                '/images/team-jems.jpg',
+                '/images/team-lev.jpg',
+                '/images/team-whatsapp-1.jpg',
             ];
 
             // Create 1-3 students for this class
@@ -157,19 +157,19 @@ class StudentManagementSeeder extends Seeder
                 'name' => 'Demo Student',
                 'email' => 'student@gmail.com',
                 'class' => '10',
-                'image' => 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                'image' => '/images/team-kawsar.jpg',
             ],
             [
                 'name' => 'Rahim Ahmed',
                 'email' => 'rahim@example.com',
                 'class' => '10',
-                'image' => 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                'image' => '/images/team-mikdad.jpg',
             ],
             [
                 'name' => 'Fatima Begum',
                 'email' => 'fatima@example.com',
                 'class' => '11',
-                'image' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                'image' => '/images/team-galib.jpg',
             ]
         ];
 

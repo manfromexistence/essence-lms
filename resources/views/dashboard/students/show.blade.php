@@ -13,7 +13,7 @@
                     <div class="relative inline-block">
                         @if($student->profile_image)
                             <img class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white shadow-lg"
-                                src="{{ Str::startsWith($student->profile_image, 'http') ? $student->profile_image : asset('storage/' . $student->profile_image) }}"
+                                src="{{ media_url($student->profile_image) }}"
                                 alt="{{ $student->user->name }}">
                         @else
                             <div

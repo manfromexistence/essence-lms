@@ -12,7 +12,7 @@
                 <div class="flex items-center space-x-6">
                     <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
                         @if($teacher->profile_image)
-                            <img src="{{ Str::startsWith($teacher->profile_image, 'http') ? $teacher->profile_image : asset('storage/' . $teacher->profile_image) }}" 
+                            <img src="{{ media_url($teacher->profile_image) }}" 
                                  alt="{{ $teacher->user->name }}" 
                                  class="w-20 h-20 rounded-full object-cover">
                         @else

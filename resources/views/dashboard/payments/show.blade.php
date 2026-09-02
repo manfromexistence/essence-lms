@@ -116,7 +116,7 @@
                     <div class="flex-shrink-0">
                         @if($payment->student->profile_image)
                             <img class="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                                src="{{ Str::startsWith($payment->student->profile_image, 'http') ? $payment->student->profile_image : asset('storage/' . $payment->student->profile_image) }}"
+                                src="{{ media_url($payment->student->profile_image) }}"
                                 alt="{{ $payment->student->user->name ?? 'Student' }}">
                         @else
                             <div class="w-16 h-16 bg-bd-green rounded-full flex items-center justify-center text-white text-xl font-bold">

@@ -47,7 +47,7 @@
                 <div class="space-y-4">
                     <div class="space-y-2">
                         <x-ui.label>About Image URL</x-ui.label>
-                        <x-ui.image-input name="content[about_image]" :value="$page->getContent('about_image')" placeholder="https://images.unsplash.com/..." />
+                        <x-ui.image-input name="content[about_image]" :value="$page->getContent('about_image')" placeholder="/images/..." />
                     </div>
                     <div class="space-y-2">
                         <x-ui.label>About Title</x-ui.label>
@@ -120,7 +120,7 @@
                 <div class="space-y-4">
                     <div class="space-y-2">
                         <x-ui.label>Vision Image URL</x-ui.label>
-                        <x-ui.image-input name="content[vision_image]" :value="$page->getContent('vision_image')" placeholder="https://images.unsplash.com/..." />
+                        <x-ui.image-input name="content[vision_image]" :value="$page->getContent('vision_image')" placeholder="/images/..." />
                     </div>
                     <div class="space-y-2">
                         <x-ui.label>Vision Title</x-ui.label>

@@ -42,28 +42,28 @@ class TeacherManagementSeeder extends Seeder
                 'email' => 'teacher@gmail.com',
                 'department' => 'Computer Science',
                 'salary' => 50000,
-                'image' => 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                'image' => '/images/team-kawsar.jpg',
             ],
             [
                 'name' => 'Dr. Arifuzzaman',
                 'email' => 'arif@example.com',
                 'department' => 'Computer Science',
                 'salary' => 55000,
-                'image' => 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                'image' => '/images/team-mikdad.jpg',
             ],
             [
                 'name' => 'Tahmid Hasan',
                 'email' => 'tahmid@example.com',
                 'department' => 'Graphic Design',
                 'salary' => 45000,
-                'image' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                'image' => '/images/team-galib.jpg',
             ],
             [
                 'name' => 'Nusrat Jahan',
                 'email' => 'nusrat@example.com',
                 'department' => 'Digital Marketing',
                 'salary' => 42000,
-                'image' => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                'image' => '/images/team-hasibur.jpg',
             ],
         ];
 

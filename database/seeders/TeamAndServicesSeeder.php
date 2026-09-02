@@ -14,7 +14,7 @@ class TeamAndServicesSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command?->info('Seeding team members with Unsplash avatars...');
+        $this->command?->info('Seeding team members...');
         $this->seedTeam();
         $this->command?->info('Seeding services catalog...');
         $this->seedServices();
@@ -31,7 +31,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Web Development',
                 'designation' => 'Lead Web Instructor',
                 'bio' => '10+ years of experience in full-stack web development. Passionate about teaching practical skills that help students land real freelance projects.',
-                'image' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-kawsar.jpg',
                 'subjects' => ['PHP', 'Laravel', 'React', 'JavaScript'],
                 'social' => ['facebook' => '#', 'linkedin' => '#', 'github' => '#'],
                 'featured' => true, 'order' => 1,
@@ -42,7 +42,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Digital Marketing',
                 'designation' => 'Digital Marketing Strategist',
                 'bio' => 'Facebook Ads expert with 7+ years helping businesses scale. Specializes in content strategy, campaign optimization, and performance marketing.',
-                'image' => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-mikdad.jpg',
                 'subjects' => ['Facebook Ads', 'SEO', 'Content Marketing', 'Analytics'],
                 'social' => ['facebook' => '#', 'linkedin' => '#', 'instagram' => '#'],
                 'featured' => true, 'order' => 2,
@@ -53,7 +53,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Graphic Design',
                 'designation' => 'Creative Design Lead',
                 'bio' => 'Award-winning designer specializing in UI/UX, branding, and motion graphics. Teaches design thinking from concept to final delivery.',
-                'image' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-galib.jpg',
                 'subjects' => ['UI/UX Design', 'Figma', 'Adobe Suite', 'Branding'],
                 'social' => ['facebook' => '#', 'linkedin' => '#', 'github' => '#', 'website' => '#'],
                 'featured' => true, 'order' => 3,
@@ -64,7 +64,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Office Applications',
                 'designation' => 'Microsoft Office Specialist',
                 'bio' => 'Certified Microsoft Office trainer with 5+ years of corporate training experience. Makes complex tools simple and practical.',
-                'image' => 'https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-hasibur.jpg',
                 'subjects' => ['MS Word', 'MS Excel', 'PowerPoint', 'Data Entry'],
                 'social' => ['facebook' => '#', 'linkedin' => '#'],
                 'featured' => false, 'order' => 4,
@@ -75,7 +75,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Python & Data Science',
                 'designation' => 'Data Science Instructor',
                 'bio' => 'Data scientist turned educator. Teaches Python, machine learning, and data analysis with real-world case studies.',
-                'image' => 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-hafez.jpg',
                 'subjects' => ['Python', 'Data Science', 'Machine Learning', 'SQL'],
                 'social' => ['linkedin' => '#', 'github' => '#'],
                 'featured' => false, 'order' => 5,
@@ -86,7 +86,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Freelancing',
                 'designation' => 'Freelancing Mentor',
                 'bio' => 'Top-rated freelancer on Fiverr and Upwork. Guides students through marketplace setup, bidding, client communication, and project delivery.',
-                'image' => 'https://images.unsplash.com/photo-1598550874175-4d0ef436c909?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-happy.jpg',
                 'subjects' => ['Marketplace Setup', 'Bidding', 'Client Communication', 'Profile Optimization'],
                 'social' => ['facebook' => '#', 'linkedin' => '#', 'website' => '#'],
                 'featured' => true, 'order' => 6,
@@ -97,7 +97,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Video Editing',
                 'designation' => 'Video Production Specialist',
                 'bio' => 'Professional video editor and motion designer. Teaches Premiere Pro, After Effects, and creative storytelling.',
-                'image' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-member-1.jpg',
                 'subjects' => ['Premiere Pro', 'After Effects', 'Color Grading', 'Motion Graphics'],
                 'social' => ['facebook' => '#', 'instagram' => '#'],
                 'featured' => false, 'order' => 7,
@@ -108,7 +108,7 @@ class TeamAndServicesSeeder extends Seeder
                 'department' => 'Spoken English',
                 'designation' => 'Language & Communication Coach',
                 'bio' => 'IELTS and communication specialist. Helps students build confidence in English speaking, writing, and professional communication.',
-                'image' => 'https://images.unsplash.com/photo-1557555186-23d70e17ff28?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=82',
+                'image' => '/images/team-jems.jpg',
                 'subjects' => ['Spoken English', 'IELTS Prep', 'Business Writing', 'Presentation Skills'],
                 'social' => ['facebook' => '#', 'linkedin' => '#'],
                 'featured' => false, 'order' => 8,
@@ -175,7 +175,7 @@ class TeamAndServicesSeeder extends Seeder
                 'features' => ['Hands-on projects', 'Real client scenarios', 'Lifetime access', 'Certificate', 'Job placement support', 'Mentorship sessions'],
                 'faqs' => [['q' => 'Do I need prior coding experience?', 'a' => 'No — the course starts from absolute basics and progresses to advanced topics.'], ['q' => 'How long is the course?', 'a' => 'The training runs for 4 months with 2 hours of daily sessions.']],
                 'price' => 15000, 'compare_price' => 22000,
-                'image' => 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=82',
+                'image' => '/images/course-laravel.jpg',
                 'featured' => true, 'order' => 1,
             ],
             [
@@ -187,7 +187,7 @@ class TeamAndServicesSeeder extends Seeder
                 'features' => ['Live campaign practice', 'Real ad spend budget', 'Analytics dashboard access', 'Portfolio building', 'Freelancing guidance'],
                 'faqs' => [['q' => 'Will I get to run actual ads?', 'a' => 'Yes! Each student gets a small real budget to practice campaign management.']],
                 'price' => 12000, 'compare_price' => 18000,
-                'image' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=82',
+                'image' => '/images/marketing-post-1.png',
                 'featured' => true, 'order' => 2,
             ],
             [
@@ -199,7 +199,7 @@ class TeamAndServicesSeeder extends Seeder
                 'features' => ['Portfolio projects', 'Industry mentors', 'Software access', 'Design critique sessions', 'Freelance marketplace prep'],
                 'faqs' => [['q' => 'Do I need a powerful PC?', 'a' => 'A standard laptop with 8GB RAM is sufficient. We use cloud-based tools where possible.']],
                 'price' => 10000, 'compare_price' => 15000,
-                'image' => 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=1200&q=82',
+                'image' => '/images/marketing-post-2.png',
                 'featured' => false, 'order' => 3,
             ],
             [
@@ -211,7 +211,7 @@ class TeamAndServicesSeeder extends Seeder
                 'features' => ['Real-world exercises', 'Certificate', 'Typing speed training', 'Bangla typing', 'Office-ready skills'],
                 'faqs' => [['q' => 'Is this suitable for beginners?', 'a' => 'Absolutely! We start from the basics and progress to advanced features.']],
                 'price' => 5000, 'compare_price' => 8000,
-                'image' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82',
+                'image' => '/images/course-job-banner.jpg',
                 'featured' => false, 'order' => 4,
             ],
             [
@@ -223,7 +223,7 @@ class TeamAndServicesSeeder extends Seeder
                 'features' => ['Live profile review', 'Mock client sessions', 'Real gig creation', 'Payment gateway setup', 'Ongoing mentorship'],
                 'faqs' => [['q' => 'Can I start without skills?', 'a' => 'We recommend completing at least one skill-based course first, then this bootcamp will help you sell it.']],
                 'price' => 8000, 'compare_price' => 12000,
-                'image' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=82',
+                'image' => '/images/seats-available.png',
                 'featured' => true, 'order' => 5,
             ],
             [
@@ -235,7 +235,7 @@ class TeamAndServicesSeeder extends Seeder
                 'features' => ['Live deployment', 'Free domain practice', 'cPanel access', 'Security basics', 'Ongoing support'],
                 'faqs' => [['q' => 'Will I get a domain for practice?', 'a' => 'Yes, we provide temp subdomains and a free domain for your first deployment.']],
                 'price' => 4000, 'compare_price' => null,
-                'image' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=82',
+                'image' => '/images/course-tech.jpg',
                 'featured' => false, 'order' => 6,
             ],
         ];

@@ -49,7 +49,7 @@
             class="hero-inner relative h-[500px] lg:h-[700px] w-full max-w-[95%] 2xl:max-w-[90rem] mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl isolate transform translate-z-0">
             <!-- Slide 1 -->
             <div class="slide active absolute inset-0 w-full h-full">
-                <img src="{{ $page ? $page->getContent('slide1_image', 'https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=1172&auto=format&fit=crop') : 'https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=1172&auto=format&fit=crop' }}" alt="Students"
+                <img src="{{ $page ? $page->getContent('slide1_image', '/images/homepage-banner.png') : '/images/homepage-banner.png' }}" alt="Students"
                     class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
                 <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
@@ -60,7 +60,7 @@
 
             <!-- Slide 2 -->
             <div class="slide absolute inset-0 w-full h-full">
-                <img src="{{ $page ? $page->getContent('slide2_image', 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920') : 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920' }}" alt="Campus"
+                <img src="{{ $page ? $page->getContent('slide2_image', '/images/slide-classroom.png') : '/images/slide-classroom.png' }}" alt="Campus"
                     class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
                 <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
@@ -71,7 +71,7 @@
 
             <!-- Slide 3 -->
             <div class="slide absolute inset-0 w-full h-full">
-                <img src="{{ $page ? $page->getContent('slide3_image', 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1920') : 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1920' }}" alt="Learning"
+                <img src="{{ $page ? $page->getContent('slide3_image', '/images/slide-campus.png') : '/images/slide-campus.png' }}" alt="Learning"
                     class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"></div>
                 <div class="absolute bottom-24 left-0 right-0 text-center px-4 z-20">
@@ -109,7 +109,7 @@
                 <div class="grid md:grid-cols-2 gap-8 items-center">
                     <!-- Left Side - Image -->
                     <div class="relative">
-                        <img src="{{ $page ? $page->getContent('banner_image', 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800') : 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800' }}" alt="Learning Banner"
+                        <img src="{{ $page ? $page->getContent('banner_image', '/images/marketing-post-1.png') : '/images/marketing-post-1.png' }}" alt="Learning Banner"
                             class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-linear-to-r from-transparent to-white/30"></div>
                     </div>
@@ -173,7 +173,7 @@
                                 <div class="relative h-48 bg-linear-to-br {{ $gradient }}">
                                     <img src="{{ $course->image_url }}" alt="{{ $course->name }}"
                                         loading="lazy" decoding="async"
-                                        onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';"
+                                        onerror="this.onerror=null;this.src='/images/slide-classroom.png';"
                                         class="w-full h-full object-cover pointer-events-none">
                                     <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
                                         <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
@@ -264,11 +264,7 @@
                                  class="cursor-pointer bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 mx-2 h-full">
                                 <div class="relative h-48 bg-linear-to-br from-blue-400 to-purple-500">
                                     @if($student->profile_image)
-                                        @if(str_starts_with($student->profile_image, 'http'))
-                                            <img src="{{ $student->profile_image }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-full h-full object-cover pointer-events-none">
-                                        @else
-                                            <img src="{{ asset('storage/' . $student->profile_image) }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-full h-full object-cover pointer-events-none">
-                                        @endif
+                                        <img src="{{ media_url($student->profile_image) }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-full h-full object-cover pointer-events-none">
                                     @else
                                         <div class="w-full h-full flex items-center justify-center">
                                             <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
@@ -375,11 +371,7 @@
                                  class="cursor-pointer bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 mx-2 h-full">
                                 <div class="relative h-48 bg-linear-to-br {{ $studentGradient }}">
                                     @if($student->profile_image)
-                                        @if(str_starts_with($student->profile_image, 'http'))
-                                            <img src="{{ $student->profile_image }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-full h-full object-cover pointer-events-none">
-                                        @else
-                                            <img src="{{ asset('storage/' . $student->profile_image) }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-full h-full object-cover pointer-events-none">
-                                        @endif
+                                        <img src="{{ media_url($student->profile_image) }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-full h-full object-cover pointer-events-none">
                                     @else
                                         <div class="w-full h-full flex items-center justify-center">
                                             <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
@@ -448,7 +440,7 @@
                 <div class="md:col-span-2 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
                     <div class="grid md:grid-cols-2 gap-6 p-6">
                         <div>
-                            <img src="{{ $page ? $page->getContent('about_section_image', 'https://images.unsplash.com/photo-1562774053-701939374585?w=600') : 'https://images.unsplash.com/photo-1562774053-701939374585?w=600' }}" alt="School Building"
+                            <img src="{{ $page ? $page->getContent('about_section_image', '/images/course-laravel-lg.jpg') : '/images/course-laravel-lg.jpg' }}" alt="School Building"
                                 class="w-full h-full object-cover rounded-lg">
                         </div>
                         <div class="flex flex-col">
@@ -844,7 +836,7 @@
                 document.getElementById('modal-title').innerText = course.name || 'Course';
                 document.getElementById('modal-description').innerText = course.description || 'No description available.';
                 
-                const imageUrl = course.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82';
+                const imageUrl = course.image_url || '/images/slide-classroom.png';
                 document.getElementById('modal-image').src = imageUrl;
 
                 // Show thumbnail as poster; load & play the preview video only on click
@@ -960,7 +952,7 @@
                 
                 let imageUrl = '';
                 if (student.image) {
-                    imageUrl = student.image.startsWith('http') ? student.image : `/storage/${student.image}`;
+                    imageUrl = student.image.startsWith('http') ? student.image : `/${student.image.replace(/^\/+/, '')}`;
                 } else {
                     imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || 'Student')}&background=random`;
                 }

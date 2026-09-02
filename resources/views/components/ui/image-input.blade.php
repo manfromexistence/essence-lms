@@ -23,15 +23,11 @@
     $isStoragePath = $urlValue && !str_starts_with($urlValue, 'http://') && !str_starts_with($urlValue, 'https://');
     
     // Brand assets live directly under public/images (e.g. images/brand/...)
-    $isBrandAsset = $isStoragePath && str_starts_with($urlValue, 'images/');
+    $isBrandAsset = $isStoragePath && str_starts_with(ltrim($urlValue, '/'), 'images/');
     
-    // For preview: convert storage/brand paths to full URLs
-    if ($isBrandAsset) {
-        $previewUrl = asset($urlValue);
-    } elseif ($isStoragePath) {
-        // Remove 'public/' prefix if present (storage paths are stored as 'logos/file.png' not 'public/logos/file.png')
-        $cleanPath = str_starts_with($urlValue, 'public/') ? substr($urlValue, 7) : $urlValue;
-        $previewUrl = asset('storage/' . $cleanPath);
+    // For preview: use the shared media resolver for any non-external path
+    if ($isStoragePath) {
+        $previewUrl = media_url($urlValue);
     } else {
         $previewUrl = $urlValue;
     }

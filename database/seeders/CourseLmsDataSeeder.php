@@ -43,11 +43,11 @@ class CourseLmsDataSeeder extends Seeder
         ];
 
         $studentImages = [
-            'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600',
-            'https://images.unsplash.com/photo-1491013516836-7dbc888c3867?w=600',
-            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600',
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600',
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600',
+            '/images/team-kawsar.jpg',
+            '/images/team-mikdad.jpg',
+            '/images/team-galib.jpg',
+            '/images/team-hasibur.jpg',
+            '/images/team-hafez.jpg',
         ];
 
         $paymentMethods = ['Cash', 'Bkash', 'Nagad', 'Rocket', 'Bank Transfer'];

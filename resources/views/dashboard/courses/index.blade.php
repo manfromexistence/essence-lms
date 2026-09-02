@@ -69,7 +69,7 @@
                                 @if(str_starts_with($course->image, 'http'))
                                     <img src="{{ $course->image }}" alt="{{ $course->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
                                 @else
-                                    <img src="{{ asset('storage/' . $course->image) }}" alt="{{ $course->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                    <img src="{{ media_url($course->image) }}" alt="{{ $course->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
                                 @endif
                             @else
                                 <div class="flex items-center justify-center w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500">
