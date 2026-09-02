@@ -5,19 +5,15 @@
 
 @push('styles')
     <style>
-        .hero-track {
-            display: flex;
-            height: 100%;
-            width: 100%;
-            transition: transform .6s cubic-bezier(.22, 1, .36, 1);
-            will-change: transform;
+        .slide {
+            display: none;
+            animation: fadeIn 0.55s ease-out;
+            transition: transform .28s cubic-bezier(.22, 1, .36, 1);
+            will-change: transform, opacity;
         }
 
-        .slide {
-            min-width: 100%;
-            height: 100%;
-            flex-shrink: 0;
-            position: relative;
+        .slide.active {
+            display: block;
         }
 
         [data-hero-slider] {
@@ -30,8 +26,18 @@
             cursor: grabbing;
         }
 
-        [data-hero-slider].is-dragging .hero-track {
+        [data-hero-slider].is-dragging .slide.active {
             transition: none;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
     </style>
 @endpush
@@ -41,24 +47,22 @@
     <section class="bg-white py-6">
         <div id="heroCarousel" data-hero-slider tabindex="0" aria-label="Featured programs carousel"
             class="hero-inner relative h-[500px] lg:h-[700px] w-full max-w-[95%] 2xl:max-w-[90rem] mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl isolate transform translate-z-0">
-            <div class="hero-track">
-                <!-- Slide 1 -->
-                <div class="slide active">
-                    <img src="/images/page-banner.png" alt="Page Banner"
-                        class="w-full h-full object-cover">
-                </div>
+            <!-- Slide 1 -->
+            <div class="slide active absolute inset-0 w-full h-full">
+                <img src="/images/page-banner.png" alt="Page Banner"
+                    class="w-full h-full object-cover">
+            </div>
 
-                <!-- Slide 2 -->
-                <div class="slide">
-                    <img src="{{ $page ? $page->getContent('slide2_image', '/images/slide-classroom.png') : '/images/slide-classroom.png' }}" alt="Campus"
-                        class="w-full h-full object-cover">
-                </div>
+            <!-- Slide 2 -->
+            <div class="slide absolute inset-0 w-full h-full">
+                <img src="{{ $page ? $page->getContent('slide2_image', '/images/slide-classroom.png') : '/images/slide-classroom.png' }}" alt="Campus"
+                    class="w-full h-full object-cover">
+            </div>
 
-                <!-- Slide 3 -->
-                <div class="slide">
-                    <img src="/images/slide-learning.jpg" alt="Learning"
-                        class="w-full h-full object-cover">
-                </div>
+            <!-- Slide 3 -->
+            <div class="slide absolute inset-0 w-full h-full">
+                <img src="/images/slide-learning.jpg" alt="Learning"
+                    class="w-full h-full object-cover">
             </div>
 
             <!-- Controls (Bottom) -->
@@ -672,33 +676,21 @@
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         const dots = document.querySelectorAll('.dot');
-        const heroTrack = document.querySelector('.hero-track');
         let modalPreviewUrl = null;
-
-        function updateDots(index) {
-            dots.forEach((dot, i) => {
-                if (i === index) {
-                    dot.classList.remove('bg-gray-400/80');
-                    dot.classList.add('bg-primary', 'scale-125');
-                } else {
-                    dot.classList.remove('bg-primary', 'scale-125');
-                    dot.classList.add('bg-gray-400/80');
-                }
-            });
-        }
-
-        function moveTrack(offsetPercent) {
-            if (heroTrack) {
-                heroTrack.style.transform = `translate3d(${-currentSlide * 100 + (offsetPercent || 0)}%, 0, 0)`;
-            }
-        }
 
         function showSlide(index) {
             slides.forEach((slide, i) => {
-                slide.classList.toggle('active', i === index);
+                slide.classList.remove('active');
+                if (dots[i]) {
+                    dots[i].classList.remove('bg-primary', 'scale-125');
+                    dots[i].classList.add('bg-gray-400/80');
+                }
             });
-            updateDots(index);
-            moveTrack(0);
+            slides[index].classList.add('active');
+            if (dots[index]) {
+                dots[index].classList.remove('bg-gray-400/80');
+                dots[index].classList.add('bg-primary', 'scale-125');
+            }
         }
 
         function nextSlide() { currentSlide = (currentSlide + 1) % slides.length; showSlide(currentSlide); }
@@ -725,7 +717,10 @@
         }
 
         function resetActiveSlidePosition() {
-            if (heroTrack) heroTrack.style.transform = '';
+            const activeSlide = slides[currentSlide];
+            if (!activeSlide) return;
+            activeSlide.style.transform = '';
+            activeSlide.style.opacity = '';
         }
 
         if (heroCarousel) {
@@ -756,13 +751,15 @@
                 heroCarousel.classList.add('is-dragging');
                 if (heroCarousel.setPointerCapture) heroCarousel.setPointerCapture(event.pointerId);
 
-                const width = heroCarousel.clientWidth || 1;
-                const offsetPercent = (deltaX / width) * 100;
-                moveTrack(offsetPercent);
+                const activeSlide = slides[currentSlide];
+                if (activeSlide) {
+                    activeSlide.style.transform = `translate3d(${deltaX * 0.22}px, 0, 0)`;
+                    activeSlide.style.opacity = `${Math.max(.72, 1 - Math.abs(deltaX) / 700)}`;
+                }
                 if (event.cancelable) event.preventDefault();
             });
 
-            const finishDrag = () => {
+            const finishDrag = (event) => {
                 if (!dragging && !horizontalDrag) return;
                 const shouldNavigate = horizontalDrag && Math.abs(dragOffsetX) >= Math.min(72, heroCarousel.clientWidth * .12);
                 resetActiveSlidePosition();
@@ -770,8 +767,6 @@
 
                 if (shouldNavigate) {
                     dragOffsetX < 0 ? nextSlide() : prevSlide();
-                } else {
-                    moveTrack(0);
                 }
 
                 dragging = false;
