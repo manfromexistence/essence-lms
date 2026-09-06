@@ -125,7 +125,7 @@ class BrutalFeatureTest extends TestCase
             'delivery_mode' => 'online',
             'level' => 'beginner',
             'category' => 'Web Development',
-        ])->assertRedirect(route('dashboard.courses.index'));
+        ])->assertRedirect(route('dashboard.courses.index', ['delivery_mode' => 'online']));
 
         $this->assertDatabaseHas('courses', ['code' => 'BRT-01', 'status' => 'active']);
 

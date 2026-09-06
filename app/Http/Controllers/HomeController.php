@@ -23,6 +23,7 @@ class HomeController extends Controller
         $popularCourses = \App\Models\Course::active()
             ->with(['batches' => fn($q) => $q->withCount('students'), 'videos'])
             ->withCount('videos')
+            ->orderByDesc('courses.id')
             ->take(8)
             ->get();
 
@@ -163,7 +164,8 @@ class HomeController extends Controller
         
         $query = \App\Models\Course::active()
             ->with(['batches' => fn($q) => $q->withCount('students'), 'videos'])
-            ->withCount('videos');
+            ->withCount('videos')
+            ->orderByDesc('courses.id');
 
         if (request()->filled('mode')) {
             request()->validate(['mode' => 'in:online,offline']);

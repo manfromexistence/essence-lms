@@ -35,6 +35,13 @@
                         placeholder="Search by name, code, or description..." 
                     />
                 </div>
+                <div class="w-40">
+                    <x-ui.select
+                        name="delivery_mode"
+                        :options="['all' => 'All Modes', 'online' => 'Online', 'offline' => 'Offline']"
+                        :selected="request('delivery_mode', $modeFilter ?? session('course_mode', 'all'))"
+                    />
+                </div>
                 <div class="w-48">
                     <x-ui.select 
                         name="status" 
@@ -48,8 +55,8 @@
                     </svg>
                     Filter
                 </x-ui.button>
-                @if(request('search') || request('status'))
-                    <a href="{{ route('dashboard.courses.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm">
+                @if(request('search') || request('status') || request('delivery_mode'))
+                    <a href="{{ route('dashboard.courses.index', ['delivery_mode' => 'all']) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>

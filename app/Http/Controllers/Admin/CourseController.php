@@ -12,8 +12,17 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         $query = Course::query();
-        $mode = $request->session()->get('course_mode', 'online');
-        $query->where('delivery_mode', $mode);
+        // Delivery-mode filter: explicit ?delivery_mode=all|online|offline wins,
+        // otherwise fall back to the header toggle stored in session.
+        // Default is 'all' so a newly uploaded course is never hidden by a
+        // silent single-mode filter right after creation.
+        $modeFilter = $request->get('delivery_mode', $request->session()->get('course_mode', 'all'));
+        if (! in_array($modeFilter, ['all', 'online', 'offline'], true)) {
+            $modeFilter = 'all';
+        }
+        if ($modeFilter !== 'all') {
+            $query->where('delivery_mode', $modeFilter);
+        }
 
         $query->when($request->filled('search'), function ($q) use ($request) {
             $search = $request->search;
@@ -32,9 +41,9 @@ class CourseController extends Controller
             $q->where('category', $request->category);
         });
 
-        $courses = $query->with('batches')->withCount(['videos', 'students'])->paginate(12);
+        $courses = $query->with('batches')->withCount(['videos', 'students'])->orderByDesc('courses.id')->paginate(12);
 
-        return view('dashboard.courses.index', compact('courses'));
+        return view('dashboard.courses.index', compact('courses', 'modeFilter'));
     }
 
     public function create()
@@ -77,7 +86,12 @@ class CourseController extends Controller
 
         Course::create($validated);
 
-        return redirect()->route('dashboard.courses.index')
+        // Switch the header mode toggle to the new course's mode so the
+        // admin list shows the just-created course instead of hiding it
+        // behind the previous single-mode filter.
+        $request->session()->put('course_mode', $validated['delivery_mode']);
+
+        return redirect()->route('dashboard.courses.index', ['delivery_mode' => $validated['delivery_mode']])
             ->with('success', 'Course created successfully.');
     }
 
@@ -131,7 +145,9 @@ class CourseController extends Controller
 
         $course->update($validated);
 
-        return redirect()->route('dashboard.courses.index')
+        $request->session()->put('course_mode', $validated['delivery_mode']);
+
+        return redirect()->route('dashboard.courses.index', ['delivery_mode' => $validated['delivery_mode']])
             ->with('success', 'Course updated successfully.');
     }
 
