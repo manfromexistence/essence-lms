@@ -35,3 +35,8 @@ services:
         value: warning
       - key: MAIL_MAILER
         value: log
+      # Trust Render's reverse proxy so Laravel generates https:// URLs for
+      # assets and redirects (otherwise @vite emits http:// links that the
+      # browser blocks as mixed content and the dashboard renders unstyled).
+      - key: TRUSTED_PROXIES
+        value: "*"

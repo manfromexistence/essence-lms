@@ -6,6 +6,11 @@ mkdir -p database
 touch database/database.sqlite
 chown -R www-data:www-data database 2>/dev/null || true
 
+# Create the public/storage symlink so uploaded files (course images, logos,
+# favicons) stored on the "public" disk are reachable at /storage/...
+# Idempotent: artisan fails harmlessly if the link already exists.
+php artisan storage:link || true
+
 # Apply migrations (fast when already applied)
 php artisan migrate --force
 
