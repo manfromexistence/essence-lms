@@ -25,9 +25,16 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Trust the deployment proxy so HTTPS URLs are generated correctly.
         // Default to private/cloud ranges; override with the TRUSTED_PROXIES
-        // env var (comma-separated IPs/CIDRs) for your host (e.g. Render).
+        // env var (comma-separated IPs/CIDRs) for your host. The special value
+        // "*" must be passed as a STRING — Laravel's TrustProxies middleware
+        // only handles "trust the calling IP" when it receives the scalar "*";
+        // an array like ['*'] is treated as an IP/CIDR list and never matches,
+        // which left Render serving http:// asset URLs on the https site.
+        $trustedProxies = trim((string) env('TRUSTED_PROXIES', '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10'));
         $middleware->trustProxies(
-            at: array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10')))),
+            at: $trustedProxies === '*'
+                ? '*'
+                : array_filter(array_map('trim', explode(',', $trustedProxies))),
         );
         $middleware->appendToGroup('web', RequirePasswordChange::class);
     })
