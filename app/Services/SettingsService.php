@@ -85,7 +85,7 @@ class SettingsService
             'type' => 'string',
         ],
         'brevo_sender_email' => [
-            'value' => 'ajju40959@gmail.com',
+            'value' => '',
             'group' => 'email',
             'type' => 'string',
         ],
@@ -117,7 +117,7 @@ class SettingsService
             'type' => 'text',
         ],
         'institution_phone' => [
-            'value' => '+880 1682-71557',
+            'value' => '+880 1682-715570',
             'group' => 'institution',
             'type' => 'string',
         ],
@@ -153,6 +153,56 @@ class SettingsService
         'invoice_prefix' => [
             'value' => 'INV',
             'group' => 'payment',
+            'type' => 'string',
+        ],
+        'bkash_number' => [
+            'value' => '',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'bkash_account_name' => [
+            'value' => 'Dhaka IT Institute',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'nagad_number' => [
+            'value' => '',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'rocket_number' => [
+            'value' => '',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'bank_name' => [
+            'value' => '',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'bank_account_name' => [
+            'value' => '',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'bank_account_number' => [
+            'value' => '',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'bank_branch' => [
+            'value' => '',
+            'group' => 'payment',
+            'type' => 'string',
+        ],
+        'facebook_url' => [
+            'value' => 'https://facebook.com/dhakaitinstitute',
+            'group' => 'institution',
+            'type' => 'string',
+        ],
+        'youtube_url' => [
+            'value' => 'https://youtube.com/@dhakaitinstitute',
+            'group' => 'institution',
             'type' => 'string',
         ],
 

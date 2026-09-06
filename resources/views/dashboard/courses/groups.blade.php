@@ -36,76 +36,23 @@
 
                         <!-- Groups List -->
                         <div class="p-4">
-                            <!-- Placeholder groups - in real implementation, this would load from database -->
-                            <div class="space-y-4">
-                                <div class="border border-gray-200 rounded-lg p-3">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h4 class="text-sm font-medium text-gray-900">Group Alpha</h4>
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                            3 members
-                                        </span>
+                            @if($batch->students->isNotEmpty())
+                            <div class="space-y-1">
+                                @foreach($batch->students->take(6) as $member)
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <div class="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center mr-2">
+                                        <span class="text-xs font-medium text-white">{{ mb_substr($member->user->name ?? $member->name_bn ?? '?', 0, 1) }}</span>
                                     </div>
-
-                                    <div class="space-y-1">
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
-                                                <span class="text-xs font-medium text-white">J</span>
-                                            </div>
-                                            John Doe
-                                        </div>
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-2">
-                                                <span class="text-xs font-medium text-white">S</span>
-                                            </div>
-                                            Sarah Wilson
-                                        </div>
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <div class="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center mr-2">
-                                                <span class="text-xs font-medium text-white">M</span>
-                                            </div>
-                                            Mike Johnson
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3 pt-3 border-t border-gray-200">
-                                        <div class="flex items-center justify-between text-xs text-gray-500">
-                                            <span>Project: E-commerce Website</span>
-                                            <button class="text-purple-600 hover:text-purple-800 font-medium">Manage</button>
-                                        </div>
-                                    </div>
+                                    {{ $member->user->name ?? $member->name_bn ?? 'Student' }}
                                 </div>
-
-                                <div class="border border-gray-200 rounded-lg p-3">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h4 class="text-sm font-medium text-gray-900">Group Beta</h4>
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                            2 members
-                                        </span>
-                                    </div>
-
-                                    <div class="space-y-1">
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-2">
-                                                <span class="text-xs font-medium text-white">A</span>
-                                            </div>
-                                            Alice Brown
-                                        </div>
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <div class="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center mr-2">
-                                                <span class="text-xs font-medium text-white">B</span>
-                                            </div>
-                                            Bob Smith
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3 pt-3 border-t border-gray-200">
-                                        <div class="flex items-center justify-between text-xs text-gray-500">
-                                            <span>Project: Data Analysis Tool</span>
-                                            <button class="text-purple-600 hover:text-purple-800 font-medium">Manage</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                @endforeach
+                                @if($batch->students->count() > 6)
+                                <p class="text-xs text-gray-500">+{{ $batch->students->count() - 6 }} more in this batch</p>
+                                @endif
                             </div>
+                            @else
+                            <p class="text-sm text-gray-500">No students assigned to this batch yet.</p>
+                            @endif
 
                             <div class="mt-4 pt-4 border-t border-gray-200">
                                 <button onclick="openGroupModal({{ $batch->id }})"
@@ -138,53 +85,8 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <!-- Sample group activities - in real app, these would come from database -->
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Group 1</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Web Development Batch 1</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">E-commerce Website</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ now()->addDays(14)->format('M d, Y') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        In Progress
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button class="text-purple-600 hover:text-purple-900 mr-3">View</button>
-                                    <button class="text-gray-600 hover:text-gray-900">Edit</button>
-                                </td>
-                            </tr>
-
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Group 2</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Data Science Batch 1</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Sales Prediction Model</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ now()->addDays(21)->format('M d, Y') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Completed
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button class="text-purple-600 hover:text-purple-900 mr-3">View</button>
-                                    <button class="text-gray-600 hover:text-gray-900">Edit</button>
-                                </td>
-                            </tr>
-
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Group 3</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Graphic Design Batch 1</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Brand Identity Package</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ now()->addDays(30)->format('M d, Y') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        Planning
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button class="text-purple-600 hover:text-purple-900 mr-3">View</button>
-                                    <button class="text-gray-600 hover:text-gray-900">Edit</button>
-                                </td>
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">Group projects are managed per batch. Open a batch to organize its students.</td>
                             </tr>
                         </tbody>
                     </table>

@@ -9,7 +9,6 @@ use App\Models\Announcement;
 use App\Models\Course;
 use App\Models\CourseVideo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
@@ -19,11 +18,6 @@ class HomeController extends Controller
         $featuredStudents = Student::with(['user', 'batch.course'])
             ->featured()
             ->take(8)
-            ->get();
-
-        $randomStudents = Student::with(['user', 'batch.course'])
-            ->inRandomOrder()
-            ->take(12)
             ->get();
 
         $popularCourses = \App\Models\Course::active()
@@ -41,23 +35,33 @@ class HomeController extends Controller
 
         $page = Page::findBySlug('home');
 
-        return view('welcome', compact('featuredStudents', 'randomStudents', 'popularCourses', 'announcements', 'page'));
+        return view('welcome', compact('featuredStudents', 'popularCourses', 'announcements', 'page'));
     }
 
     public function showAnnouncement(Announcement $announcement)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login');
+        abort_unless($announcement->is_active, 404);
+
+        $now = now();
+        if (($announcement->starts_at && $announcement->starts_at->isFuture())
+            || ($announcement->expires_at && $announcement->expires_at->isPast())) {
+            abort(404);
         }
 
-        // According to requirements:
-        // - Authenticated: Redirect to announcement details
-        // - Bought course: Redirect to announcement details
-        // - Not bought: Redirect to announcement details
-        // - Bought + Batch: Redirect to announcement details
-        
-        // Basically, if logged in, show it.
         return view('announcement-details', compact('announcement'));
+    }
+
+    public function announcements()
+    {
+        $announcements = Announcement::active()
+            ->where('target_type', 'all')
+            ->orderBy('priority', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        $page = Page::findBySlug('home');
+
+        return view('announcements', compact('announcements', 'page'));
     }
 
     public function about()
@@ -82,16 +86,14 @@ class HomeController extends Controller
         ]);
 
         try {
-            // Always store the submission so it shows in the dashboard,
-            // even if the email send fails.
-            \App\Models\ContactMessage::create([
+            $logId = \App\Models\ContactMessage::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'subject' => $data['subject'],
                 'message' => $data['message'],
                 'status' => 'new',
                 'ip_address' => $request->ip(),
-            ]);
+            ])->id;
 
             $settingsService = app(\App\Services\SettingsService::class);
             $to = $settingsService->get('institution_email', 'dhakaitinstitute@gmail.com');
@@ -105,10 +107,10 @@ class HomeController extends Controller
                 $to,
                 'Contact form: ' . $data['subject'],
                 $html,
-                ['type' => 'contact']
+                ['type' => 'contact', 'related_id' => $logId]
             );
 
-            return back()->with('success', 'Your message has been sent. We will get back to you soon.');
+            return back()->with('success', 'Your message has been received. We will get back to you soon.');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Contact form store failed', ['error' => $e->getMessage()]);
             return back()->with('error', 'Sorry, your message could not be sent. Please try again.');

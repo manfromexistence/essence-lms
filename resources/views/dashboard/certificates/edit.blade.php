@@ -26,6 +26,9 @@
     @if(session('success'))
         <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
     @endif
+    @if($errors->any())
+        <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{{ $errors->first() }}</div>
+    @endif
 
     <form id="templateEditorForm" action="{{ route('dashboard.certificates.templates.update', $template) }}" method="POST" enctype="multipart/form-data">
         @csrf
@@ -61,6 +64,8 @@
                     <div class="grid grid-cols-2 gap-2 mt-3">
                         <button type="button" draggable="true" id="dragAddText" onclick="addElement('text')" class="rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 cursor-grab active:cursor-grabbing"><i class="fa-solid fa-font mr-1"></i> Text</button>
                         <button type="button" draggable="true" id="dragAddImage" onclick="addElement('image')" class="rounded-lg border border-purple-200 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 cursor-grab active:cursor-grabbing"><i class="fa-solid fa-image mr-1"></i> Image</button>
+                        <button type="button" onclick="bringForward()" class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"><i class="fa-solid fa-arrow-up mr-1"></i> Forward</button>
+                        <button type="button" onclick="sendBackward()" class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"><i class="fa-solid fa-arrow-down mr-1"></i> Backward</button>
                     </div>
                     <p class="text-[10px] text-gray-400 mt-1.5">Tip: drag a button onto the canvas, or click it to add at a default spot.</p>
                 </div>
@@ -220,9 +225,9 @@
             institution_name: 'Dhaka IT Institute', student_name: 'Rafiqul Islam',
             course_name: 'Full Stack Web Development', certificate_number: 'DII-202608-00001-001',
             verification_code: 'ABC123XYZ789', issued_at: '07 Aug 2026', grade: 'A+',
-            student_id: 'STU-0001', student_phone: '01712345678', student_email: 'student@example.com',
+            student_id: 'STU-0001', student_phone: '017XXXXXXXX', student_email: 'student@example.test',
             course_code: 'DIT-WD-01', course_duration: '12 months',
-            institution_phone: '+880 1682-71557', institution_address: 'Mirpur-10, Dhaka',
+            institution_phone: '+880 1682-715570', institution_address: 'Mirpur-10, Dhaka',
         };
 
         elements.forEach((el, i) => {
@@ -397,7 +402,13 @@
     function insertVariable(variable) {
         if (selectedIndex < 0 || elements[selectedIndex].type !== 'text') { alert('Select a text element first.'); return; }
         const input = document.getElementById('el_content');
-        input.value += '{' + variable + '}';
+        const token = '{' + variable + '}';
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        input.value = input.value.slice(0, start) + token + input.value.slice(end);
+        const caret = start + token.length;
+        input.focus();
+        input.setSelectionRange(caret, caret);
         elements[selectedIndex].content = input.value;
         renderPreview();
     }

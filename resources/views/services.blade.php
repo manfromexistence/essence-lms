@@ -138,7 +138,7 @@
         </div>
         @auth
             @if(Auth::user()->isStudent())
-                <a href="{{ route('student.courses') }}" class="block rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Proceed to Enrol</a>
+                <a href="{{ route('student.courses') }}?from_service_cart=1" class="block rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Proceed to Enrol</a>
             @else
                 <a href="{{ route('dashboard') }}" class="block rounded-xl bg-primary px-6 py-3 text-center font-bold text-white transition hover:opacity-90">Go to Dashboard</a>
             @endif

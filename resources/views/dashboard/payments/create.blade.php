@@ -151,8 +151,8 @@
                 <div class="ml-4">
                     <h4 class="text-sm font-semibold text-blue-800" id="mobile-money-title">Payment Instructions</h4>
                     <p class="mt-1 text-sm text-blue-700">
-                        <span class="font-medium">Send money to:</span> 
-                        <span id="mobile-money-phone" class="font-bold">01XXXXXXXXX</span>
+                        <span class="font-medium">Send money to:</span>
+                        <span id="mobile-money-phone" class="font-bold">Configured institute number</span>
                     </p>
                     <p class="mt-1 text-sm text-blue-600" id="mobile-money-instructions">
                         Send money to the above number and provide the Transaction ID below.
@@ -190,7 +190,7 @@
                         <input type="tel" name="mobile_number" id="mobile_number"
                             value="{{ old('mobile_number') }}"
                             class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-bd-green focus:border-transparent"
-                            placeholder="01XXXXXXXXX">
+                            placeholder="017XXXXXXXX">
                         @error('mobile_number')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -298,10 +298,10 @@
                         transactionDetails.classList.add('hidden');
                     } else if (method === 'bkash' || method === 'nagad') {
                         // Show mobile money instructions
-                        const config = mobileMoneyConfig[method];
+                        const config = mobileMoneyConfig[method] || {};
                         mobileMoneyTitle.textContent = method === 'bkash' ? 'bKash Payment Instructions' : 'Nagad Payment Instructions';
-                        mobileMoneyPhone.textContent = config.phone;
-                        mobileMoneyInstructions.textContent = config.instructions;
+                        mobileMoneyPhone.textContent = config.phone || 'Not configured — ask the office for the number.';
+                        mobileMoneyInstructions.textContent = config.instructions || '';
                         mobileMoneyInfo.classList.remove('hidden');
                         
                         // Show transaction details with mobile number

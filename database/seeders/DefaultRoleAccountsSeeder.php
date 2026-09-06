@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Creates the support accounts needed to verify each portal.
  *
+ * Production safety: no default passwords exist in this file. Every account
+ * requires an explicit DEFAULT_*_EMAIL + DEFAULT_*_PASSWORD pair (16+
+ * characters). Missing or weak credentials are skipped with a warning, so a
+ * fresh production deploy can never be logged into with a public password.
+ *
  * This seeder is deliberately idempotent: it can run on every container
  * start without overwriting a password that an administrator has changed.
  */
@@ -21,33 +26,37 @@ class DefaultRoleAccountsSeeder extends Seeder
     {
         $accounts = [
             'super-admin' => [
-                'email' => env('DEFAULT_SUPER_ADMIN_EMAIL', 'superadmin@dhakaitinstitute.com'),
-                'password' => env('DEFAULT_SUPER_ADMIN_PASSWORD', 'Dii!SuperAdmin-2026#X9'),
+                'email' => env('DEFAULT_SUPER_ADMIN_EMAIL'),
+                'password' => env('DEFAULT_SUPER_ADMIN_PASSWORD'),
                 'name' => 'Dhaka IT Institute Super Admin',
             ],
             'admin' => [
-                'email' => env('DEFAULT_ADMIN_EMAIL', 'admin@dhakaitinstitute.com'),
-                'password' => env('DEFAULT_ADMIN_PASSWORD', 'Dii!Admin-2026#X9'),
+                'email' => env('DEFAULT_ADMIN_EMAIL'),
+                'password' => env('DEFAULT_ADMIN_PASSWORD'),
                 'name' => 'Dhaka IT Institute Administrator',
             ],
             'teacher' => [
-                'email' => env('DEFAULT_TEACHER_EMAIL', 'teacher@dhakaitinstitute.com'),
-                'password' => env('DEFAULT_TEACHER_PASSWORD', 'Dii!Teacher-2026#X9'),
+                'email' => env('DEFAULT_TEACHER_EMAIL'),
+                'password' => env('DEFAULT_TEACHER_PASSWORD'),
                 'name' => 'Dhaka IT Institute Instructor',
             ],
             'student' => [
-                'email' => env('DEFAULT_STUDENT_EMAIL', 'student@dhakaitinstitute.com'),
-                'password' => env('DEFAULT_STUDENT_PASSWORD', 'Dii!Student-2026#X9'),
+                'email' => env('DEFAULT_STUDENT_EMAIL'),
+                'password' => env('DEFAULT_STUDENT_PASSWORD'),
                 'name' => 'Dhaka IT Institute Demo Student',
             ],
             'parent' => [
-                'email' => env('DEFAULT_PARENT_EMAIL', 'parent@dhakaitinstitute.com'),
-                'password' => env('DEFAULT_PARENT_PASSWORD', 'Dii!Parent-2026#X9'),
+                'email' => env('DEFAULT_PARENT_EMAIL'),
+                'password' => env('DEFAULT_PARENT_PASSWORD'),
                 'name' => 'Dhaka IT Institute Demo Parent',
             ],
         ];
 
         foreach ($accounts as $slug => $account) {
+            if (empty($account['email']) || empty($account['password']) || strlen((string) $account['password']) < 16) {
+                $this->command?->warn("Skipping {$slug} support account: set DEFAULT_" . strtoupper(str_replace('-', '_', $slug)) . '_EMAIL and a 16+ character DEFAULT_' . strtoupper(str_replace('-', '_', $slug)) . '_PASSWORD.');
+                continue;
+            }
             $role = Role::where('slug', $slug)->first();
             if (!$role) {
                 continue;
@@ -70,7 +79,7 @@ class DefaultRoleAccountsSeeder extends Seeder
                     ['user_id' => $user->id],
                     [
                         'name_bn' => $account['name'],
-                        'phone' => '01682715570',
+                        'phone' => env('DEFAULT_STUDENT_PHONE', '01700000000'),
                         'admission_mode' => 'online',
                         'admission_status' => 'approved',
                         'status' => 'active',
@@ -84,7 +93,7 @@ class DefaultRoleAccountsSeeder extends Seeder
                     ['email' => $account['email']],
                     [
                         'name' => $account['name'],
-                        'phone' => '01682715571',
+                        'phone' => env('DEFAULT_PARENT_PHONE', '01700000000'),
                         'password' => Hash::make($account['password']),
                         'email_verified_at' => now(),
                         'phone_verified_at' => now(),
@@ -98,7 +107,9 @@ class DefaultRoleAccountsSeeder extends Seeder
                     ],
                 );
 
-                $student = Student::whereHas('user', fn ($query) => $query->where('email', $accounts['student']['email']))->first();
+                $student = !empty($accounts['student']['email'])
+                    ? Student::whereHas('user', fn ($query) => $query->where('email', $accounts['student']['email']))->first()
+                    : null;
                 if ($student && !$parent->students()->whereKey($student->id)->exists()) {
                     $parent->students()->attach($student->id, [
                         'relationship_type' => 'guardian',

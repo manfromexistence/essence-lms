@@ -58,26 +58,50 @@ class ProductionSecurityTest extends TestCase
         $this->assertTrue(class_exists(\League\Flysystem\AwsS3V3\PortableVisibilityConverter::class));
     }
 
-    public function test_default_role_accounts_are_idempotent_and_have_required_profiles(): void
+    public function test_default_role_accounts_require_explicit_credentials(): void
     {
-        $this->seed([RoleSeeder::class, DefaultRoleAccountsSeeder::class]);
+        $this->seed(RoleSeeder::class);
 
         foreach (['super-admin', 'admin', 'teacher', 'student', 'parent'] as $role) {
             $this->assertDatabaseHas('roles', ['slug' => $role]);
         }
 
-        $student = User::where('email', 'student@dhakaitinstitute.com')->firstOrFail();
-        $this->assertTrue($student->hasRole('student'));
-        $this->assertNotNull($student->student);
-        $this->assertSame('approved', $student->student->admission_status);
-
-        $parent = User::where('email', 'parent@dhakaitinstitute.com')->firstOrFail();
-        $this->assertTrue($parent->hasRole('parent'));
-        $this->assertDatabaseHas('parents', ['email' => 'parent@dhakaitinstitute.com']);
-
-        $originalHash = $student->password;
+        // No credentials configured in testing env → no accounts created.
         $this->seed(DefaultRoleAccountsSeeder::class);
-        $this->assertSame($originalHash, User::find($student->id)->password);
+        $this->assertDatabaseCount('users', 0);
+
+        // Explicit 16+ char credentials create idempotent accounts with profiles.
+        foreach (['super-admin', 'admin', 'teacher', 'student', 'parent'] as $role) {
+            $key = 'DEFAULT_' . strtoupper(str_replace('-', '_', $role));
+            putenv("{$key}_EMAIL={$role}@dhakaitinstitute.test");
+            $_ENV["{$key}_EMAIL"] = "{$role}@dhakaitinstitute.test";
+            putenv("{$key}_PASSWORD=Testing-Only-Password-123!");
+            $_ENV["{$key}_PASSWORD"] = 'Testing-Only-Password-123!';
+        }
+
+        try {
+            $this->seed(DefaultRoleAccountsSeeder::class);
+
+            $student = User::where('email', 'student@dhakaitinstitute.test')->firstOrFail();
+            $this->assertTrue($student->hasRole('student'));
+            $this->assertNotNull($student->student);
+            $this->assertSame('approved', $student->student->admission_status);
+
+            $parent = User::where('email', 'parent@dhakaitinstitute.test')->firstOrFail();
+            $this->assertTrue($parent->hasRole('parent'));
+            $this->assertDatabaseHas('parents', ['email' => 'parent@dhakaitinstitute.test']);
+
+            $originalHash = $student->password;
+            $this->seed(DefaultRoleAccountsSeeder::class);
+            $this->assertSame($originalHash, User::find($student->id)->password);
+        } finally {
+            foreach (['super-admin', 'admin', 'teacher', 'student', 'parent'] as $role) {
+                $key = 'DEFAULT_' . strtoupper(str_replace('-', '_', $role));
+                putenv($key . '_EMAIL');
+                putenv($key . '_PASSWORD');
+                unset($_ENV[$key . '_EMAIL'], $_ENV[$key . '_PASSWORD']);
+            }
+        }
     }
 
     public function test_debug_upload_routes_are_not_exposed(): void

@@ -16,7 +16,7 @@ class BrevoEmailService
     public function __construct()
     {
         $this->apiKey = Setting::getValue('brevo_api_key');
-        $this->senderEmail = Setting::getValue('brevo_sender_email', 'ajju40959@gmail.com');
+        $this->senderEmail = Setting::getValue('brevo_sender_email') ?: config('mail.from.address');
         $this->senderName = Setting::getValue('brevo_sender_name', 'Dhaka IT Institute');
     }
 
@@ -36,13 +36,13 @@ class BrevoEmailService
 
         // The email_logs table only allows 'sent' or 'failed' (no 'pending'),
         // so create the log with its final state after the API attempt.
-        if (!$this->apiKey) {
+        if (!$this->apiKey || !$this->senderEmail) {
             $log = EmailLog::create([
                 'to' => $to,
                 'subject' => $subject,
                 'template_type' => $type,
                 'status' => 'failed',
-                'error_message' => 'Brevo API key is not configured in Settings.',
+                'error_message' => 'Brevo API key / sender email is not configured in Settings.',
             ]);
             if ($related) {
                 $log->update([

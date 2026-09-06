@@ -303,29 +303,29 @@
                 <div>
                     <h6 class="font-bold mb-4 bengali-text">দ্রুত লিংক</h6>
                     <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">সম্পর্কে</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">কোর্স</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">শিক্ষক</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">যোগাযোগ</a></li>
+                        <li><a href="{{ route('about') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">সম্পর্কে</a></li>
+                        <li><a href="{{ route('courses') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">কোর্স</a></li>
+                        <li><a href="{{ route('teachers') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">শিক্ষক</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">যোগাযোগ</a></li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h6 class="font-bold mb-4 bengali-text">সহায়তা</h6>
                     <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">সাহায্য কেন্দ্র</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">গোপনীয়তা নীতি</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">শর্তাবলী</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors bengali-text">FAQ</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">সাহায্য কেন্দ্র</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">গোপনীয়তা নীতি</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">শর্তাবলী</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-gray-400 hover:text-white transition-colors bengali-text">FAQ</a></li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h6 class="font-bold mb-4 bengali-text">যোগাযোগ করুন</h6>
                     <ul class="space-y-2 text-gray-400">
-                        <li>ইমেইল: support@alphalms.com</li>
-                        <li>ফোন: +880 1XXX-XXXXXX</li>
-                        <li class="bengali-text">ঠিকানা: ঢাকা, বাংলাদেশ</li>
+                        <li>ইমেইল: dhakaitinstitute@gmail.com</li>
+                        <li>ফোন: {{ config('institution.phone', '+880 1682-715570') }}</li>
+                        <li class="bengali-text">ঠিকানা: House #5, Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216</li>
                     </ul>
                 </div>
             </div>

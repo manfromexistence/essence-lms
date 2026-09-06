@@ -25,7 +25,7 @@
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_featured" value="1" @checked(old('is_featured')) class="rounded" /> Featured</label>
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" @checked(old('is_active',true)) class="rounded" /> Active</label>
     </div>
-    <div><x-ui.image-input name="image" label="Cover Image" helperText="Upload or paste Unsplash URL" persist /></div>
+    <div><x-ui.image-input name="image" label="Cover Image" helperText="Upload an image (JPG/PNG, max 20MB)" persist /></div>
     <div class="grid md:grid-cols-2 gap-4">
         <div class="space-y-2">
             <label class="text-sm font-semibold">Features (one per line)</label>

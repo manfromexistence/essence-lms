@@ -170,13 +170,16 @@ class CourseController extends Controller
 
     public function groups()
     {
-        $batches = \App\Models\Batch::with(['course', 'teachers'])->active()->get();
+        $batches = \App\Models\Batch::with(['course', 'teachers', 'students.user'])->active()->get();
         return view('dashboard.courses.groups', compact('batches'));
     }
 
-    public function attendance()
+    public function attendance(Request $request)
     {
         $batches = \App\Models\Batch::with(['course', 'students'])->active()->get();
+        if ($request->filled('batch_id')) {
+            $batches = $batches->where('id', (int) $request->batch_id)->values();
+        }
         return view('dashboard.courses.attendance', compact('batches'));
     }
 

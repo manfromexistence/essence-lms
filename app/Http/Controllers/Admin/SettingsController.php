@@ -68,6 +68,16 @@ class SettingsController extends Controller
             'currency' => 'nullable|string|max:10',
             'receipt_prefix' => 'nullable|string|max:10',
             'invoice_prefix' => 'nullable|string|max:10',
+            'bkash_number' => 'nullable|string|max:20',
+            'bkash_account_name' => 'nullable|string|max:255',
+            'nagad_number' => 'nullable|string|max:20',
+            'rocket_number' => 'nullable|string|max:20',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account_name' => 'nullable|string|max:255',
+            'bank_account_number' => 'nullable|string|max:100',
+            'bank_branch' => 'nullable|string|max:255',
+            'facebook_url' => 'nullable|url|max:500',
+            'youtube_url' => 'nullable|url|max:500',
 
             // Theme Settings
             'theme_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -119,10 +129,7 @@ class SettingsController extends Controller
                 $this->settingsService->set('sms_gateway_enabled', false);
             }
 
-            // Pre-fill Brevo defaults so the email dashboard works out of the box
-            if (!$this->settingsService->get('brevo_sender_email')) {
-                $this->settingsService->set('brevo_sender_email', 'ajju40959@gmail.com');
-            }
+            // Pre-fill Brevo sender name so the email dashboard works out of the box
             if (!$this->settingsService->get('brevo_sender_name')) {
                 $this->settingsService->set('brevo_sender_name', 'Dhaka IT Institute');
             }

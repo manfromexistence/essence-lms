@@ -99,13 +99,15 @@
                 </svg>
                 Back to Exams
             </a>
-            <a href="{{ route('student.exam.download-pdf', $exam->id) }}" 
+            @if(isset($result) && $result)
+            <a href="{{ route('student.results.mark-sheet', $result->id) }}"
                class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
                 Download PDF
             </a>
+            @endif
         </div>
 
         <!-- Question-by-Question Breakdown -->
@@ -282,13 +284,13 @@
 
         <!-- Back to Top Button -->
         <div class="mt-8 text-center">
-            <a href="#" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" 
+            <button type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'});"
                class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
                 </svg>
                 Back to Top
-            </a>
+            </button>
         </div>
     </div>
 </div>

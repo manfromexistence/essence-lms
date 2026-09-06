@@ -20,9 +20,9 @@ class CertificateTemplateController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:100',
-            'background_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
-            'logo_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'signature_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'background_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:10240', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'logo_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'signature_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
             'width' => 'nullable|integer|min:600|max:3000',
             'height' => 'nullable|integer|min:400|max:2000',
             'is_default' => 'nullable|boolean',
@@ -64,9 +64,9 @@ class CertificateTemplateController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:100',
-            'background_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
-            'logo_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'signature_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'background_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:10240', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'logo_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'signature_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
             'width' => 'nullable|integer|min:600|max:3000',
             'height' => 'nullable|integer|min:400|max:2000',
             'is_active' => 'nullable|boolean',
@@ -109,6 +109,14 @@ class CertificateTemplateController extends Controller
 
     public function destroy(CertificateTemplate $template)
     {
+        if ($template->is_default) {
+            return back()->with('error', 'The default template cannot be deleted. Set another template as default first.');
+        }
+
+        if ($template->certificates()->exists()) {
+            return back()->with('error', 'This template has issued certificates and cannot be deleted. Deactivate it instead.');
+        }
+
         foreach (['background_image', 'logo_image', 'signature_image'] as $field) {
             if ($template->{$field} && Storage::disk('public')->exists($template->{$field})) {
                 Storage::disk('public')->delete($template->{$field});

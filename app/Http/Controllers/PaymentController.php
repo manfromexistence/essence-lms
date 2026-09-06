@@ -33,8 +33,13 @@ class PaymentController extends Controller
         }
 
         // Load payment methods from config
-        $paymentMethods = config('payment-methods.methods');
-        
+        $paymentMethods = array_filter(
+            config('payment-methods.methods', []),
+            fn ($method) => !empty($method['number'] ?? null) || !empty(array_filter($method['details'] ?? []))
+        );
+
+        abort_if($paymentMethods === [], 503, 'Online payment is not configured yet. Please contact the office to complete admission.');
+
         return view('student.payment-form', compact('course', 'paymentMethods'));
     }
 
@@ -46,14 +51,20 @@ class PaymentController extends Controller
     public function submit(Request $request): RedirectResponse
     {
         // Validate inputs
+        $configuredMethods = array_keys(array_filter(
+            config('payment-methods.methods', []),
+            fn ($method) => !empty($method['number'] ?? null) || !empty(array_filter($method['details'] ?? []))
+        ));
+        abort_if($configuredMethods === [], 503, 'Online payment is not configured yet. Please contact the office to complete admission.');
+
         $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
-            'payment_method' => 'required|in:bkash,nagad,rocket,bank_transfer',
+            'payment_method' => ['required', Rule::in($configuredMethods)],
             'transaction_id' => [
                 'required', 'string', 'max:255',
                 Rule::unique('payments')->where(fn ($query) => $query->where('payment_method', $request->payment_method)),
             ],
-            'sender_number' => 'required_if:payment_method,bkash|nullable|regex:/^01[3-9][0-9]{8}$/',
+            'sender_number' => 'required_if:payment_method,bkash,nagad,rocket|nullable|regex:/^01[3-9][0-9]{8}$/',
             'screenshot' => [
                 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120',
                 new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'pdf']),
@@ -207,6 +218,9 @@ class PaymentController extends Controller
             $studentName = $payment->student?->user?->name ?? 'Student';
             $studentEmail = $payment->student?->user?->email;
             if ($studentEmail) {
+                $payment->loadMissing('student.user', 'course');
+                $studentName = $payment->student?->user?->name ?? $studentName;
+                $studentEmail = $payment->student?->user?->email ?? $studentEmail;
                 $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
                     . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
                     . '<h2 style="color:#fff;margin:0;">Payment Approved 🎉</h2></div>'

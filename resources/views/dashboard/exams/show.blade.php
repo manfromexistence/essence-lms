@@ -308,23 +308,18 @@
             function openEditQuestionModal(questionId) {
                 const fetchUrl = "{{ route('dashboard.exams.questions.show', [$exam, '__QUESTION_ID__']) }}".replace('__QUESTION_ID__', questionId);
                 const updateUrl = "{{ route('dashboard.exams.questions.update', [$exam, '__QUESTION_ID__']) }}".replace('__QUESTION_ID__', questionId);
-                
-                console.log('Fetching question from:', fetchUrl);
-                
+
                 // Fetch question data
                 fetch(fetchUrl)
                     .then(response => {
-                        console.log('Response status:', response.status);
                         if (!response.ok) {
-                            return response.text().then(text => {
-                                console.error('Response error:', text);
+                            return response.text().then(() => {
                                 throw new Error('Failed to fetch question: ' + response.status);
                             });
                         }
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Question data:', data);
                         document.getElementById('editQuestionForm').action = updateUrl;
                         document.getElementById('edit_question_text').value = data.question_text;
                         document.getElementById('edit_marks').value = data.marks;
@@ -370,9 +365,8 @@
                         
                         document.getElementById('editQuestionModal').classList.remove('hidden');
                     })
-                    .catch(error => {
-                        console.error('Error fetching question:', error);
-                        alert('Failed to load question data. Please try again. Error: ' + error.message);
+                    .catch(() => {
+                        alert('Failed to load question data. Please try again.');
                     });
             }
 

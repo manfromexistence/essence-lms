@@ -54,6 +54,40 @@ class AppServiceProvider extends ServiceProvider
             return \App\Models\Question::findOrFail($value);
         });
 
+        // Payment method numbers come from Settings first, env second — nothing
+        // user-facing ever falls back to a placeholder number.
+        $this->app->resolving('config', function ($config) {
+            /** @var \Illuminate\Config\Repository $config */
+            try {
+                $methods = $config->get('payment-methods.methods', []);
+                $settings = function (string $key) {
+                    try {
+                        return \App\Models\Setting::getValue($key);
+                    } catch (\Throwable) {
+                        return null;
+                    }
+                };
+                if (isset($methods['bkash'])) {
+                    $methods['bkash']['number'] = $settings('bkash_number') ?: $methods['bkash']['number'] ?? null;
+                    $methods['bkash']['account_name'] = $settings('bkash_account_name') ?: $methods['bkash']['account_name'] ?? null;
+                }
+                if (isset($methods['nagad'])) {
+                    $methods['nagad']['number'] = $settings('nagad_number') ?: $methods['nagad']['number'] ?? null;
+                }
+                if (isset($methods['rocket'])) {
+                    $methods['rocket']['number'] = $settings('rocket_number') ?: $methods['rocket']['number'] ?? null;
+                }
+                if (isset($methods['bank_transfer']['details'])) {
+                    $methods['bank_transfer']['details']['bank_name'] = $settings('bank_name') ?: null;
+                    $methods['bank_transfer']['details']['account_name'] = $settings('bank_account_name') ?: null;
+                    $methods['bank_transfer']['details']['account_number'] = $settings('bank_account_number') ?: null;
+                    $methods['bank_transfer']['details']['branch'] = $settings('bank_branch') ?: null;
+                }
+                $config->set('payment-methods.methods', $methods);
+            } catch (\Throwable) {
+            }
+        });
+
         // Register the sidebar composer for the admin layout
         View::composer('layouts.admin', SidebarComposer::class);
 

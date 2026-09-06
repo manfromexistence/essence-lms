@@ -9,6 +9,9 @@
     @if(session('success'))
         <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
     @endif
+    @if(session('error'))
+        <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{{ session('error') }}</div>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Create Template Form -->
@@ -100,10 +103,13 @@
                                     <button type="submit" class="text-xs font-semibold text-primary hover:underline">Set as Default</button>
                                 </form>
                             @endif
+                            <a href="{{ route('dashboard.certificates.templates.edit', $template) }}" class="text-xs font-semibold text-gray-600 hover:underline">Design</a>
                             <button type="button" onclick="openEditModal({{ $template->id }})" class="text-xs font-semibold text-gray-600 hover:underline">Settings</button>
+                            @if(!$template->is_default && $template->certificates()->count() === 0)
                             <form action="{{ route('dashboard.certificates.templates.destroy', $template) }}" method="POST" onsubmit="return confirm('Delete this template?')">@csrf @method('DELETE')
                                 <button type="submit" class="text-xs font-semibold text-red-600 hover:underline">Delete</button>
                             </form>
+                            @endif
                         </div>
                     </div>
                 </a>

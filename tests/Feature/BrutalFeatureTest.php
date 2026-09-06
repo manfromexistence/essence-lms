@@ -16,7 +16,6 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -209,8 +208,9 @@ class BrutalFeatureTest extends TestCase
 
     public function test_admin_approves_payment_student_gets_enrolled_and_email_sent(): void
     {
-        Http::fake(['api.brevo.com/*' => Http::response(['messageId' => 'x'], 201)]);
+        \Illuminate\Support\Facades\Bus::fake();
         \App\Models\Setting::updateOrCreate(['key' => 'brevo_api_key'], ['value' => 'xkeysib-test', 'group' => 'email', 'type' => 'string']);
+        \App\Models\Setting::updateOrCreate(['key' => 'brevo_sender_email'], ['value' => 'sender@dhakaitinstitute.test', 'group' => 'email', 'type' => 'string']);
         app(\App\Services\SettingsService::class)->clearCache();
 
         $admin = $this->makeUser('super-admin');
@@ -235,8 +235,9 @@ class BrutalFeatureTest extends TestCase
         $this->assertDatabaseHas('payments', ['id' => $payment->id, 'status' => Payment::STATUS_COMPLETED]);
         $this->assertDatabaseHas('course_enrollments', ['student_id' => $student->id, 'course_id' => $course->id]);
 
-        // Brevo email sent
-        Http::assertSent(fn ($r) => str_contains($r->url(), 'api.brevo.com') && str_contains($r['subject'], 'Payment Approved'));
+        // Approval queues a transactional email and an in-app notification.
+        \Illuminate\Support\Facades\Bus::assertDispatched(\App\Jobs\SendEmailJob::class);
+        $this->assertDatabaseHas('notifications', ['user_id' => $studentUser->id, 'type' => 'course_payment_approved']);
     }
 
     /* ---------- CERTIFICATES + TEMPLATES ---------- */

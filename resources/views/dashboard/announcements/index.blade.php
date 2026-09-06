@@ -159,17 +159,13 @@
     function openEditModal(announcementId) {
         const announcement = announcements.find(a => a.id === announcementId);
         if (!announcement) {
-            console.error('Announcement not found:', announcementId);
             return;
         }
-
-        console.log('Opening edit modal for:', announcement);
 
         // Set form action
         const form = document.getElementById('editAnnouncementForm');
         if (form) {
             form.action = `/dashboard/announcements/${announcementId}`;
-            console.log('Form action set to:', form.action);
         }
 
         // Populate form fields
@@ -250,16 +246,6 @@
         if (editModal) {
             editModal.addEventListener('click', function(e) {
                 if (e.target === this) closeEditModal();
-            });
-        }
-
-        // Add form submit handler for debugging
-        const editForm = document.getElementById('editAnnouncementForm');
-        if (editForm) {
-            editForm.addEventListener('submit', function(e) {
-                console.log('Form submitting to:', this.action);
-                console.log('Form data:', new FormData(this));
-                // Let the form submit normally
             });
         }
     });

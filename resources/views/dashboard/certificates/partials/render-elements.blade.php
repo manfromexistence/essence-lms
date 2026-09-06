@@ -28,11 +28,11 @@
         'issued_at' => $values['issued_at'] ?? '07 Aug 2026',
         'grade' => $values['grade'] ?? 'A+',
         'student_id' => $values['student_id'] ?? 'STU-0001',
-        'student_phone' => $values['student_phone'] ?? '01712345678',
-        'student_email' => $values['student_email'] ?? 'student@example.com',
+        'student_phone' => $values['student_phone'] ?? '017XXXXXXXX',
+        'student_email' => $values['student_email'] ?? 'student@example.test',
         'course_code' => $values['course_code'] ?? 'DIT-WD-01',
         'course_duration' => $values['course_duration'] ?? '12 months',
-        'institution_phone' => $values['institution_phone'] ?? '+880 1682-71557',
+        'institution_phone' => $values['institution_phone'] ?? '+880 1682-715570',
         'institution_address' => $values['institution_address'] ?? 'Mirpur-10, Dhaka',
     ];
 

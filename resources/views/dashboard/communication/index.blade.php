@@ -40,7 +40,7 @@
                     
                     <div>
                         <x-ui.label for="phone">Phone Number</x-ui.label>
-                        <x-ui.input type="text" name="phone" id="phone" required placeholder="01XXXXXXXXX" />
+                        <x-ui.input type="text" name="phone" id="phone" required placeholder="017XXXXXXXX" />
                         @error('phone')
                             <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                         @enderror
@@ -120,7 +120,7 @@
                     
                     <div id="custom_field" class="hidden">
                         <x-ui.label for="custom_numbers">Phone Numbers (comma separated)</x-ui.label>
-                        <x-ui.textarea name="custom_numbers" id="custom_numbers" rows="2" placeholder="01712345678, 01812345678"></x-ui.textarea>
+                        <x-ui.textarea name="custom_numbers" id="custom_numbers" rows="2" placeholder="017XXXXXXXX, 018XXXXXXXX"></x-ui.textarea>
                     </div>
 
                     <!-- Requirement 11.5: Support sending to both students and parents -->

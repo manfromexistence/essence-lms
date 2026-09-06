@@ -18,6 +18,8 @@ class UploadContentScanTest extends TestCase
 
     public function test_payment_proof_with_embedded_php_is_rejected(): void
     {
+        config(['payment-methods.methods.bkash.number' => '01700000000']);
+
         $studentUser = $this->makeStudent();
         $course = Course::factory()->active()->create(['price' => 5000]);
 
@@ -41,6 +43,7 @@ class UploadContentScanTest extends TestCase
     {
         Storage::fake('local');
         config(['filesystems.private' => 'local']);
+        config(['payment-methods.methods.bkash.number' => '01700000000']);
 
         $studentUser = $this->makeStudent();
         $course = Course::factory()->active()->create(['price' => 5000]);

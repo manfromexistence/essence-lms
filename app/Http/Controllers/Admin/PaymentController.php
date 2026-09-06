@@ -93,14 +93,15 @@ class PaymentController extends Controller
             'bank_transfer' => 'Bank Transfer',
         ];
 
-        // Mobile money configuration for display
+        // Mobile money configuration for display (Settings first, env second).
+        $settingsService = app(\App\Services\SettingsService::class);
         $mobileMoneyConfig = [
             'bkash' => [
-                'phone' => config('services.bkash.phone', '01XXXXXXXXX'),
+                'phone' => $settingsService->get('bkash_number', config('payment-methods.methods.bkash.number')),
                 'instructions' => 'Send money to the above bKash number and provide the Transaction ID.',
             ],
             'nagad' => [
-                'phone' => config('services.nagad.phone', '01XXXXXXXXX'),
+                'phone' => $settingsService->get('nagad_number', config('payment-methods.methods.nagad.number')),
                 'instructions' => 'Send money to the above Nagad number and provide the Transaction ID.',
             ],
         ];

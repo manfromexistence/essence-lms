@@ -97,4 +97,55 @@ class CertificateEditorTest extends TestCase
             ->assertSee('Design', false)
             ->assertSee('Dhaka IT Course Completion');
     }
+
+    public function test_default_template_cannot_be_deleted(): void
+    {
+        $this->seed(\Database\Seeders\CertificateTemplateSeeder::class);
+        $admin = $this->makeSuperAdmin();
+        $template = \App\Models\CertificateTemplate::where('is_default', true)->firstOrFail();
+
+        $this->actingAs($admin)->delete("/dashboard/certificates/templates/{$template->id}")
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('certificate_templates', ['id' => $template->id]);
+    }
+
+    public function test_template_with_certificates_cannot_be_deleted(): void
+    {
+        $this->seed(\Database\Seeders\CertificateTemplateSeeder::class);
+        $admin = $this->makeSuperAdmin();
+        $studentRole = \App\Models\Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
+        $studentUser = \App\Models\User::factory()->create(['is_active' => true, 'must_change_password' => false]);
+        $studentUser->roles()->attach($studentRole);
+        $student = \App\Models\Student::factory()->create(['user_id' => $studentUser->id]);
+        $course = \App\Models\Course::factory()->create();
+        app(\App\Services\CertificateService::class)->issue($student, $course, $admin);
+
+        $template = \App\Models\CertificateTemplate::where('is_default', true)->firstOrFail();
+        $template->update(['is_default' => false]);
+        \App\Models\CertificateTemplate::where('id', '!=', $template->id)->firstOrFail()->update(['is_default' => true]);
+
+        $this->actingAs($admin)->delete("/dashboard/certificates/templates/{$template->id}")
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('certificate_templates', ['id' => $template->id]);
+    }
+
+    public function test_verify_page_handles_revoked_certificate(): void
+    {
+        $this->seed(\Database\Seeders\CertificateTemplateSeeder::class);
+        $admin = $this->makeSuperAdmin();
+        $studentRole = \App\Models\Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
+        $studentUser = \App\Models\User::factory()->create(['is_active' => true, 'must_change_password' => false]);
+        $studentUser->roles()->attach($studentRole);
+        $student = \App\Models\Student::factory()->create(['user_id' => $studentUser->id]);
+        $course = \App\Models\Course::factory()->create();
+
+        $cert = app(\App\Services\CertificateService::class)->issue($student, $course, $admin);
+        $cert->update(['status' => 'revoked', 'revoked_at' => now(), 'revocation_reason' => 'Test revoke']);
+
+        $this->get("/certificates/verify/{$cert->verification_code}")
+            ->assertStatus(200)
+            ->assertSee('revoked', false);
+    }
 }

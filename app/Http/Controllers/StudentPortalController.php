@@ -391,10 +391,14 @@ class StudentPortalController extends Controller
     public function submitExam(Request $request, Exam $exam)
     {
         $student = $this->getStudent();
-        
+
         if (!$student) {
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
+
+        $this->assertExamAccess($student, $exam);
+
+        $this->assertExamAvailable($exam);
 
         // Validate exam attempt ownership
         // First try to find an in-progress attempt
@@ -409,20 +413,37 @@ class StudentPortalController extends Controller
                 ->where('exam_id', $exam->id)
                 ->where('status', 'submitted')
                 ->first();
-            
+
             if ($submittedAttempt) {
                 // Already submitted, redirect to results
                 $result = ExamResult::where('student_id', $student->id)
                     ->where('exam_id', $exam->id)
                     ->first();
-                
+
                 if ($result) {
                     return redirect()->route('student.exam-result', $result->id)
                         ->with('info', 'This exam has already been submitted.');
                 }
             }
-            
+
             return redirect()->route('student.exams')->with('error', 'No active attempt found for this exam.');
+        }
+
+        if ($exam->type === 'cq') {
+            $textAnswers = [];
+            foreach ((array) $request->input('answers', []) as $questionId => $answer) {
+                if (!is_numeric($questionId)) {
+                    continue;
+                }
+                $text = is_array($answer) ? ($answer['text'] ?? '') : $answer;
+                if (trim(strip_tags((string) $text)) !== '') {
+                    $textAnswers[(int) $questionId] = (string) $text;
+                }
+            }
+
+            if ($textAnswers !== []) {
+                $this->examService->saveCqTextAnswers($attempt, $textAnswers);
+            }
         }
 
         // Submit exam (saves answers, creates result, marks as submitted)
@@ -556,15 +577,13 @@ class StudentPortalController extends Controller
             ->exists();
 
         if ($hasPurchased) {
-            // Check if added to batch
             if ($student->batch_id) {
-                // Already in a batch - redirect to course content (using materials as simpler proxy for "course page")
-                return redirect()->route('student.materials')->with('success', 'You are already enrolled.');
-            } else {
-                // Purchased but no batch - redirect to batch selection (or dashboard with warning for now)
-                // Since batch selection page doesn't exist, we send to dashboard with instruction.
-                return redirect()->route('student.dashboard')->with('info', 'Payment approved! Please contact admin to be assigned to a batch.');
+                return redirect()->route('student.course.watch', $course)->with('success', 'You are already enrolled.');
             }
+
+            $batches = \App\Models\Batch::where('course_id', $course->id)->active()->orderBy('name')->get();
+
+            return view('student.batch-select', compact('course', 'student', 'batches'));
         } else {
             // Check if there is a pending payment
             $isPending = Payment::where('student_id', $student->id)
@@ -579,6 +598,41 @@ class StudentPortalController extends Controller
             // Not purchased, redirect to payment form
             return redirect()->route('student.payment.form', $course->id);
         }
+    }
+
+    /**
+     * Save the student's batch after a settled course payment.
+     */
+    public function selectBatch(Request $request, Course $course)
+    {
+        $student = $this->getStudent();
+        abort_unless($student, 403);
+
+        abort_unless(Payment::where('student_id', $student->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', Payment::settledStatuses())
+            ->exists(), 403, 'Purchase approval is required.');
+
+        $validated = $request->validate([
+            'batch_id' => ['required', 'integer', 'exists:batches,id'],
+        ]);
+
+        $batch = \App\Models\Batch::where('id', $validated['batch_id'])
+            ->where('course_id', $course->id)
+            ->active()
+            ->firstOrFail();
+
+        if ($batch->max_students && $batch->students()->count() >= $batch->max_students && $student->batch_id !== $batch->id) {
+            return back()->with('error', 'This batch is full. Please choose another batch.');
+        }
+
+        $student->update(['batch_id' => $batch->id]);
+        CourseEnrollment::updateOrCreate(
+            ['student_id' => $student->id, 'course_id' => $course->id],
+            ['batch_id' => $batch->id, 'enrolled_at' => now()]
+        );
+
+        return redirect()->route('student.course.watch', $course)->with('success', 'Batch assigned. Happy learning!');
     }
 
     public function watchCourse(Course $course, ?CourseVideo $video = null)

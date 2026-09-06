@@ -240,7 +240,7 @@
                         </div>
                     </a>
 
-                    <a href="#" class="flex items-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg hover:shadow-md transition-all group">
+                    <a href="{{ route('contact') }}" class="flex items-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg hover:shadow-md transition-all group">
                         <div class="p-3 bg-purple-500 rounded-lg mr-4 group-hover:scale-110 transition-transform">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -265,7 +265,7 @@
                     <h3 class="mt-4 text-lg font-medium text-gray-900">No children linked</h3>
                     <p class="mt-2 text-sm text-gray-500">Contact the administrator to link your children's profiles to your account.</p>
                     <div class="mt-6">
-                        <a href="#" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:opacity-90">
+                        <a href="{{ route('contact') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:opacity-90">
                             Contact Administrator
                         </a>
                     </div>

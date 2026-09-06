@@ -11,6 +11,22 @@
             <p class="text-gray-600">Explore and enroll in available courses</p>
         </div>
 
+        @if(request('from_service_cart'))
+        <div class="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+            <strong>Service shortlist carried over.</strong>
+            <span id="service-cart-note">Finish by enrolling in the matching course below, or ask the office to convert a service into admission.</span>
+        </div>
+        <script>
+            try {
+                const cart = JSON.parse(localStorage.getItem('dii_cart') || '[]');
+                if (cart.length) {
+                    document.getElementById('service-cart-note').textContent =
+                        'Your shortlist (' + cart.map(i => i.name).join(', ') + ') is saved — enroll in the matching course below or contact the office to convert it into admission.';
+                }
+            } catch (e) {}
+        </script>
+        @endif
+
         <!-- Success/Error Messages -->
         @if(session('success'))
         <div class="mb-6 bg-green-50 border-l-4 border-green-400 p-4">

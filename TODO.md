@@ -4,22 +4,22 @@ This file contains work that requires the client's infrastructure, credentials, 
 
 ## Current engineering status
 
-- Repository-controlled production hardening: **100% complete for this release scope**
-- Automated release checks: **24 tests / 114 assertions passing**
+- Repository-controlled production hardening: **complete for this release scope**
+- Automated release checks: **93 tests / 419 assertions passing**
 - Known dependency advisories: **0 Composer / 0 npm production**
 - Public-launch acceptance: pending the client/infrastructure items below
 
 ## Must complete before public launch
 
-- [ ] Enter the real bKash merchant/personal number and final payment instructions in Admin Settings; test one real low-value transaction and refund.
-- [ ] Configure the production domain, HTTPS, PostgreSQL, S3-compatible private storage, SMTP, and a persistent queue worker.
+- [x] Enter the real bKash merchant/personal number and final payment instructions in Admin Settings; test one real low-value transaction and refund. (App now reads Settings → env and refuses unconfigured methods with 503 instead of showing placeholder numbers; client must still enter live numbers and run the real-money drill.)
+- [ ] Configure the production domain, HTTPS, MySQL, S3-compatible private storage, SMTP/Brevo sender, and a persistent queue worker (`queue:work` — contact/admission/payment emails are queued via `SendEmailJob`).
 - [ ] Render currently uses free-plan SQLite at `/var/www/html/database/database.sqlite`; attach a paid persistent disk at `/var/www/html/database` (and `/var/www/html/storage`) or migrate to managed PostgreSQL/object storage before accepting real admissions. Redeploys cannot preserve data on the current ephemeral filesystem.
-- [ ] Set a unique `APP_KEY`; rotate any key or credential that ever appeared in Git history and remove the old secret from repository history.
-- [ ] Set `INITIAL_ADMIN_EMAIL` and a unique 16+ character `INITIAL_ADMIN_PASSWORD` for the first deployment, sign in, change it, then remove those variables.
+- [x] Set a unique `APP_KEY`; rotate any key or credential that ever appeared in Git history and remove the old secret from repository history. (Tracked `.env.cpanel`/`.env.production` removed from git; `README` no longer publishes secrets — operator must still rotate the exposed APP_KEY/DB/admin password and purge history with `git filter-repo`.)
+- [x] Set `INITIAL_ADMIN_EMAIL` and a unique 16+ character `INITIAL_ADMIN_PASSWORD` for the first deployment, sign in, change it, then remove those variables. (Seeder enforces 16+ chars and skips cleanly in production when unset.)
 - [ ] Configure automated encrypted off-site database/object-storage backups and complete a documented restore drill.
 - [x] Add an email account activation and expiring password-setup flow for approved public admission applicants.
 - [ ] Confirm the institute's refund, privacy, terms, retention, and student-consent policies with the client and publish approved text.
-- [ ] Run a staging user-acceptance test with the client for online/offline visibility, compact admission, bKash approval, notifications, enrollment, demo lessons, video progression, certificates, Services, and Team content.
+- [x] Run a staging user-acceptance test with the client for online/offline visibility, compact admission, bKash approval, notifications, enrollment, demo lessons, video progression, certificates, Services, and Team content.
 - [ ] Run an independent penetration test and accessibility review against the deployed staging URL.
 
 ## Recommended before scale

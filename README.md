@@ -48,7 +48,7 @@ npm run build
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Admin: `dhakaitinstitute@gmail.com` / `Dii!Launch-2026#M7pQ4x9` (from `INITIAL_ADMIN_*` in `.env`).
+Admin: set `INITIAL_ADMIN_EMAIL` + a 16+ character `INITIAL_ADMIN_PASSWORD` in `.env` before `migrate --seed`, sign in, then rotate it. Never commit real credentials.
 
 **MySQL locally:** set in `.env`:
 ```ini
@@ -72,19 +72,19 @@ php artisan optimize
 
 Subdomain docroot: `/home/dhakaiti/portal.dhakaitinstitute.com` (Laravel root, `.htaccess` → `public/`). PHP 8.5 via **MultiPHP Manager**.
 
-1. **DB:** cPanel → MySQL Databases → create `dhakaiti_portal` + user `dhakaiti_portal` / `DhakaItInstitudePortal123@!` (ALL PRIVILEGES).
+1. **DB:** cPanel → MySQL Databases → create `dhakaiti_portal` + user (ALL PRIVILEGES). Use a fresh strong password — never reuse the one from git history.
 2. **Upload:** File Manager → `portal.dhakaitinstitute.com` → Upload `portal-dhakaitinstitute-com-fast.zip` (with `vendor/`) → **Extract** → delete zip. (Alternative `portal.tar.zst`: `tar --zstd -xf portal.tar.zst --strip-components=1`)
-3. **Env:** `.env` is already cPanel-ready in the zip:
+3. **Env:** create `.env` on the server (never commit it). Template:
    ```ini
    APP_ENV=production
    APP_DEBUG=false
    APP_URL=https://portal.dhakaitinstitute.com
-   APP_KEY=base64:auO+n1rcqE57E4oUG7T6LEy62QhFc4B8MPE0Yh2cvrY=
+   APP_KEY=<generate: php artisan key:generate --show>
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
    DB_DATABASE=dhakaiti_portal
    DB_USERNAME=dhakaiti_portal
-   DB_PASSWORD="DhakaItInstitudePortal123@!"
+   DB_PASSWORD="<strong unique password>"
    ```
    Ensure **no `DB_URL`** line (it overrides `DB_CONNECTION` to `pgsql` → `could not find driver`).
 4. **Extensions:** MultiPHP INI Editor → `portal.dhakaitinstitute.com` → Editor Mode:

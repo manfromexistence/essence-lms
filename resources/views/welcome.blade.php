@@ -233,18 +233,12 @@
                 <x-ui.carousel class="w-full">
                     @foreach($featuredStudents as $student)
                         <x-ui.carousel-item class="basis-full md:basis-1/2 lg:basis-1/4 select-none">
-                            <div onclick="openStudentModal(this)" 
+                            <div onclick="openStudentModal(this)"
                                  data-student="{{ htmlspecialchars(json_encode([
                                      'name' => $student->user->name ?? 'Student',
                                      'image' => $student->profile_image,
-                                     'class' => $student->class,
                                      'batch' => $student->batch->name ?? null,
                                      'registration_no' => $student->registration_no,
-                                     'phone' => $student->phone,
-                                     'roll' => $student->roll,
-                                     'section' => $student->section,
-                                     'group' => $student->group,
-                                     'shift' => $student->shift
                                  ]), ENT_QUOTES, 'UTF-8') }}"
                                  class="cursor-pointer bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 mx-2 h-full">
                                 <div class="relative h-48 bg-linear-to-br from-blue-400 to-purple-500">
@@ -273,128 +267,6 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                                 </svg>
                                                 <span class="truncate">{{ $student->batch->name }}</span>
-                                            </div>
-                                        @endif
-                                        @if($student->class)
-                                            <div class="flex items-center">
-                                                <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span>Class {{ $student->class }}</span>
-                                            </div>
-                                        @endif
-                                        @if($student->registration_no)
-                                            <div class="flex items-center">
-                                                <svg class="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                </svg>
-                                                <span class="truncate">{{ $student->registration_no }}</span>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </x-ui.carousel-item>
-                    @endforeach
-                </x-ui.carousel>
-            </div>
-
-            <div class="text-center mt-8">
-                <a href="{{ route('students') }}"
-                    class="inline-flex items-center gap-2 bg-primary hover:opacity-90 text-white font-semibold px-8 py-3 rounded-lg transition-all shadow-lg">
-                    <span>সকল শিক্ষার্থী দেখুন</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-    </section>
-    @endif
-
-    <!-- Random Students Section -->
-    @if($randomStudents->count() > 0)
-    <section class="py-16 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-100">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{{ $page ? $page->getContent('random_students_title', 'আমাদের শিক্ষার্থীরা') : 'আমাদের শিক্ষার্থীরা' }}</h2>
-                <p class="text-gray-600 text-lg">{{ $page ? $page->getContent('random_students_subtitle', 'আমাদের প্রতিষ্ঠানের মেধাবী ও পরিশ্রমী শিক্ষার্থীদের সাথে পরিচিত হন') : 'আমাদের প্রতিষ্ঠানের মেধাবী ও পরিশ্রমী শিক্ষার্থীদের সাথে পরিচিত হন' }}</p>
-            </div>
-
-            <div class="relative px-8">
-                <x-ui.carousel class="w-full">
-                    @php
-                        $studentGradients = [
-                            'from-blue-400 to-indigo-500',
-                            'from-green-400 to-teal-500',
-                            'from-purple-400 to-pink-500',
-                            'from-orange-400 to-red-500',
-                            'from-cyan-400 to-blue-500',
-                            'from-pink-400 to-rose-500',
-                            'from-indigo-400 to-purple-500',
-                            'from-teal-400 to-green-500',
-                        ];
-                    @endphp
-                    @foreach($randomStudents as $index => $student)
-                        @php
-                            $studentGradient = $studentGradients[$index % count($studentGradients)];
-                        @endphp
-                        <x-ui.carousel-item class="basis-full md:basis-1/2 lg:basis-1/4 select-none">
-                            <div onclick="openStudentModal(this)"
-                                 data-student="{{ htmlspecialchars(json_encode([
-                                     'name' => $student->user->name ?? 'Student',
-                                     'image' => $student->profile_image,
-                                     'class' => $student->class,
-                                     'batch' => $student->batch->name ?? null,
-                                     'registration_no' => $student->registration_no,
-                                     'phone' => $student->phone,
-                                     'roll' => $student->roll,
-                                     'section' => $student->section,
-                                     'group' => $student->group,
-                                     'shift' => $student->shift
-                                 ]), ENT_QUOTES, 'UTF-8') }}"
-                                 class="cursor-pointer bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 mx-2 h-full">
-                                <div class="relative h-48 bg-linear-to-br {{ $studentGradient }}">
-                                    @if($student->profile_image)
-                                        <img src="{{ media_url($student->profile_image) }}" alt="{{ $student->user->name ?? 'Student' }}" class="w-full h-full object-cover pointer-events-none">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center">
-                                            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
-                                                <svg class="w-10 h-10 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="p-6">
-                                    <h3 class="text-xl font-bold text-gray-900 mb-2 truncate">{{ $student->user->name ?? 'Student Name' }}</h3>
-                                    @if($student->name_bn)
-                                        <p class="text-gray-600 mb-3 truncate">{{ $student->name_bn }}</p>
-                                    @endif
-                                    <div class="space-y-2 text-sm text-gray-600">
-                                        @if($student->batch)
-                                            <div class="flex items-center">
-                                                <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                                </svg>
-                                                <span class="truncate">{{ $student->batch->name }}</span>
-                                            </div>
-                                        @endif
-                                        @if($student->class)
-                                            <div class="flex items-center">
-                                                <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span>{{ $student->class }}</span>
-                                            </div>
-                                        @endif
-                                        @if($student->registration_no)
-                                            <div class="flex items-center">
-                                                <svg class="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                </svg>
-                                                <span class="truncate">{{ $student->registration_no }}</span>
                                             </div>
                                         @endif
                                     </div>
@@ -537,7 +409,7 @@
                         @endforelse
                     </div>
                     <div class="mt-4 text-center">
-                        <a href="#notice-board"
+                        <a href="{{ route('announcements.index') }}"
                             class="inline-flex items-center gap-1 text-primary text-sm font-medium hover:underline"><span>{{ $page ? $page->getContent('notice_view_all', 'সকল নোটিশ') : 'সকল নোটিশ' }}</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg></a>
@@ -597,7 +469,7 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                    <a id="modal-buy-btn" href="#" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary/90 focus:outline-none sm:w-auto sm:text-sm">
+                    <a id="modal-buy-btn" href="/login" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary/90 focus:outline-none sm:w-auto sm:text-sm">
                         কোর্সটি কিনুন
                     </a>
                     <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="closeCourseModal()">
@@ -628,11 +500,8 @@
                             <div class="flex flex-col items-center">
                                 <img id="student-modal-image" src="" alt="Student Image" class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 mb-4 shadow-sm">
                                 <h3 class="text-2xl leading-6 font-bold text-gray-900 mb-2" id="student-modal-name">Student Name</h3>
-                                <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium mb-6">
-                                    <span id="student-modal-class"></span>
-                                </div>
-                                
-                                <div class="w-full grid grid-cols-2 gap-4 text-left bg-gray-50 p-4 rounded-lg">
+
+                                <div class="w-full grid grid-cols-2 gap-4 text-left bg-gray-50 p-4 rounded-lg mt-4">
                                     <div>
                                         <p class="text-xs text-gray-500 uppercase tracking-wide">Batch</p>
                                         <p class="font-semibold text-gray-800" id="student-modal-batch">-</p>
@@ -640,26 +509,6 @@
                                     <div>
                                         <p class="text-xs text-gray-500 uppercase tracking-wide">Registration No</p>
                                         <p class="font-semibold text-gray-800" id="student-modal-registration">-</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase tracking-wide">Roll</p>
-                                        <p class="font-semibold text-gray-800" id="student-modal-roll">-</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase tracking-wide">Section</p>
-                                        <p class="font-semibold text-gray-800" id="student-modal-section">-</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase tracking-wide">Group</p>
-                                        <p class="font-semibold text-gray-800" id="student-modal-group">-</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase tracking-wide">Shift</p>
-                                        <p class="font-semibold text-gray-800" id="student-modal-shift">-</p>
-                                    </div>
-                                    <div class="col-span-2">
-                                        <p class="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
-                                        <p class="font-semibold text-gray-800" id="student-modal-phone">-</p>
                                     </div>
                                 </div>
                             </div>
@@ -910,30 +759,19 @@
             try {
                 const studentData = element.getAttribute('data-student');
                 if (!studentData) {
-                    console.error('No student data found');
                     return;
                 }
-                
+
                 // Decode HTML entities
                 const decodedData = studentData.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
                 const student = JSON.parse(decodedData);
                 if (!student) {
-                    console.error('Failed to parse student data');
                     return;
                 }
-                
-                // Debug: log the student data
-                console.log('Student data:', student);
-                
+
                 document.getElementById('student-modal-name').innerText = student.name || 'Student';
-                document.getElementById('student-modal-class').innerText = student.class ? `Class ${student.class}` : 'N/A';
                 document.getElementById('student-modal-batch').innerText = student.batch || '-';
                 document.getElementById('student-modal-registration').innerText = student.registration_no || '-';
-                document.getElementById('student-modal-roll').innerText = student.roll || '-';
-                document.getElementById('student-modal-section').innerText = student.section || '-';
-                document.getElementById('student-modal-group').innerText = student.group || '-';
-                document.getElementById('student-modal-shift').innerText = student.shift || '-';
-                document.getElementById('student-modal-phone').innerText = student.phone || '-';
                 
                 let imageUrl = '';
                 if (student.image) {
@@ -946,7 +784,7 @@
                 document.getElementById('studentModal').classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
             } catch (error) {
-                console.error('Error opening student modal:', error);
+                return;
             }
         }
 

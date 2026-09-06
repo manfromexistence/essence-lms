@@ -252,9 +252,9 @@ class PageController extends Controller
             'page_subtitle' => 'আমাদের সাথে যোগাযোগ করার বিভিন্ন মাধ্যম',
             'form_title' => 'বার্তা পাঠান',
             'address' => 'House #5 (2nd floor), Road #8, Block-C, Section-10, Mirpur-10, Dhaka-1216',
-            'phone' => '+880 1XXX-XXXXXX',
-            'email' => 'info@example.com',
-            'map_embed' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d116347.16843475968!2d89.9238384!3d24.9193214',
+            'phone' => '+880 1682-715570',
+            'email' => 'dhakaitinstitute@gmail.com',
+            'map_embed' => 'https://www.google.com/maps?q=House%205%20Road%208%20Block%20C%20Section%2010%20Mirpur%2010%20Dhaka%201216&output=embed',
         ];
     }
 

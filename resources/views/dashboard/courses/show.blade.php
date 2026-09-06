@@ -203,7 +203,16 @@
                                                     </svg>
                                                 </div>
                                             @elseif($video->video_type === 'vimeo')
-                                                <img src="{{ $video->thumbnail ? asset('storage/' . $video->thumbnail) : 'https://via.placeholder.com/96x54?text=Vimeo' }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
+                                                @if($video->thumbnail)
+                                                <img src="{{ media_url($video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
+                                                @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-400 to-blue-600">
+                                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                @endif
                                             @elseif($video->thumbnail)
                                                 <img src="{{ asset('storage/' . $video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
                                             @else

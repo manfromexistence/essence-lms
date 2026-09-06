@@ -96,7 +96,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-bold text-gray-800 mb-2">ফোন</h3>
-                            <p class="text-gray-600">{!! nl2br(e($page ? $page->getContent('phone', '+880 1682-71557') : '+880 1682-71557')) !!}</p>
+                            <p class="text-gray-600">{!! nl2br(e($page ? $page->getContent('phone', '+880 1682-715570') : '+880 1682-715570')) !!}</p>
                         </div>
                     </div>
 

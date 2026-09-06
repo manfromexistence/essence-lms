@@ -64,6 +64,29 @@ class ExamTakingService
     }
 
     /**
+     * Persist written CQ answers alongside the attempt so nothing is lost
+     * before grading. Text answers live inside ExamAttempt.answers keyed by
+     * question id; file uploads continue through submitCqAnswer().
+     *
+     * @param array<int, string> $textAnswers
+     */
+    public function saveCqTextAnswers(ExamAttempt $attempt, array $textAnswers): void
+    {
+        $answers = $attempt->answers ?? [];
+
+        foreach ($textAnswers as $questionId => $text) {
+            $clean = trim(strip_tags((string) $text, '<p><br><ul><ol><li><b><strong><i><em><u>'));
+            if ($clean === '') {
+                unset($answers[$questionId]);
+                continue;
+            }
+            $answers[$questionId] = mb_substr((string) $text, 0, 20000);
+        }
+
+        $attempt->update(['answers' => $answers]);
+    }
+
+    /**
      * Submit an exam attempt.
      * 
      * Requirements: 2.2

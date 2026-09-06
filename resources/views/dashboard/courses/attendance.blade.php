@@ -142,7 +142,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button class="text-indigo-600 hover:text-indigo-900">View Details</button>
+                                        <a href="{{ route('dashboard.batches.show', $record['batch']) }}#attendance" class="text-indigo-600 hover:text-indigo-900">View Details</a>
                                     </td>
                                 </tr>
                             @empty
@@ -256,53 +256,16 @@
                 document.getElementById('studentsList').classList.add('hidden');
                 return;
             }
-
-            // In a real application, you would make an AJAX call to load students
-            // For now, we'll simulate loading students
-            const container = document.getElementById('studentsContainer');
-            container.innerHTML = `
-                <div class="p-4 text-center text-gray-500">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
-                    Loading students...
-                </div>
-            `;
-
-            // Simulate API call delay
-            setTimeout(() => {
-                container.innerHTML = `
-                    <div class="p-4 flex items-center justify-between hover:bg-gray-50">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
-                                <span class="text-xs font-medium text-gray-700">JD</span>
-                            </div>
-                            <span class="text-sm font-medium text-gray-900">John Doe</span>
-                        </div>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="attendance[]" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-700">Present</span>
-                        </label>
-                    </div>
-                    <div class="p-4 flex items-center justify-between hover:bg-gray-50">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
-                                <span class="text-xs font-medium text-gray-700">JS</span>
-                            </div>
-                            <span class="text-sm font-medium text-gray-900">Jane Smith</span>
-                        </div>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="attendance[]" value="2" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-700">Present</span>
-                        </label>
-                    </div>
-                `;
-                document.getElementById('studentsList').classList.remove('hidden');
-                document.getElementById('submitAttendance').disabled = false;
-            }, 1000);
+            const url = new URL(window.location.href);
+            url.searchParams.set('batch_id', batchId);
+            window.location.href = url.toString();
         }
 
         function filterAttendance() {
-            // In a real application, you would filter the attendance records based on the selected batch
-            console.log('Filtering attendance for batch:', document.getElementById('batchFilter').value);
+            const batchId = document.getElementById('batchFilter').value;
+            const url = new URL(window.location.href);
+            if (batchId) { url.searchParams.set('batch_id', batchId); } else { url.searchParams.delete('batch_id'); }
+            window.location.href = url.toString();
         }
 
         // Close modal when clicking outside

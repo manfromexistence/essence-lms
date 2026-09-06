@@ -37,6 +37,7 @@ Route::get('/admission/offline', [AdmissionController::class, 'createOffline'])-
 Route::get('/admission', [AdmissionController::class, 'create'])->name('admission.create');
 Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');
 
+Route::get('/announcements', [HomeController::class, 'announcements'])->name('announcements.index');
 Route::get('/announcements/{announcement}', [HomeController::class, 'showAnnouncement'])->name('announcement.show');
 
 // Authentication Routes
@@ -393,6 +394,7 @@ Route::middleware('auth')->group(function () {
         // Course Enrollment Payment Routes (Task 15)
         Route::get('/courses', [\App\Http\Controllers\StudentPortalController::class, 'courses'])->name('courses');
         Route::get('/courses/{course}/enroll', [\App\Http\Controllers\StudentPortalController::class, 'enroll'])->name('course.enroll');
+        Route::post('/courses/{course}/batch', [\App\Http\Controllers\StudentPortalController::class, 'selectBatch'])->name('course.batch');
         Route::get('/courses/{course}/watch', [\App\Http\Controllers\StudentPortalController::class, 'watchCourse'])->name('course.watch');
         Route::get('/courses/{course}/watch/{video}', [\App\Http\Controllers\StudentPortalController::class, 'watchCourse'])->name('course.video');
         Route::get('/courses/{course}/watch/{video}/stream', [\App\Http\Controllers\StudentPortalController::class, 'streamVideo'])->name('course.video.stream');

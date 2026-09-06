@@ -314,8 +314,68 @@
 
                     <div class="space-y-2">
                         <x-ui.label for="invoice_prefix">Invoice Prefix</x-ui.label>
-                        <x-ui.input type="text" name="invoice_prefix" id="invoice_prefix" 
+                        <x-ui.input type="text" name="invoice_prefix" id="invoice_prefix"
                             value="{{ $settings['payment']['invoice_prefix']['value'] ?? 'INV' }}" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="bkash_number">bKash Number</x-ui.label>
+                        <x-ui.input type="text" name="bkash_number" id="bkash_number"
+                            value="{{ $settings['payment']['bkash_number']['value'] ?? '' }}" placeholder="01XXXXXXXXX" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="bkash_account_name">bKash Account Name</x-ui.label>
+                        <x-ui.input type="text" name="bkash_account_name" id="bkash_account_name"
+                            value="{{ $settings['payment']['bkash_account_name']['value'] ?? 'Dhaka IT Institute' }}" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="nagad_number">Nagad Number</x-ui.label>
+                        <x-ui.input type="text" name="nagad_number" id="nagad_number"
+                            value="{{ $settings['payment']['nagad_number']['value'] ?? '' }}" placeholder="01XXXXXXXXX" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="rocket_number">Rocket Number</x-ui.label>
+                        <x-ui.input type="text" name="rocket_number" id="rocket_number"
+                            value="{{ $settings['payment']['rocket_number']['value'] ?? '' }}" placeholder="01XXXXXXXXX" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="bank_name">Bank Name</x-ui.label>
+                        <x-ui.input type="text" name="bank_name" id="bank_name"
+                            value="{{ $settings['payment']['bank_name']['value'] ?? '' }}" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="bank_account_name">Bank Account Name</x-ui.label>
+                        <x-ui.input type="text" name="bank_account_name" id="bank_account_name"
+                            value="{{ $settings['payment']['bank_account_name']['value'] ?? '' }}" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="bank_account_number">Bank Account Number</x-ui.label>
+                        <x-ui.input type="text" name="bank_account_number" id="bank_account_number"
+                            value="{{ $settings['payment']['bank_account_number']['value'] ?? '' }}" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="bank_branch">Bank Branch</x-ui.label>
+                        <x-ui.input type="text" name="bank_branch" id="bank_branch"
+                            value="{{ $settings['payment']['bank_branch']['value'] ?? '' }}" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="facebook_url">Facebook URL</x-ui.label>
+                        <x-ui.input type="url" name="facebook_url" id="facebook_url"
+                            value="{{ $settings['institution']['facebook_url']['value'] ?? 'https://facebook.com/dhakaitinstitute' }}" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-ui.label for="youtube_url">YouTube URL</x-ui.label>
+                        <x-ui.input type="url" name="youtube_url" id="youtube_url"
+                            value="{{ $settings['institution']['youtube_url']['value'] ?? 'https://youtube.com/@dhakaitinstitute' }}" />
                     </div>
                 </div>
             </x-ui.card-content>
@@ -376,45 +436,4 @@
         </div>
     </form>
 </div>
-
-@push('scripts')
-<script>
-    // Debug form submission
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form[action="{{ route('dashboard.settings.update') }}"]');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                console.log('Form submitting...');
-                const formData = new FormData(form);
-                
-                // Log all form data
-                console.log('Form data entries:');
-                for (let [key, value] of formData.entries()) {
-                    if (value instanceof File) {
-                        console.log(`${key}:`, {
-                            name: value.name,
-                            size: value.size,
-                            type: value.type
-                        });
-                    } else {
-                        console.log(`${key}:`, value);
-                    }
-                }
-                
-                // Check for file inputs
-                const logoFile = formData.get('institution_logo_file');
-                const faviconFile = formData.get('institution_favicon_file');
-                
-                if (logoFile && logoFile.size > 0) {
-                    console.log('Logo file found:', logoFile.name, logoFile.size, 'bytes');
-                }
-                if (faviconFile && faviconFile.size > 0) {
-                    console.log('Favicon file found:', faviconFile.name, faviconFile.size, 'bytes');
-                }
-            });
-        }
-    });
-</script>
-@endpush
 @endsection
-

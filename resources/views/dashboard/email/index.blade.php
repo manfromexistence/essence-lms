@@ -38,7 +38,7 @@
                     @csrf
                     <div>
                         <x-ui.label for="email">Email Address</x-ui.label>
-                        <x-ui.input type="email" name="email" id="email" required placeholder="student@example.com" />
+                        <x-ui.input type="email" name="email" id="email" required placeholder="student@example.test" />
                         @error('email')<p class="text-sm text-red-500 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
