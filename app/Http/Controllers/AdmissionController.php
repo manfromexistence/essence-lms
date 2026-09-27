@@ -10,6 +10,7 @@ use App\Services\StudentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
 
@@ -23,7 +24,9 @@ class AdmissionController extends Controller
             ? $request->input('mode')
             : 'offline';
         $lockedMode = null;
-        $courses = Course::active()->orderBy('delivery_mode')->orderBy('name')->get();
+        // Use enrollable() (active + draft) so a newly uploaded course shows up
+        // immediately instead of being hidden and blocking the required field.
+        $courses = Course::enrollable()->orderBy('delivery_mode')->orderBy('name')->get();
 
         return view('admission.create', compact('courses', 'selectedMode', 'lockedMode'));
     }
@@ -32,7 +35,7 @@ class AdmissionController extends Controller
     {
         $selectedMode = 'offline';
         $lockedMode = 'offline';
-        $courses = Course::active()->where('delivery_mode', 'offline')->orderBy('name')->get();
+        $courses = Course::enrollable()->where('delivery_mode', 'offline')->orderBy('name')->get();
 
         return view('admission.create', compact('courses', 'selectedMode', 'lockedMode'));
     }
@@ -40,20 +43,25 @@ class AdmissionController extends Controller
     public function store(StoreStudentRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-        // The applicant always supplies their own login password (required field).
-        $password = $validated['password'];
+
+        // The applicant no longer chooses a password. We store an unguessable
+        // random placeholder that nobody knows; a real, usable password is
+        // generated and emailed only when an administrator approves the
+        // application (see StudentController::updateAdmissionStatus). The
+        // account starts inactive, so the placeholder can never be used.
+        $placeholder = Str::random(64);
         $course = null;
 
-        DB::transaction(function () use ($validated, $password, &$course) {
+        DB::transaction(function () use ($validated, $placeholder, &$course) {
             $course = !empty($validated['course_id']) ? Course::findOrFail($validated['course_id']) : null;
             abort_if($course && $course->delivery_mode !== $validated['admission_mode'], 422, 'Selected course does not match the admission mode.');
 
             $user = User::create([
                 'name' => ($validated['name'] ?? null) ?: $validated['name_bn'],
                 'email' => $validated['email'],
-                'password' => Hash::make($password),
+                'password' => Hash::make($placeholder),
                 'is_active' => false,
-                'must_change_password' => false,
+                'must_change_password' => true,
             ]);
             $studentRole = Role::where('slug', 'student')->first();
             abort_unless($studentRole, 500, 'The "student" role is missing. Run the role seeder first.');

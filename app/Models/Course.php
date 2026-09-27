@@ -188,6 +188,23 @@ class Course extends Model
     }
 
     /**
+     * Scope a query to courses that applicants may enrol in.
+     *
+     * The public admission form must offer every course an admin has created
+     * and not explicitly retired. Excluding "draft" here is what previously
+     * hid a freshly-uploaded course (created with the default "draft" status)
+     * from the course dropdown, and because the field is required that blocked
+     * every new admission. Only "inactive" (retired) courses are hidden.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeEnrollable($query)
+    {
+        return $query->whereIn('status', ['active', 'draft']);
+    }
+
+    /**
      * Scope a query to only include inactive courses.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query

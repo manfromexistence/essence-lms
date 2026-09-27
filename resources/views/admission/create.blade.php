@@ -38,10 +38,10 @@
             </fieldset>
 
             <fieldset>
-                <legend class="mb-4 text-lg font-bold text-green-800">Login credentials</legend>
-                <div class="grid gap-4 md:grid-cols-2">
-                    <x-ui.password-input name="password" label="Password" placeholder="Enter a strong password" required autocomplete="new-password" />
-                    <x-ui.password-input name="password_confirmation" label="Confirm Password" placeholder="Re-enter password" required autocomplete="new-password" />
+                <legend class="mb-4 text-lg font-bold text-green-800">How you'll get your login</legend>
+                <div class="rounded-xl border-2 border-green-100 bg-green-50 p-4 text-sm text-green-900">
+                    <p class="font-semibold">No password needed to apply.</p>
+                    <p class="mt-1">Just submit this application. Once our office approves your admission, we will email your login credentials (email and password) to the address you entered above. You can change your password after your first sign-in.</p>
                 </div>
             </fieldset>
 

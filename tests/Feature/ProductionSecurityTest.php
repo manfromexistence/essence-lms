@@ -33,15 +33,44 @@ class ProductionSecurityTest extends TestCase
 
     public function test_password_forms_expose_show_hide_control_and_symbol_requirement(): void
     {
+        // The PUBLIC admission form no longer collects a password — applicants
+        // apply first and receive generated credentials on approval.
         $this->get('/admission')
+            ->assertSuccessful()
+            ->assertDontSee('name="password"', false)
+            ->assertDontSee('data-password-toggle', false);
+
+        // The admin "Add Student" form (creator sets the password) still exposes
+        // the show/hide control and the strength/symbol requirements.
+        $admin = $this->createSuperAdmin();
+        $this->actingAs($admin)
+            ->get('/dashboard/students/create')
             ->assertSuccessful()
             ->assertSee('data-password-toggle', false)
             ->assertSee('data-password-eye="show"', false)
-            ->assertSee('togglePasswordVisibility', false)
-            ->assertSee('pr-14', false)
-            ->assertDontSee('password-strength-label', false)
-            ->assertSee('(?=.*[^A-Za-z0-9])', false)
-            ->assertSee('one symbol', false);
+            ->assertSee('togglePasswordVisibility', false);
+
+        // The post-approval change-password screen keeps the same controls.
+        $user = \App\Models\User::factory()->create(['must_change_password' => true]);
+        $this->actingAs($user)
+            ->get('/change-password')
+            ->assertSuccessful()
+            ->assertSee('data-password-toggle', false);
+    }
+
+    /**
+     * Create an authenticated super-admin for admin-area assertions.
+     */
+    private function createSuperAdmin(): \App\Models\User
+    {
+        $this->seed(RoleSeeder::class);
+        $role = \App\Models\Role::where('slug', 'super-admin')->first();
+        $user = \App\Models\User::factory()->create(['is_active' => true]);
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
+
+        return $user;
     }
 
     public function test_dhaka_it_favicon_assets_are_present(): void

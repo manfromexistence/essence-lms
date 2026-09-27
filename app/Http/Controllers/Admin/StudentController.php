@@ -12,6 +12,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\StudentService;
 use App\Services\StudentIdGenerator;
+use App\Services\StudentCredentialService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,8 @@ class StudentController extends Controller
 {
     public function __construct(
         protected StudentService $studentService,
-        protected StudentIdGenerator $idGenerator
+        protected StudentIdGenerator $idGenerator,
+        protected StudentCredentialService $credentialService
     ) {}
 
     /**
@@ -371,6 +373,7 @@ class StudentController extends Controller
 
         $student = Student::findOrFail($request->student_id);
         $approved = (bool) $request->batch_id;
+        $wasApproved = $student->admission_status === 'approved';
         $student->update([
             'batch_id' => $request->batch_id,
             'admission_status' => $approved ? 'approved' : 'pending',
@@ -379,6 +382,11 @@ class StudentController extends Controller
         $student->user?->update(['is_active' => $approved]);
         if ($approved) {
             $this->studentService->syncEnrollment($student);
+            // Issue credentials the first time a student becomes approved here,
+            // so they still receive login details without a separate step.
+            if (! $wasApproved) {
+                $this->credentialService->issueFor($student);
+            }
         }
 
         return redirect()->route('dashboard.students.batch-assignment')
@@ -411,30 +419,10 @@ class StudentController extends Controller
         }
 
         if ($status === 'approved' && $student->user) {
-            $student->load(['user', 'batch.course']);
-            $courseName = $student->batch?->course?->name
-                ?? $student->course_name
-                ?? 'your selected course';
-            // The student already has a known password (required at creation),
-            // so no password-reset link is sent — they log in with it directly.
-            $resetLine = 'Your account is now active. Log in with your registered email address and the password you set.';
-
-            $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
-                . '<div style="background:#168536;padding:24px;border-radius:12px 12px 0 0;text-align:center;">'
-                . '<h2 style="color:#fff;margin:0;">Admission Approved</h2></div>'
-                . '<div style="border:1px solid #e5e7eb;border-top:0;padding:32px;border-radius:0 0 12px 12px;">'
-                . '<p>Dear <strong>' . e($student->user?->name ?? 'Student') . '</strong>,</p>'
-                . '<p>Congratulations! Your admission to <strong>' . e($courseName) . '</strong> at Dhaka IT Institute has been approved.</p>'
-                . '<p>' . $resetLine . '</p>'
-                . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
-                . '</div></div>';
-
-            \App\Jobs\SendEmailJob::dispatch(
-                $student->user->email,
-                'Admission Approved — ' . $courseName,
-                $html,
-                ['type' => 'admission']
-            );
+            // Approval is when the applicant receives working credentials: the
+            // system generates a password, forces a change on first login, and
+            // emails the login details.
+            $this->credentialService->issueFor($student);
         }
 
         return back()->with('success', 'Admission status updated to ' . ucfirst($status) . '.');

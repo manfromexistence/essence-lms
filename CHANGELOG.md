@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-27 — Registration credential flow + admission course dropdown
+
+### Changed — applicants no longer set their own password
+
+- The public admission form no longer collects a password. Applicants submit an
+  application only ("No password needed to apply").
+- On approval, a new `StudentCredentialService` generates a strong 16-character
+  password, activates the account, forces a password change on first login, and
+  emails the login credentials (email + temporary password).
+- `StoreStudentRequest` now requires a password only for the admin "Add Student"
+  form; the public `admission.store` route no longer accepts or stores one
+  (an unknowable random placeholder is persisted until approval).
+- Credential issuance is applied on both approval paths: admission-status update
+  and first-time batch assignment.
+- Verified: submit → approve → generated password logs in → redirected to
+  `/change-password` → new password grants `/student/dashboard`.
+
+### Fixed — newly uploaded courses now appear on the admission form
+
+- Root cause: the admission form queried `Course::active()` only, while the
+  course form can create a course with `status = draft`; a required Course field
+  with no matching option blocked every new admission.
+- Added `Course::scopeEnrollable()` (`status IN (active, draft)`); only retired
+  (`inactive`) courses are hidden. Used by both public admission forms.
+- The admin course-create form now defaults to `active` and no longer persists
+  a stale status in `localStorage`.
+
+### Tests
+
+- Added `AdmissionCourseDropdownTest` (5 tests) and rewrote
+  `StudentLoginCredentialFlowTest` for the new credential flow (6 tests).
+- Updated `ProductionSecurityTest` password-UI assertions to the admin
+  create-student form and the change-password screen.
+- Suite: **113 passed / 474 assertions** (was 106 / 448).
+
 ## 2026-08-10
 
 - Added idempotent default accounts for super-admin, admin, teacher, student, and parent roles; startup seeding now preserves changed passwords and never overwrites admissions.

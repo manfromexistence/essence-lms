@@ -100,9 +100,18 @@ class StoreStudentRequest extends FormRequest
             'paid_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string|max:50',
 
-            // Login credentials (required — the creator always sets the password)
-            'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
-            'password_confirmation' => ['required', 'same:password'],
+            // Login credentials:
+            //  - Public admission (`admission.store`): NO password is collected.
+            //    The applicant only applies; admin approval generates a password
+            //    and emails the login details.
+            //  - Admin "Add Student": the admin still sets a password directly,
+            //    so the strong-password rule is enforced there.
+            'password' => $this->isPublicAdmission()
+                ? ['nullable']
+                : ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
+            'password_confirmation' => $this->isPublicAdmission()
+                ? ['nullable']
+                : ['required', 'same:password'],
 
             // Other
             'featured' => 'nullable|boolean',
@@ -124,6 +133,15 @@ class StoreStudentRequest extends FormRequest
             'profile_image_file.max' => 'The profile image must not exceed 20MB.',
             'profile_image_url.url' => 'The profile image URL must be a valid URL.',
         ];
+    }
+
+    /**
+     * Whether this request is the public admission application (as opposed to
+     * the admin "Add Student" form). Only the public form omits the password.
+     */
+    protected function isPublicAdmission(): bool
+    {
+        return $this->routeIs('admission.store');
     }
 
     /**

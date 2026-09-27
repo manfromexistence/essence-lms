@@ -2,11 +2,51 @@
 
 This file contains work that requires the client's infrastructure, credentials, business decisions, or an external audit. It is intentionally not hidden behind a “100%” claim.
 
+---
+
+## Feature work — 2026-09-27 (registration flow + admission dropdown)
+
+Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[~]` in progress.
+
+### TASK A — Registration & authentication flow rework
+
+**Requirement:** applicants must NOT set their own password. They submit an application; on admin approval the system generates a password and emails the login credentials; the user then changes the password after first login.
+
+- [x] A1. Remove the `password` / `password_confirmation` fields from the public admission form (`resources/views/admission/create.blade.php`).
+- [x] A2. Make the password rule conditional in `StoreStudentRequest` — required only for the admin "Add Student" form (`admission.store` exempt).
+- [x] A3. Stop persisting an applicant-chosen password in `AdmissionController@store`; store an unknowable random placeholder instead and set `must_change_password = true`.
+- [x] A4. Add `StudentCredentialService` that generates a strong 16-char password, hashes it, sets `is_active = true` + `must_change_password = true`, and emails credentials.
+- [x] A5. Wire credential issuance into `StudentController@updateAdmissionStatus` (approval) and `updateBatchAssignment` (first-time approval path).
+- [x] A6. Force a password change on first login via the existing `RequirePasswordChange` middleware + `/change-password` screen.
+- [x] A7. Update the admission page copy to explain the new flow ("No password needed to apply").
+- [x] A8. Tests: `StudentLoginCredentialFlowTest` — no applicant password accepted, credentials generated + emailed on approval, forced change on first login, change succeeds.
+- [x] A9. Update `ProductionSecurityTest` password-UI assertions to target the admin create form + change-password page (not the public form).
+
+### TASK B — Admission form dropdown bug (URGENT)
+
+**Requirement:** a newly uploaded course must appear immediately in the admission form's Course dropdown; the required field was blocking all new admissions.
+
+- [x] B1. Root-cause: `AdmissionController` queried `Course::active()` only, while the course form can create a course with `status = draft` (the `persist` localStorage behavior on the status select made this silent and sticky).
+- [x] B2. Add `Course::scopeEnrollable()` = `status IN (active, draft)` — hides only retired (`inactive`) courses.
+- [x] B3. Use `enrollable()` in `AdmissionController@create` and `@createOffline`.
+- [x] B4. Make the admin course-create form default to `active` and remove the sticky `persist` on status so new uploads are enrollable by default.
+- [x] B5. Tests: `AdmissionCourseDropdownTest` — draft course appears on both public forms, inactive stays hidden, draft course is submittable.
+
+### Verification evidence (2026-09-27)
+
+- [x] V1. `php artisan test` → **113 passed / 474 assertions** (was 106 / 448).
+- [x] V2. Browser E2E: submit application (no password) → admin approve → generated password logs in → forced to `/change-password` → new password grants `/student/dashboard`.
+- [x] V3. Newly created draft course appears in the `/admission/offline` dropdown.
+
+---
+
 ## Current engineering status
 
 - Repository-controlled production hardening: **complete for this release scope**
-- Automated release checks: **106 tests / 448 assertions passing** — verified 2026-09-27 (`php artisan test`)
+- Automated release checks: **113 tests / 474 assertions passing** — verified 2026-09-27 (`php artisan test`)
 - Browser end-to-end verification: **every admin (20), teacher (5) and student (9) route returns HTTP 200**; exam create submits and persists; public pages render off the compiled Vite bundle (no CDN)
+- Registration flow: **applicant-set passwords removed**; approval emails generated credentials and forces a change on first login
+- Admission dropdown: **newly uploaded courses appear immediately** (active + draft); only retired courses hidden
 - Known dependency advisories: **0 Composer / 0 npm (dev + production)** — verified 2026-09-27 with `composer audit --locked` and `npm audit`
 - Seed integrity: **0 exams with end_time < start_time**, all demo accounts have linked Student/Teacher profiles and batches
 - Public-launch acceptance: pending the client/infrastructure items below

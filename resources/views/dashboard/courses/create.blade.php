@@ -100,7 +100,7 @@
                     <h3 class="text-lg font-semibold text-gray-900">Status & Image</h3>
                 </div>
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <x-ui.select name="status" label="Status" required persist>
+                    <x-ui.select name="status" label="Status" required :selected="old('status', 'active')">
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                         <option value="draft">Draft</option>
