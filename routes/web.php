@@ -41,27 +41,59 @@ Route::post('/admission', [AdmissionController::class, 'store'])->middleware('th
 Route::get('/_diag2', function () {
     $out = [];
     try {
-        $year = date('Y');
-        $out['year'] = $year;
-        $out['student_total'] = \App\Models\Student::count();
-        $out['student_this_year'] = \App\Models\Student::whereBetween('created_at', [
-            \Carbon\Carbon::create($year, 1, 1)->startOfYear(),
-            \Carbon\Carbon::create($year, 12, 31)->endOfYear(),
-        ])->count();
-        $out['newest_this_year'] = \App\Models\Student::whereBetween('created_at', [
-            \Carbon\Carbon::create($year, 1, 1)->startOfYear(),
-            \Carbon\Carbon::create($year, 12, 31)->endOfYear(),
-        ])->orderBy('id', 'desc')->value('registration_no');
-        $out['newest_overall'] = \App\Models\Student::orderBy('id', 'desc')->value('registration_no');
-        $out['newest_overall_created'] = (string) \App\Models\Student::orderBy('id', 'desc')->value('created_at');
-        $out['id_format'] = app(\App\Services\SettingsService::class)->get('student_id_format', '(default)');
+        $courseId = (int) request()->query('course', 3);
+        $mode = (string) request()->query('mode', 'online');
+        $out['course_id'] = $courseId;
+        $out['mode'] = $mode;
 
-        $gen = app(\App\Services\StudentIdGenerator::class);
-        $out['next_sequence'] = $gen->getNextSequence();
-        $out['would_generate'] = $gen->generate(null);
-        $out['already_exists'] = \App\Models\Student::where('registration_no', $out['would_generate'])->exists();
-        $out['mode'] = 'read-only probe';
+        $course = \App\Models\Course::find($courseId);
+        $out['course'] = $course ? $course->only(['id', 'name', 'status', 'delivery_mode', 'price']) : 'NOT FOUND';
+        $out['role_student'] = (bool) \App\Models\Role::where('slug', 'student')->first();
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        $email = 'diag2.'.time().'@example.com';
+        $placeholder = \Illuminate\Support\Str::random(64);
+        $user = \App\Models\User::create([
+            'name' => 'Diag2',
+            'email' => $email,
+            'password' => \Illuminate\Support\Facades\Hash::make($placeholder),
+            'is_active' => false,
+            'must_change_password' => true,
+        ]);
+        $out['user_id'] = $user->id;
+        $user->roles()->attach(\App\Models\Role::where('slug', 'student')->value('id'));
+
+        $payload = [
+            'user_id' => $user->id,
+            'name_bn' => 'Diag2',
+            'email' => $email,
+            'phone' => '01700000009',
+            'admission_mode' => $mode,
+            'course_id' => $courseId,
+            'course_name' => $course?->name,
+            'admission_status' => 'pending',
+            'status' => 'pending',
+            'applied_at' => now(),
+        ];
+        $student = app(\App\Services\StudentService::class)->create($payload);
+        $out['student_id'] = $student->id;
+        $out['registration_no'] = $student->registration_no;
+        $out['write'] = 'OK';
+
+        // Now exercise the exact notification the controller sends.
+        try {
+            \App\Jobs\SendEmailJob::dispatch($email, 'Diag2 Subject', '<p>x</p>', ['type' => 'admission']);
+            $out['email_dispatch'] = 'OK';
+        } catch (\Throwable $e) {
+            $out['email_dispatch'] = 'THREW';
+            $out['email_exception'] = get_class($e);
+            $out['email_message'] = $e->getMessage();
+        }
+
+        \Illuminate\Support\Facades\DB::rollBack();
     } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\DB::rollBack();
+        $out['write'] = 'FAILED';
         $out['exception'] = get_class($e);
         $out['message'] = $e->getMessage();
         $out['file'] = $e->getFile().':'.$e->getLine();
