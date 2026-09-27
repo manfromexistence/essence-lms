@@ -41,74 +41,46 @@ Route::post('/admission', [AdmissionController::class, 'store'])->middleware('th
 Route::get('/_diag2', function () {
     $out = ['php' => PHP_VERSION, 'env' => app()->environment()];
 
+    // 1) Can the rate limiter be resolved without exploding?
     try {
-        $courseId = (int) request()->query('course', 3);
-        $mode = (string) request()->query('mode', 'online');
-
-        $request = \Illuminate\Http\Request::create('/admission', 'POST', [
-            'name_bn' => 'Controller Probe',
-            'email' => 'ctrlprobe.'.time().'@example.com',
-            'phone' => '01700000077',
-            'admission_mode' => $mode,
-            'course_id' => $courseId,
-        ]);
-
-        // Mirror AdmissionController@store exactly. The FormRequest needs a
-        // real request binding, so we replicate the validated payload and the
-        // exact call order instead.
-        $validated = [
-            'name' => null,
-            'name_bn' => 'Controller Probe',
-            'email' => $request->input('email'),
-            'phone' => '01700000077',
-            'admission_mode' => $mode,
-            'course_id' => $courseId,
-        ];
-        $out['validated'] = $validated;
-
-        $studentService = app(\App\Services\StudentService::class);
-        $out['studentService'] = get_class($studentService);
-
-        // Mirror AdmissionController@store exactly.
-        $placeholder = \Illuminate\Support\Str::random(64);
-        $course = null;
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $placeholder, &$course) {
-            $course = !empty($validated['course_id']) ? \App\Models\Course::findOrFail($validated['course_id']) : null;
-            abort_if($course && $course->delivery_mode !== $validated['admission_mode'], 422, 'Selected course does not match the admission mode.');
-
-            $user = \App\Models\User::create([
-                'name' => ($validated['name'] ?? null) ?: $validated['name_bn'],
-                'email' => $validated['email'],
-                'password' => \Illuminate\Support\Facades\Hash::make($placeholder),
-                'is_active' => false,
-                'must_change_password' => true,
-            ]);
-            $studentRole = \App\Models\Role::where('slug', 'student')->first();
-            abort_unless($studentRole, 500, 'The "student" role is missing.');
-            $user->roles()->attach($studentRole->id);
-
-            $validated['user_id'] = $user->id;
-            $validated['course_name'] = $course?->name;
-            $validated['admission_status'] = 'pending';
-            $validated['status'] = 'pending';
-            $validated['applied_at'] = now();
-            app(\App\Services\StudentService::class)->create($validated);
+        $limiter = app(\Illuminate\Cache\RateLimiter::class);
+        $out['rate_limiter'] = get_class($limiter);
+        $out['throttle_attempt'] = $limiter->attempt('diag-probe-key', 5, function () {
+            return true;
         });
-        $out['store_body'] = 'OK';
-
-        // The redirect target the controller returns.
-        $out['login_route'] = route('login');
-        $out['redirect_ok'] = true;
+        $out['throttle_hit_count'] = $limiter->tooManyAttempts('diag-probe-key', 5);
     } catch (\Throwable $e) {
-        $out['FAILED_AT'] = 'see exception';
-        $out['exception'] = get_class($e);
-        $out['message'] = $e->getMessage();
-        $out['file'] = $e->getFile().':'.$e->getLine();
-        $out['trace'] = array_slice(array_map(
+        $out['rate_limiter_failed'] = get_class($e).': '.$e->getMessage();
+    }
+
+    // 2) Can the request resolver + session + redirect response be built?
+    try {
+        $out['session_driver'] = config('session.driver');
+        $out['session_store'] = get_class(app('session.store'));
+        $out['redirect'] = redirect()->route('login')->with('success', 'probe')->getTargetUrl();
+    } catch (\Throwable $e) {
+        $out['session_failed'] = get_class($e).': '.$e->getMessage();
+    }
+
+    // 3) Can the admission controller itself be resolved from the container?
+    try {
+        $c = app(\App\Http\Controllers\AdmissionController::class);
+        $out['controller'] = get_class($c);
+    } catch (\Throwable $e) {
+        $out['controller_failed'] = get_class($e).': '.$e->getMessage();
+        $out['controller_trace'] = array_slice(array_map(
             fn ($f) => ($f['file'] ?? '?').':'.($f['line'] ?? '?').' '.($f['class'] ?? '').($f['type'] ?? '').($f['function'] ?? ''),
             $e->getTrace()
-        ), 0, 8);
+        ), 0, 6);
+    }
+
+    // 4) Route list for the admission POST (middleware actually attached)?
+    try {
+        $route = collect(\Illuminate\Support\Facades\Route::getRoutes())
+            ->first(fn ($r) => $r->getName() === 'admission.store');
+        $out['admission_middleware'] = $route ? $route->gatherMiddleware() : 'route not found';
+    } catch (\Throwable $e) {
+        $out['route_failed'] = get_class($e).': '.$e->getMessage();
     }
 
     return response()->json($out);
