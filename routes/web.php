@@ -40,55 +40,74 @@ Route::post('/admission', [AdmissionController::class, 'store'])->middleware('th
 // TEMPORARY diagnostic (remove after debugging the live admission 500).
 Route::get('/_diag2', function () {
     $out = ['php' => PHP_VERSION, 'env' => app()->environment()];
+    $mode = (string) request()->query('mode', 'online');
+    $courseId = (int) request()->query('course', 3);
+    $out['mode'] = $mode;
+    $out['course'] = $courseId;
 
-    // Build the REAL FormRequest for the public admission route and run it.
     try {
-        $request = \Illuminate\Http\Request::create('/admission', 'POST', [
-            'name_bn' => 'FormRequest Probe',
-            'email' => 'frprobe.'.time().'@example.com',
-            'phone' => '01700000088',
-            'admission_mode' => 'online',
-            'course_id' => 3,
-        ]);
+        // Reproduce the controller body verbatim, including the exact
+        // DB::transaction + email dispatch + redirect sequence.
+        $email = 'diagc.'.time().'@example.com';
+        $validated = [
+            'name' => 'DiagC',
+            'name_bn' => 'DiagC',
+            'email' => $email,
+            'phone' => '01700000066',
+            'admission_mode' => $mode,
+            'course_id' => $courseId,
+        ];
 
-        $route = collect(\Illuminate\Support\Facades\Route::getRoutes())
-            ->first(fn ($r) => $r->getName() === 'admission.store');
-        $request->setRouteResolver(fn () => $route);
+        $placeholder = \Illuminate\Support\Str::random(64);
+        $course = null;
 
-        $app = app();
-        $app->instance('request', $request);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $placeholder, &$course) {
+            $course = !empty($validated['course_id']) ? \App\Models\Course::findOrFail($validated['course_id']) : null;
+            $out_mode = $validated['admission_mode'];
+            abort_if($course && $course->delivery_mode !== $out_mode, 422, 'Selected course does not match the admission mode.');
 
-        // Build the FormRequest the same way the router does.
-        $form = \App\Http\Requests\StoreStudentRequest::create(
-            $request->getUri(), 'POST', $request->all(), [], [], $request->server->all()
-        );
-        $form->setContainer($app);
-        $form->setRedirector($app->make('redirect'));
-        $form->setRouteResolver(fn () => $route);
+            $user = \App\Models\User::create([
+                'name' => ($validated['name'] ?? null) ?: $validated['name_bn'],
+                'email' => $validated['email'],
+                'password' => \Illuminate\Support\Facades\Hash::make($placeholder),
+                'is_active' => false,
+                'must_change_password' => true,
+            ]);
+            $studentRole = \App\Models\Role::where('slug', 'student')->first();
+            abort_unless($studentRole, 500, 'The "student" role is missing.');
+            $user->roles()->attach($studentRole->id);
 
-        $out['routeName_resolved'] = $form->route()?->getName();
-        $out['isPublic'] = (function () use ($form) {
-            $m = new \ReflectionMethod($form, 'isPublicAdmission');
-            $m->setAccessible(true);
-            return $m->invoke($form);
-        })();
-        $out['password_rules'] = json_encode($form->rules()['password']);
+            $validated['user_id'] = $user->id;
+            $validated['course_name'] = $course?->name;
+            $validated['admission_status'] = 'pending';
+            $validated['status'] = 'pending';
+            $validated['applied_at'] = now();
+            app(\App\Services\StudentService::class)->create($validated);
+        });
+        $out['step1_write'] = 'OK';
 
-        $validator = \Illuminate\Support\Facades\Validator::make($form->all(), $form->rules());
-        $out['passes'] = $validator->passes();
-        if ($validator->fails()) {
-            $out['errors'] = $validator->errors()->toArray();
+        $applicantName = ($validated['name'] ?? null) ?: ($validated['name_bn'] ?? 'Applicant');
+        $courseName = $course?->name ?? 'your selected course';
+        $html = '<p>test</p>';
+
+        try {
+            \App\Jobs\SendEmailJob::dispatch($validated['email'], 'Admission Received — '.$courseName, $html, ['type' => 'admission']);
+            $out['step2_email'] = 'OK';
+        } catch (\Throwable $e) {
+            $out['step2_email'] = 'THREW: '.get_class($e).': '.$e->getMessage();
         }
-        $out['formrequest'] = 'OK';
+
+        $out['step3_redirect'] = redirect()->route('login')->with('success', 'x')->getTargetUrl();
+        $out['RESULT'] = 'ALL STEPS OK';
     } catch (\Throwable $e) {
-        $out['formrequest'] = 'FAILED';
+        $out['RESULT'] = 'FAILED';
         $out['exception'] = get_class($e);
         $out['message'] = $e->getMessage();
         $out['file'] = $e->getFile().':'.$e->getLine();
         $out['trace'] = array_slice(array_map(
             fn ($f) => ($f['file'] ?? '?').':'.($f['line'] ?? '?').' '.($f['class'] ?? '').($f['type'] ?? '').($f['function'] ?? ''),
             $e->getTrace()
-        ), 0, 6);
+        ), 0, 8);
     }
 
     return response()->json($out);
