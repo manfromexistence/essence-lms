@@ -117,4 +117,83 @@ class StudentIdGeneratorTest extends TestCase
 
         $this->assertDatabaseHas('users', ['email' => 'after.legacy@example.com']);
     }
+
+    /**
+     * Bug #2 (found live immediately after the overflow fix landed): every
+     * admission past the first returned HTTP 500 with
+     *
+     *   RuntimeException: Unable to generate unique student ID after 10 attempts
+     *
+     * Cause: getNextSequence() read the *last row by id* and incremented its
+     * trailing digits. Because a second transaction already held a row whose
+     * tail equalled the value being generated, all ten retries inside
+     * generateUnique() recomputed the exact same colliding ID and the loop
+     * exhausted itself.
+     */
+    public function test_admission_succeeds_when_the_latest_row_collides_with_the_next_sequence(): void
+    {
+        Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
+
+        $course = Course::factory()->create([
+            'status' => 'active',
+            'delivery_mode' => 'online',
+        ]);
+
+        // This is precisely the live state: the most recent row carries the
+        // registration number the generator would produce next.
+        Student::factory()->create([
+            'registration_no' => (string) date('Y') . '00000021',
+            'created_at' => now(),
+        ]);
+        Student::factory()->create([
+            'registration_no' => (string) date('Y') . '00000022',
+            'created_at' => now(),
+        ]);
+
+        $this->post('/admission', [
+            'name_bn' => 'Collision Survivor',
+            'email' => 'collision.survivor@example.com',
+            'phone' => '01700000004',
+            'admission_mode' => 'online',
+            'course_id' => $course->id,
+        ])->assertRedirect('/login');
+
+        $this->assertDatabaseHas('users', ['email' => 'collision.survivor@example.com']);
+    }
+
+    public function test_next_sequence_uses_the_highest_number_not_the_last_row(): void
+    {
+        // Insert the *highest* number first and the lowest last, so "last row"
+        // and "highest number" disagree.
+        Student::factory()->create([
+            'registration_no' => date('Y') . '-STU-0040',
+            'created_at' => now()->subMinutes(5),
+        ]);
+        Student::factory()->create([
+            'registration_no' => date('Y') . '-STU-0003',
+            'created_at' => now(),
+        ]);
+
+        $this->assertSame(41, app(StudentIdGenerator::class)->getNextSequence());
+    }
+
+    public function test_generate_unique_steps_past_an_occupied_sequence(): void
+    {
+        // Occupy the first three values the generator would try. The default
+        // pattern is {YEAR}{BATCH}{SEQ:4} -> e.g. "20260000021".
+        foreach ([21, 22, 23] as $tail) {
+            Student::factory()->create([
+                'registration_no' => date('Y') . '00' . str_pad((string) $tail, 4, '0', STR_PAD_LEFT),
+                'created_at' => now(),
+            ]);
+        }
+
+        $generator = app(StudentIdGenerator::class);
+        $id = $generator->generateUnique();
+
+        // Highest value is 23, so the next free slot is 24 (the trailing
+        // {SEQ:4} block).
+        $this->assertSame('0024', substr($id, -4));
+        $this->assertFalse($generator->exists($id));
+    }
 }

@@ -25,13 +25,17 @@ class StudentIdGenerator
 
     /**
      * Generate a student registration number based on the configured pattern.
+     *
+     * @param  int  $sequenceOffset  Added to the computed sequence. Used by
+     *                               generateUnique() to step past a colliding
+     *                               value without recomputing from scratch.
      */
-    public function generate(?Batch $batch = null): string
+    public function generate(?Batch $batch = null, int $sequenceOffset = 0): string
     {
         $pattern = $this->settingsService->get('student_id_format', '{YEAR}{BATCH}{SEQ:4}');
 
-        return DB::transaction(function () use ($pattern, $batch) {
-            $id = $this->parsePattern($pattern, $batch);
+        return DB::transaction(function () use ($pattern, $batch, $sequenceOffset) {
+            $id = $this->parsePattern($pattern, $batch, $sequenceOffset);
             return $id;
         });
     }
@@ -39,7 +43,7 @@ class StudentIdGenerator
     /**
      * Parse the pattern and replace tokens with actual values.
      */
-    protected function parsePattern(string $pattern, ?Batch $batch = null): string
+    protected function parsePattern(string $pattern, ?Batch $batch = null, int $sequenceOffset = 0): string
     {
         $result = $pattern;
 
@@ -60,8 +64,8 @@ class StudentIdGenerator
         // Handle {SEQ} or {SEQ:n} where n is the number of digits
         if (preg_match('/\{SEQ(?::(\d+))?\}/', $result, $matches)) {
             $digits = isset($matches[1]) ? (int) $matches[1] : 4;
-            $sequence = $this->getNextSequence();
-            $sequenceStr = str_pad($sequence, $digits, '0', STR_PAD_LEFT);
+            $sequence = $this->safeInt($this->getNextSequence() + $sequenceOffset);
+            $sequenceStr = str_pad((string) $sequence, $digits, '0', STR_PAD_LEFT);
             $result = preg_replace('/\{SEQ(?::\d+)?\}/', $sequenceStr, $result);
         }
 
@@ -70,38 +74,45 @@ class StudentIdGenerator
 
     /**
      * Get the next sequence number with database locking.
+     *
+     * The sequence is derived from the *highest* trailing number present among
+     * this year's registration numbers — not merely from the most recently
+     * created row. Using the last row by id was fragile: whenever a legacy or
+     * hand-edited registration number sat at the top of the table (e.g. a
+     * duplicated/unparsable tail), every retry in generateUnique() recomputed
+     * the exact same colliding ID and the admission failed after 10 attempts.
      */
     public function getNextSequence(): int
     {
-        // Get the current year for yearly sequence reset
         $currentYear = date('Y');
 
-        // Get the highest sequence number for this year
         $startOfYear = Carbon::create($currentYear, 1, 1)->startOfYear();
         $endOfYear = Carbon::create($currentYear, 12, 31)->endOfYear();
-        $lastStudent = Student::whereBetween('created_at', [$startOfYear, $endOfYear])
+
+        // Pull the trailing digit group of every registration number issued
+        // this year and take the largest. Scanning the whole year (rather than
+        // one row) makes the result idempotent: the same "next" value is
+        // returned no matter which row was inserted last.
+        $numbers = Student::whereBetween('created_at', [$startOfYear, $endOfYear])
             ->orderBy('id', 'desc')
             ->lockForUpdate()
-            ->first();
+            ->pluck('registration_no');
 
-        if ($lastStudent && preg_match('/(\d+)$/', (string) $lastStudent->registration_no, $matches)) {
-            // Guard against integer overflow: a very long trailing digit run
-            // would saturate (int) to PHP_INT_MAX, and adding 1 to that yields
-            // a *float* — which fatals the strict `: int` return type on
-            // PHP 8.3 and 500s the whole admission. Cap the parsed value so the
-            // addition always stays inside the integer range.
-            $sequence = $this->safeInt($matches[1]);
-
-            if ($sequence < PHP_INT_MAX) {
-                return $sequence + 1;
+        $highest = 0;
+        foreach ($numbers as $registrationNo) {
+            if (preg_match('/(\d+)$/', (string) $registrationNo, $matches)) {
+                $candidate = $this->safeInt($matches[1]);
+                if ($candidate > $highest && $candidate < PHP_INT_MAX) {
+                    $highest = $candidate;
+                }
             }
-
-            // Absurdly large sequence — restart from the configured floor
-            // rather than crash the request.
-            return max(1, $this->safeInt($this->settingsService->get('student_id_sequence_start', 1)));
         }
 
-        // Return the configured start number or default to 1
+        if ($highest > 0) {
+            return $highest + 1;
+        }
+
+        // Fresh year / no parseable rows yet — start from the configured floor.
         return max(1, $this->safeInt($this->settingsService->get('student_id_sequence_start', 1)));
     }
 
@@ -216,18 +227,26 @@ class StudentIdGenerator
 
     /**
      * Generate a unique registration number, retrying if collision occurs.
+     *
+     * getNextSequence() is now deterministic across retries (it reads the
+     * highest sequence for the year), so a plain "call it again" loop would
+     * spin on the same value. After the first collision we therefore escalate
+     * the requested sequence so a stubborn legacy row can never wedge the
+     * admission permanently.
      */
     public function generateUnique(?Batch $batch = null, int $maxAttempts = 10): string
     {
         $attempts = 0;
+        $offset = 0;
 
         while ($attempts < $maxAttempts) {
-            $id = $this->generate($batch);
+            $id = $this->generate($batch, $offset);
 
             if (!$this->exists($id)) {
                 return $id;
             }
 
+            $offset++;
             $attempts++;
         }
 
