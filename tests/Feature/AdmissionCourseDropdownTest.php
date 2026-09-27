@@ -99,6 +99,38 @@ class AdmissionCourseDropdownTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'draft.applicant@example.com']);
     }
 
+    public function test_admission_still_succeeds_when_the_notification_email_throws(): void
+    {
+        // The confirmation email is a best-effort side effect. On Render the
+        // queue runs "sync" (inline), so a mail/driver failure used to bubble
+        // out of the controller and return HTTP 500 even though the student
+        // row had already been written. The admission must survive that.
+        $course = Course::factory()->create([
+            'status' => 'active',
+            'delivery_mode' => 'offline',
+            'name' => 'Email Failure Course',
+        ]);
+
+        // Make the email transport blow up inside the (sync) job.
+        \Illuminate\Support\Facades\Mail::shouldReceive('send')->never();
+
+        $this->mock(\App\Services\BrevoEmailService::class, function ($mock) {
+            $mock->shouldReceive('send')->andThrow(new \RuntimeException('SMTP is down'));
+        });
+
+        $this->post('/admission', [
+            'name_bn' => 'Resilient Applicant',
+            'email' => 'resilient.applicant@example.com',
+            'phone' => '01911008811',
+            'admission_mode' => 'offline',
+            'course_id' => $course->id,
+        ])->assertRedirect('/login');
+
+        // The application itself must be persisted regardless of mail failure.
+        $this->assertDatabaseHas('users', ['email' => 'resilient.applicant@example.com']);
+        $this->assertDatabaseHas('students', ['name_bn' => 'Resilient Applicant']);
+    }
+
     public function test_enrollable_scope_includes_active_and_draft_only(): void
     {
         // A brand-content data migration seeds 4 base courses, so assert on the

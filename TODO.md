@@ -34,9 +34,18 @@ Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[
 
 ### Verification evidence (2026-09-27)
 
-- [x] V1. `php artisan test` → **113 passed / 474 assertions** (was 106 / 448).
+- [x] V1. `php artisan test` → **114 passed / 479 assertions** (was 106 / 448).
 - [x] V2. Browser E2E: submit application (no password) → admin approve → generated password logs in → forced to `/change-password` → new password grants `/student/dashboard`.
 - [x] V3. Newly created draft course appears in the `/admission/offline` dropdown.
+- [x] V4. **Live browser audit of `https://dhaka-it-institute.onrender.com`** — homepage, `/courses`, `/admission`, `/admission/offline`, `/login`, `/forgot-password`, `/certificates/verify` all render correctly.
+- [x] V5. **Live bug found & fixed:** `POST /admission` returned HTTP 500. Reproduced locally (`received 500`), root-caused to the inline sync-queue email dispatch, fixed with a `\Throwable` guard, and covered by a regression test.
+
+### Open — requires owner action in the Render dashboard
+
+- [ ] R1. Set `DEFAULT_*_EMAIL` / `DEFAULT_*_PASSWORD` (16+ chars) **or** `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` env vars so the live site has a usable login. Production deliberately seeds **no** accounts, and the live DB currently rejects every login ("credentials do not match").
+- [ ] R2. Configure a Brevo API key (or a real mailer) in Settings — Render runs `MAIL_MAILER=log`, so no email is actually delivered (admission confirmations, credential emails, password resets).
+- [ ] R3. Attach a persistent disk (or switch to managed Postgres) — the free-plan SQLite filesystem is **ephemeral**, so every deploy/restart wipes all students, payments and courses.
+
 
 ---
 

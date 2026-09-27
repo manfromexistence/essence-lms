@@ -89,12 +89,24 @@ class AdmissionController extends Controller
             . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
             . '</div></div>';
 
-        \App\Jobs\SendEmailJob::dispatch(
-            $validated['email'],
-            'Admission Received — ' . $courseName,
-            $html,
-            ['type' => 'admission']
-        );
+        // Notifications are a best-effort side effect: the application is already
+        // committed above, so a mail/queue problem must never turn a successful
+        // admission into a 500 error. Wrapped in a broad Throwable catch because
+        // the sync queue runs the job inline and re-throws anything the job's
+        // own Exception handler misses (e.g. a TypeError from a mail driver).
+        try {
+            \App\Jobs\SendEmailJob::dispatch(
+                $validated['email'],
+                'Admission Received — ' . $courseName,
+                $html,
+                ['type' => 'admission']
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Admission confirmation email failed to dispatch', [
+                'email' => $validated['email'],
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->route('login')->with(
             'success',

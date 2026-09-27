@@ -102,11 +102,21 @@ class StudentCredentialService
             . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">Dhaka IT Institute — Let\'s Build Your Dream</p>'
             . '</div></div>';
 
-        SendEmailJob::dispatch(
-            $user->email,
-            'Your Login Credentials — ' . $courseName,
-            $html,
-            ['type' => 'admission', 'subtype' => 'credentials']
-        );
+        // Credentials are already persisted above, so a mail failure must not
+        // fail the approval action. The sync queue runs inline and re-throws,
+        // hence the broad Throwable catch.
+        try {
+            SendEmailJob::dispatch(
+                $user->email,
+                'Your Login Credentials — ' . $courseName,
+                $html,
+                ['type' => 'admission', 'subtype' => 'credentials']
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Credential email failed to dispatch', [
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

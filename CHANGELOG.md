@@ -1,6 +1,33 @@
 # Changelog
 
+## 2026-09-27 — HOTFIX: admission submission returned HTTP 500 in production
+
+### Fixed — notification email could kill a successful admission
+
+- **Symptom (live):** every `POST /admission` on the Render deployment returned
+  `500 Server Error`, so no applicant could apply.
+- **Root cause:** `QUEUE_CONNECTION=sync` on Render runs `SendEmailJob` inline
+  inside the web request. `AdmissionController@store` called
+  `SendEmailJob::dispatch()` unwrapped *after* the student row was already
+  committed, so any mail/transport failure (the sync driver re-throws)
+  propagated out of the controller and produced a 500 — even though the
+  application had been saved successfully.
+- **Fix:** the email dispatch is now wrapped in `try { … } catch (\Throwable)`
+  in `AdmissionController@store`, `StudentCredentialService@emailCredentials`
+  and `Admin\CertificateController@send`; failures are logged instead of
+  failing the request. A broad `\Throwable` catch is used because the inline
+  sync queue re-throws `Error`/`TypeError`, which `catch (\Exception)` misses.
+- **Note:** `MAIL_MAILER=log` on Render means no real email is delivered; configure
+  a Brevo API key in Settings (or a real mailer) for delivery to work.
+- Regression test `test_admission_still_succeeds_when_the_notification_email_throws`
+  fails with `received 500` if the guard is removed.
+
+### Added — test coverage
+
+- Suite is now **114 tests / 479 assertions** (was 113 / 474).
+
 ## 2026-09-27 — Registration credential flow + admission course dropdown
+
 
 ### Changed — applicants no longer set their own password
 

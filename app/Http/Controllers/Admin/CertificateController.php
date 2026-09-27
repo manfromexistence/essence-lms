@@ -95,12 +95,21 @@ class CertificateController extends Controller
             . '<p style="margin-top:24px;color:#6b7280;font-size:13px;">This certificate is verifiable online. Keep it safe and share it with pride!</p>'
             . '</div></div>';
 
-        \App\Jobs\SendEmailJob::dispatch(
-            $certificate->student->user->email,
-            "🎓 Your Course Certificate — {$courseName}",
-            $html,
-            ['type' => 'certificate', 'related' => $certificate->student]
-        );
+        try {
+            \App\Jobs\SendEmailJob::dispatch(
+                $certificate->student->user->email,
+                "🎓 Your Course Certificate — {$courseName}",
+                $html,
+                ['type' => 'certificate', 'related' => $certificate->student]
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Certificate email failed to dispatch', [
+                'certificate' => $certificate->certificate_number,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('warning', 'Certificate is issued, but the notification email could not be queued. You can resend it later.');
+        }
 
         return back()->with('success', "Certificate email queued for {$certificate->student->user->email}. It will be sent in the background.");
     }
