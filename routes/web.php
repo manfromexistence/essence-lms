@@ -37,6 +37,38 @@ Route::get('/admission/offline', [AdmissionController::class, 'createOffline'])-
 Route::get('/admission', [AdmissionController::class, 'create'])->name('admission.create');
 Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');
 
+// TEMPORARY diagnostic (remove after debugging the live admission 500).
+Route::get('/_diag2', function () {
+    $out = [];
+    try {
+        $year = date('Y');
+        $out['year'] = $year;
+        $out['student_total'] = \App\Models\Student::count();
+        $out['student_this_year'] = \App\Models\Student::whereBetween('created_at', [
+            \Carbon\Carbon::create($year, 1, 1)->startOfYear(),
+            \Carbon\Carbon::create($year, 12, 31)->endOfYear(),
+        ])->count();
+        $out['newest_this_year'] = \App\Models\Student::whereBetween('created_at', [
+            \Carbon\Carbon::create($year, 1, 1)->startOfYear(),
+            \Carbon\Carbon::create($year, 12, 31)->endOfYear(),
+        ])->orderBy('id', 'desc')->value('registration_no');
+        $out['newest_overall'] = \App\Models\Student::orderBy('id', 'desc')->value('registration_no');
+        $out['newest_overall_created'] = (string) \App\Models\Student::orderBy('id', 'desc')->value('created_at');
+        $out['id_format'] = app(\App\Services\SettingsService::class)->get('student_id_format', '(default)');
+
+        $gen = app(\App\Services\StudentIdGenerator::class);
+        $out['next_sequence'] = $gen->getNextSequence();
+        $out['would_generate'] = $gen->generate(null);
+        $out['already_exists'] = \App\Models\Student::where('registration_no', $out['would_generate'])->exists();
+        $out['mode'] = 'read-only probe';
+    } catch (\Throwable $e) {
+        $out['exception'] = get_class($e);
+        $out['message'] = $e->getMessage();
+        $out['file'] = $e->getFile().':'.$e->getLine();
+    }
+    return response()->json($out);
+});
+
 Route::get('/announcements', [HomeController::class, 'announcements'])->name('announcements.index');
 Route::get('/announcements/{announcement}', [HomeController::class, 'showAnnouncement'])->name('announcement.show');
 
