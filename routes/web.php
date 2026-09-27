@@ -39,65 +39,78 @@ Route::post('/admission', [AdmissionController::class, 'store'])->middleware('th
 
 // TEMPORARY diagnostic (remove after debugging the live admission 500).
 Route::get('/_diag2', function () {
-    $out = [];
+    $out = ['php' => PHP_VERSION, 'env' => app()->environment()];
+
     try {
         $courseId = (int) request()->query('course', 3);
         $mode = (string) request()->query('mode', 'online');
-        $out['course_id'] = $courseId;
-        $out['mode'] = $mode;
 
-        $course = \App\Models\Course::find($courseId);
-        $out['course'] = $course ? $course->only(['id', 'name', 'status', 'delivery_mode', 'price']) : 'NOT FOUND';
-        $out['role_student'] = (bool) \App\Models\Role::where('slug', 'student')->first();
-
-        \Illuminate\Support\Facades\DB::beginTransaction();
-        $email = 'diag2.'.time().'@example.com';
-        $placeholder = \Illuminate\Support\Str::random(64);
-        $user = \App\Models\User::create([
-            'name' => 'Diag2',
-            'email' => $email,
-            'password' => \Illuminate\Support\Facades\Hash::make($placeholder),
-            'is_active' => false,
-            'must_change_password' => true,
-        ]);
-        $out['user_id'] = $user->id;
-        $user->roles()->attach(\App\Models\Role::where('slug', 'student')->value('id'));
-
-        $payload = [
-            'user_id' => $user->id,
-            'name_bn' => 'Diag2',
-            'email' => $email,
-            'phone' => '01700000009',
+        $request = \Illuminate\Http\Request::create('/admission', 'POST', [
+            'name_bn' => 'Controller Probe',
+            'email' => 'ctrlprobe.'.time().'@example.com',
+            'phone' => '01700000077',
             'admission_mode' => $mode,
             'course_id' => $courseId,
-            'course_name' => $course?->name,
-            'admission_status' => 'pending',
-            'status' => 'pending',
-            'applied_at' => now(),
+        ]);
+
+        // Mirror AdmissionController@store exactly. The FormRequest needs a
+        // real request binding, so we replicate the validated payload and the
+        // exact call order instead.
+        $validated = [
+            'name' => null,
+            'name_bn' => 'Controller Probe',
+            'email' => $request->input('email'),
+            'phone' => '01700000077',
+            'admission_mode' => $mode,
+            'course_id' => $courseId,
         ];
-        $student = app(\App\Services\StudentService::class)->create($payload);
-        $out['student_id'] = $student->id;
-        $out['registration_no'] = $student->registration_no;
-        $out['write'] = 'OK';
+        $out['validated'] = $validated;
 
-        // Now exercise the exact notification the controller sends.
-        try {
-            \App\Jobs\SendEmailJob::dispatch($email, 'Diag2 Subject', '<p>x</p>', ['type' => 'admission']);
-            $out['email_dispatch'] = 'OK';
-        } catch (\Throwable $e) {
-            $out['email_dispatch'] = 'THREW';
-            $out['email_exception'] = get_class($e);
-            $out['email_message'] = $e->getMessage();
-        }
+        $studentService = app(\App\Services\StudentService::class);
+        $out['studentService'] = get_class($studentService);
 
-        \Illuminate\Support\Facades\DB::rollBack();
+        // Mirror AdmissionController@store exactly.
+        $placeholder = \Illuminate\Support\Str::random(64);
+        $course = null;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $placeholder, &$course) {
+            $course = !empty($validated['course_id']) ? \App\Models\Course::findOrFail($validated['course_id']) : null;
+            abort_if($course && $course->delivery_mode !== $validated['admission_mode'], 422, 'Selected course does not match the admission mode.');
+
+            $user = \App\Models\User::create([
+                'name' => ($validated['name'] ?? null) ?: $validated['name_bn'],
+                'email' => $validated['email'],
+                'password' => \Illuminate\Support\Facades\Hash::make($placeholder),
+                'is_active' => false,
+                'must_change_password' => true,
+            ]);
+            $studentRole = \App\Models\Role::where('slug', 'student')->first();
+            abort_unless($studentRole, 500, 'The "student" role is missing.');
+            $user->roles()->attach($studentRole->id);
+
+            $validated['user_id'] = $user->id;
+            $validated['course_name'] = $course?->name;
+            $validated['admission_status'] = 'pending';
+            $validated['status'] = 'pending';
+            $validated['applied_at'] = now();
+            app(\App\Services\StudentService::class)->create($validated);
+        });
+        $out['store_body'] = 'OK';
+
+        // The redirect target the controller returns.
+        $out['login_route'] = route('login');
+        $out['redirect_ok'] = true;
     } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\DB::rollBack();
-        $out['write'] = 'FAILED';
+        $out['FAILED_AT'] = 'see exception';
         $out['exception'] = get_class($e);
         $out['message'] = $e->getMessage();
         $out['file'] = $e->getFile().':'.$e->getLine();
+        $out['trace'] = array_slice(array_map(
+            fn ($f) => ($f['file'] ?? '?').':'.($f['line'] ?? '?').' '.($f['class'] ?? '').($f['type'] ?? '').($f['function'] ?? ''),
+            $e->getTrace()
+        ), 0, 8);
     }
+
     return response()->json($out);
 });
 
