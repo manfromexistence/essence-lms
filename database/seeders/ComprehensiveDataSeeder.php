@@ -358,6 +358,13 @@ class ComprehensiveDataSeeder extends Seeder
         $weights = [70, 10, 15, 5]; // Weighted probability
         
         foreach ($students as $student) {
+            // Attendance rows require a batch. Skip any student who has not
+            // been assigned to one yet (e.g. a pending applicant or a demo
+            // account) instead of violating the NOT NULL constraint.
+            if (!$student->batch_id) {
+                continue;
+            }
+
             // Create attendance for last 60 days
             for ($i = 60; $i >= 0; $i--) {
                 $date = now()->subDays($i);
@@ -406,7 +413,15 @@ class ComprehensiveDataSeeder extends Seeder
             for ($i = 1; $i <= $numExams; $i++) {
                 $type = rand(0, 1) ? 'mcq' : 'cq';
                 $isPast = rand(1, 100) <= 70; // 70% past exams
-                
+
+                // Compute the start once, then derive the end from it. Calling
+                // rand() separately for each could produce an end_time that
+                // precedes start_time, which breaks the exam time validator.
+                $examStart = $isPast
+                    ? now()->subDays(rand(5, 60))
+                    : now()->addDays(rand(1, 30));
+                $examEnd = (clone $examStart)->addHours(2);
+
                 $exam = Exam::create([
                     'course_id' => $batch->course_id,
                     'batch_id' => $batch->id,
@@ -415,8 +430,8 @@ class ComprehensiveDataSeeder extends Seeder
                     'duration_minutes' => $type === 'mcq' ? rand(45, 90) : rand(90, 180),
                     'total_marks' => $type === 'mcq' ? 50 : 100,
                     'pass_marks' => $type === 'mcq' ? 20 : 40,
-                    'start_time' => $isPast ? now()->subDays(rand(5, 60)) : now()->addDays(rand(1, 30)),
-                    'end_time' => $isPast ? now()->subDays(rand(5, 60))->addHours(2) : now()->addDays(rand(1, 30))->addHours(2),
+                    'start_time' => $examStart,
+                    'end_time' => $examEnd,
                     'status' => 'active',
                     'instructions' => 'Read all questions carefully. Answer to the best of your ability. Good luck!',
                 ]);

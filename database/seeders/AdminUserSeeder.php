@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Student;
+use App\Models\Teacher;
 use Illuminate\Support\Facades\Hash;
 
 class AdminUserSeeder extends Seeder
@@ -106,6 +108,17 @@ class AdminUserSeeder extends Seeder
             $teacher->roles()->syncWithoutDetaching([$teacherRole->id]);
         }
 
+        // Every teacher login needs a Teacher profile, otherwise the teacher
+        // portal redirects straight back to the generic dashboard.
+        Teacher::firstOrCreate(
+            ['user_id' => $teacher->id],
+            [
+                'phone' => '01700000000',
+                'designation' => 'Instructor',
+                'status' => 'active',
+            ]
+        );
+
         // Create a local-only teacher account
         $teacherAlpha = User::updateOrCreate(
             ['email' => 'teacher@dhakaitinstitute.test'],
@@ -136,6 +149,23 @@ class AdminUserSeeder extends Seeder
             $student->roles()->syncWithoutDetaching([$studentRole->id]);
         }
 
+        // Every student login needs a Student profile; without it the student
+        // portal bounces back to the generic dashboard in a redirect loop.
+        // The batch is attached later by DemoAccountBatchSeeder, which runs
+        // after BatchSeeder (batches do not exist yet at this point).
+        Student::firstOrCreate(
+            ['user_id' => $student->id],
+            [
+                'name_bn' => $student->name,
+                'phone' => '01700000000',
+                'admission_mode' => 'online',
+                'admission_status' => 'approved',
+                'status' => 'active',
+                'registration_no' => 'REG-DEMO-0001',
+                'applied_at' => now(),
+            ]
+        );
+
         // Create a local-only student account
         $studentAlpha = User::updateOrCreate(
             ['email' => 'student@dhakaitinstitute.test'],
@@ -149,5 +179,20 @@ class AdminUserSeeder extends Seeder
         if ($studentRole) {
             $studentAlpha->roles()->syncWithoutDetaching([$studentRole->id]);
         }
+
+        // Give the local-only student account a profile too so the student
+        // portal is reachable with it (batch attached later, see above).
+        Student::firstOrCreate(
+            ['user_id' => $studentAlpha->id],
+            [
+                'name_bn' => $studentAlpha->name,
+                'phone' => '01700000000',
+                'admission_mode' => 'online',
+                'admission_status' => 'approved',
+                'status' => 'active',
+                'registration_no' => 'REG-DEMO-0002',
+                'applied_at' => now(),
+            ]
+        );
     }
 }

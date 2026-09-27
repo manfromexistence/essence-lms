@@ -25,8 +25,9 @@ class BackupService
         // For SQLite (common in development)
         $driver = config('database.default');
         if ($driver === 'sqlite') {
-            $dbPath = config('database.connections.sqlite.database');
-            if (file_exists($dbPath)) {
+            $dbPath = $this->resolveSqlitePath();
+            if ($dbPath !== null && file_exists($dbPath)) {
+                Storage::disk('local')->makeDirectory($this->backupPath);
                 Storage::disk('local')->put($path, file_get_contents($dbPath));
                 return $filename;
             }
@@ -70,7 +71,10 @@ class BackupService
 
         $driver = config('database.default');
         if ($driver === 'sqlite') {
-            $dbPath = config('database.connections.sqlite.database');
+            $dbPath = $this->resolveSqlitePath();
+            if ($dbPath === null) {
+                throw new \Exception('SQLite database path could not be resolved.');
+            }
             $backupContent = Storage::disk('local')->get($path);
             file_put_contents($dbPath, $backupContent);
             return true;
@@ -134,6 +138,31 @@ class BackupService
         }
 
         return Storage::disk('local')->download($path, $filename);
+    }
+
+    /**
+     * Resolve the SQLite database file to an absolute path.
+     *
+     * The configured value may be absolute, relative to the app root, or the
+     * special ":memory:" database. Relative paths break when the process
+     * working directory differs from the app root (e.g. the PHP dev server
+     * runs with CWD = public/), which previously made web-triggered backups
+     * fail while CLI backups succeeded. Always resolve relative to base_path().
+     */
+    private function resolveSqlitePath(): ?string
+    {
+        $configured = (string) config('database.connections.sqlite.database');
+
+        if ($configured === '' || $configured === ':memory:') {
+            return null;
+        }
+
+        // Already absolute (Unix "/...", Windows "C:\..." or "C:/...")?
+        if (str_starts_with($configured, '/') || preg_match('#^[A-Za-z]:[\\\\/]#', $configured) === 1) {
+            return $configured;
+        }
+
+        return base_path($configured);
     }
 
     private function validateFilename(string $filename): void

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $certificate->certificate_number }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css'])
     <style>@media print { .no-print { display:none!important } body { background:white!important } .certificate { box-shadow:none!important; margin:0!important } }</style>
 </head>
 <body class="bg-gray-100 p-4 md:p-10">

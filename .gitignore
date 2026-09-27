@@ -23,8 +23,13 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.testing
+!.env.cpanel.template
+!.env.production.template
 
 # Dusk runtime artifacts
 database/dusk.sqlite
 storage/logs/dusk-server.log
 
+
+# Local AI workspace state (not for VCS)
+.workbuddy-ai/

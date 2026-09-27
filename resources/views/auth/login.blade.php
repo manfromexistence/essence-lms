@@ -10,7 +10,7 @@
     @endphp
     <link rel="icon" href="{{ $faviconUrl }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=20260802">
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @php
         $primaryColor = $settingsService->get('theme_primary_color', '#3d59f9');

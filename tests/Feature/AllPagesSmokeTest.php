@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -73,6 +74,14 @@ class AllPagesSmokeTest extends TestCase
             '/dashboard/cms',
             '/dashboard/users',
             '/dashboard/settings',
+            // Exam module (previously untested — allowed a 500 to ship).
+            '/dashboard/exams',
+            '/dashboard/exams/create',
+            '/dashboard/mcq-exams',
+            '/dashboard/cq-exams',
+            '/dashboard/live-exams',
+            '/dashboard/exam-results',
+            '/dashboard/exam-leaderboard',
         ];
 
         $failures = [];
@@ -140,5 +149,37 @@ class AllPagesSmokeTest extends TestCase
         }
 
         $this->assertEmpty($failures, 'Student pages failing: ' . implode(', ', $failures));
+    }
+
+    public function test_all_teacher_pages_render(): void
+    {
+        $teacherRole = Role::firstOrCreate(['slug' => 'teacher'], ['name' => 'Teacher']);
+        $user = User::factory()->create(['is_active' => true, 'must_change_password' => false]);
+        $user->roles()->attach($teacherRole);
+
+        Teacher::create([
+            'user_id' => $user->id,
+            'phone' => '01700000000',
+            'designation' => 'Instructor',
+            'status' => 'active',
+        ]);
+
+        $pages = [
+            '/teacher/dashboard',
+            '/teacher/batches',
+            '/teacher/attendance',
+            '/teacher/exams',
+            '/teacher/schedule',
+        ];
+
+        $failures = [];
+        foreach ($pages as $page) {
+            $response = $this->actingAs($user)->get($page);
+            if ($response->getStatusCode() !== 200) {
+                $failures[] = $page . ' -> ' . $response->getStatusCode();
+            }
+        }
+
+        $this->assertEmpty($failures, 'Teacher pages failing: ' . implode(', ', $failures));
     }
 }

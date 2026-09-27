@@ -28,8 +28,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (compiled via Vite — includes all classes used by the
+         public views because resources/css/app.css scans resources/views/**) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Alpine.js (required by x-ui components: tabs, dialogs, dropdowns...) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>

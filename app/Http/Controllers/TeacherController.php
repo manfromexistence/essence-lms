@@ -214,11 +214,20 @@ class TeacherController extends Controller
             return redirect()->route('dashboard')->with('error', 'Teacher profile not found.');
         }
 
+        // Build a driver-portable weekday ordering. MySQL's FIELD() does not
+        // exist on SQLite/PostgreSQL, so use a CASE expression instead.
+        $dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        $caseSql = 'CASE day_of_week';
+        foreach ($dayOrder as $index => $day) {
+            $caseSql .= " WHEN '" . $day . "' THEN " . $index;
+        }
+        $caseSql .= ' ELSE ' . count($dayOrder) . ' END';
+
         $schedules = ClassSchedule::whereHas('batch.teachers', function($query) use ($teacher) {
             $query->where('teachers.id', $teacher->id);
         })
         ->with(['batch.course'])
-        ->orderByRaw("FIELD(day_of_week, 'sunday','monday','tuesday','wednesday','thursday','friday','saturday')")
+        ->orderByRaw($caseSql)
         ->orderBy('start_time')
         ->get()
         ->groupBy('day_of_week');

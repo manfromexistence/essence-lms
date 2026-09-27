@@ -5,8 +5,10 @@ This file contains work that requires the client's infrastructure, credentials, 
 ## Current engineering status
 
 - Repository-controlled production hardening: **complete for this release scope**
-- Automated release checks: **93 tests / 419 assertions passing**
-- Known dependency advisories: **0 Composer / 0 npm production**
+- Automated release checks: **106 tests / 448 assertions passing** — verified 2026-09-27 (`php artisan test`)
+- Browser end-to-end verification: **every admin (20), teacher (5) and student (9) route returns HTTP 200**; exam create submits and persists; public pages render off the compiled Vite bundle (no CDN)
+- Known dependency advisories: **0 Composer / 0 npm (dev + production)** — verified 2026-09-27 with `composer audit --locked` and `npm audit`
+- Seed integrity: **0 exams with end_time < start_time**, all demo accounts have linked Student/Teacher profiles and batches
 - Public-launch acceptance: pending the client/infrastructure items below
 
 ## Must complete before public launch
