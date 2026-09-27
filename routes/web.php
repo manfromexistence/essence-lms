@@ -37,6 +37,59 @@ Route::get('/admission/offline', [AdmissionController::class, 'createOffline'])-
 Route::get('/admission', [AdmissionController::class, 'create'])->name('admission.create');
 Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');
 
+// TEMPORARY diagnostic route (remove after debugging the live admission 500).
+Route::get('/_diag-admission', function (\Illuminate\Http\Request $request) {
+    $courseId = (int) $request->query('course', 1);
+    $mode = $request->query('mode', 'offline');
+    $out = ['php' => PHP_VERSION, 'env' => app()->environment(), 'debug' => config('app.debug')];
+
+    try {
+        $out['db_default'] = config('database.default');
+        $out['db_database'] = config('database.connections.'.config('database.default').'.database');
+        $out['migrations_ran'] = \Illuminate\Support\Facades\Schema::hasTable('migrations');
+        $out['students_cols'] = \Illuminate\Support\Facades\Schema::hasColumn('students', 'admission_status')
+            ? 'yes' : 'NO admission_status';
+        $out['users_cols'] = \Illuminate\Support\Facades\Schema::hasColumn('users', 'must_change_password')
+            ? 'yes' : 'NO must_change_password';
+        $out['courses'] = \App\Models\Course::count();
+        $out['roles'] = \App\Models\Role::count();
+        $out['student_role'] = (bool) \App\Models\Role::where('slug', 'student')->first();
+        $out['settings_present'] = (bool) \Illuminate\Support\Facades\Schema::hasTable('settings');
+
+        $course = \App\Models\Course::find($courseId);
+        $out['course'] = $course ? $course->only(['id', 'name', 'status', 'delivery_mode']) : 'not found';
+
+        // Attempt the write in a rolled-back transaction to capture the real error.
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        $email = 'diag'.time().'@example.com';
+        $user = \App\Models\User::create([
+            'name' => 'Diag', 'email' => $email,
+            'password' => \Illuminate\Support\Facades\Hash::make('x'),
+            'is_active' => false, 'must_change_password' => true,
+        ]);
+        $out['user_created'] = $user->id;
+        $role = \App\Models\Role::where('slug', 'student')->first();
+        $user->roles()->attach($role->id);
+        $student = app(\App\Services\StudentService::class)->create([
+            'user_id' => $user->id, 'name_bn' => 'Diag', 'phone' => '01700000000',
+            'email' => $email, 'admission_mode' => $mode, 'course_id' => $courseId,
+            'course_name' => $course?->name, 'admission_status' => 'pending',
+            'status' => 'pending', 'applied_at' => now(),
+        ]);
+        $out['student_created'] = $student->id;
+        $out['write_test'] = 'OK';
+        \Illuminate\Support\Facades\DB::rollBack();
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\DB::rollBack();
+        $out['write_test'] = 'FAILED';
+        $out['exception'] = get_class($e);
+        $out['message'] = $e->getMessage();
+        $out['file'] = $e->getFile().':'.$e->getLine();
+    }
+
+    return response()->json($out);
+});
+
 Route::get('/announcements', [HomeController::class, 'announcements'])->name('announcements.index');
 Route::get('/announcements/{announcement}', [HomeController::class, 'showAnnouncement'])->name('announcement.show');
 
