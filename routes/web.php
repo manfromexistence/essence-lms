@@ -41,46 +41,47 @@ Route::post('/admission', [AdmissionController::class, 'store'])->middleware('th
 Route::get('/_diag2', function () {
     $out = ['php' => PHP_VERSION, 'env' => app()->environment()];
 
-    // 1) Can the rate limiter be resolved without exploding?
+    // Build the REAL FormRequest for the public admission route and run it.
     try {
-        $limiter = app(\Illuminate\Cache\RateLimiter::class);
-        $out['rate_limiter'] = get_class($limiter);
-        $out['throttle_attempt'] = $limiter->attempt('diag-probe-key', 5, function () {
-            return true;
-        });
-        $out['throttle_hit_count'] = $limiter->tooManyAttempts('diag-probe-key', 5);
-    } catch (\Throwable $e) {
-        $out['rate_limiter_failed'] = get_class($e).': '.$e->getMessage();
-    }
+        $request = \Illuminate\Http\Request::create('/admission', 'POST', [
+            'name_bn' => 'FormRequest Probe',
+            'email' => 'frprobe.'.time().'@example.com',
+            'phone' => '01700000088',
+            'admission_mode' => 'online',
+            'course_id' => 3,
+        ]);
 
-    // 2) Can the request resolver + session + redirect response be built?
-    try {
-        $out['session_driver'] = config('session.driver');
-        $out['session_store'] = get_class(app('session.store'));
-        $out['redirect'] = redirect()->route('login')->with('success', 'probe')->getTargetUrl();
-    } catch (\Throwable $e) {
-        $out['session_failed'] = get_class($e).': '.$e->getMessage();
-    }
+        $route = collect(\Illuminate\Support\Facades\Route::getRoutes())
+            ->first(fn ($r) => $r->getName() === 'admission.store');
+        $request->setRouteResolver(fn () => $route);
 
-    // 3) Can the admission controller itself be resolved from the container?
-    try {
-        $c = app(\App\Http\Controllers\AdmissionController::class);
-        $out['controller'] = get_class($c);
+        $app = app();
+        $app->instance('request', $request);
+
+        $form = \App\Http\Requests\StoreStudentRequest::createFrom($request, $request);
+        $form->setContainer($app);
+        $form->setRedirector($app->make('redirect'));
+        $form->setRouteResolver(fn () => $route);
+
+        $validator = \Illuminate\Support\Facades\Validator::make($form->all(), $form->rules());
+        $out['passes'] = $validator->passes();
+        if ($validator->fails()) {
+            $out['errors'] = $validator->errors()->toArray();
+        }
+        $out['routeName'] = $route?->getName();
+        $out['isPublic'] = method_exists($form, 'isPublicAdmission')
+            ? (function () use ($form) { $m = new \ReflectionMethod($form, 'isPublicAdmission'); $m->setAccessible(true); return $m->invoke($form); })()
+            : 'no method';
+        $out['formrequest'] = 'OK';
     } catch (\Throwable $e) {
-        $out['controller_failed'] = get_class($e).': '.$e->getMessage();
-        $out['controller_trace'] = array_slice(array_map(
+        $out['formrequest'] = 'FAILED';
+        $out['exception'] = get_class($e);
+        $out['message'] = $e->getMessage();
+        $out['file'] = $e->getFile().':'.$e->getLine();
+        $out['trace'] = array_slice(array_map(
             fn ($f) => ($f['file'] ?? '?').':'.($f['line'] ?? '?').' '.($f['class'] ?? '').($f['type'] ?? '').($f['function'] ?? ''),
             $e->getTrace()
         ), 0, 6);
-    }
-
-    // 4) Route list for the admission POST (middleware actually attached)?
-    try {
-        $route = collect(\Illuminate\Support\Facades\Route::getRoutes())
-            ->first(fn ($r) => $r->getName() === 'admission.store');
-        $out['admission_middleware'] = $route ? $route->gatherMiddleware() : 'route not found';
-    } catch (\Throwable $e) {
-        $out['route_failed'] = get_class($e).': '.$e->getMessage();
     }
 
     return response()->json($out);
