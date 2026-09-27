@@ -59,6 +59,20 @@ Route::get('/_diag-admission', function (\Illuminate\Http\Request $request) {
         $course = \App\Models\Course::find($courseId);
         $out['course'] = $course ? $course->only(['id', 'name', 'status', 'delivery_mode']) : 'not found';
 
+        // Inspect the registration numbers that drive the sequence generator.
+        $out['student_count'] = \App\Models\Student::count();
+        $out['recent_reg'] = \App\Models\Student::orderBy('id', 'desc')->limit(6)
+            ->pluck('registration_no')->all();
+        $out['max_reg'] = \App\Models\Student::orderBy('id', 'desc')->value('registration_no');
+        $out['php_int_max'] = PHP_INT_MAX;
+        if (preg_match('/(\d+)$/', (string) $out['max_reg'], $m)) {
+            $out['trailing_digits'] = $m[1];
+            $out['int_cast'] = (int) $m[1];
+            $seq = (int) $m[1] + 1;
+            $out['cast_plus_one'] = $seq;
+            $out['result_type'] = gettype($seq);
+        }
+
         // Attempt the write in a rolled-back transaction to capture the real error.
         \Illuminate\Support\Facades\DB::beginTransaction();
         $email = 'diag'.time().'@example.com';
