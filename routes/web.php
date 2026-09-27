@@ -38,6 +38,40 @@ Route::get('/admission', [AdmissionController::class, 'create'])->name('admissio
 Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');
 
 // TEMPORARY diagnostic (remove after debugging the live admission 500).
+Route::get('/_diag3', function () {
+    $gen = app(\App\Services\StudentIdGenerator::class);
+    $pattern = app(\App\Services\SettingsService::class)->get('student_id_format', '(default)');
+    $rows = \App\Models\Student::orderBy('id', 'desc')->limit(12)
+        ->get(['id', 'registration_no', 'created_at', 'user_id'])
+        ->map(fn ($s) => [
+            'id' => $s->id,
+            'reg' => $s->registration_no,
+            'created' => (string) $s->created_at,
+        ])->all();
+
+    // What would the generator produce right now?
+    $nextSeq = $gen->getNextSequence();
+    $candidate = $gen->generate();
+
+    return response()->json([
+        'php' => PHP_VERSION,
+        'pattern' => $pattern,
+        'year' => date('Y'),
+        'student_count' => \App\Models\Student::count(),
+        'this_year_count' => \App\Models\Student::whereBetween('created_at', [
+            \Carbon\Carbon::create(date('Y'), 1, 1)->startOfYear(),
+            \Carbon\Carbon::create(date('Y'), 12, 31)->endOfYear(),
+        ])->count(),
+        'next_sequence' => $nextSeq,
+        'would_generate' => $candidate,
+        'would_collide' => $gen->exists($candidate),
+        'recent_students' => $rows,
+        'duplicate_regs' => \Illuminate\Support\Facades\DB::table('students')
+            ->select('registration_no', \Illuminate\Support\Facades\DB::raw('count(*) as c'))
+            ->groupBy('registration_no')->having('c', '>', 1)->get()->all(),
+    ]);
+});
+
 Route::get('/_diag2', function () {
     $out = ['php' => PHP_VERSION, 'env' => app()->environment()];
     $mode = (string) request()->query('mode', 'online');
