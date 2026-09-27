@@ -22,6 +22,14 @@ class AdminUserSeeder extends Seeder
 
     public function run(): void
     {
+        // Common attributes every seeded login needs so the account is
+        // immediately usable and never lazily depends on a DB default.
+        $loginDefaults = [
+            'email_verified_at' => now(),
+            'is_active' => true,
+            'must_change_password' => false,
+        ];
+
         // The primary admin comes from env (same credentials work in any
         // environment). Falls back to local demo accounts when unset.
         $email = env('INITIAL_ADMIN_EMAIL');
@@ -32,7 +40,7 @@ class AdminUserSeeder extends Seeder
                 [
                     'name' => 'System Owner',
                     'password' => Hash::make($password),
-                    'email_verified_at' => now(),
+                    ...$loginDefaults,
                 ]
             );
             if ($role = Role::where('slug', 'super-admin')->first()) {
@@ -52,7 +60,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Super Admin',
                 'password' => $this->quickHash('password'),
-                'email_verified_at' => now(),
+                ...$loginDefaults,
             ]
         );
 
@@ -68,7 +76,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'password' => $this->quickHash('password'),
-                'email_verified_at' => now(),
+                ...$loginDefaults,
             ]
         );
 
@@ -83,7 +91,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Dhaka IT Admin',
                 'password' => $this->quickHash('password'),
-                'email_verified_at' => now(),
+                ...$loginDefaults,
             ]
         );
 
@@ -98,7 +106,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Demo Teacher',
                 'password' => $this->quickHash('password'),
-                'email_verified_at' => now(),
+                ...$loginDefaults,
             ]
         );
 
@@ -125,7 +133,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Dhaka IT Demo Teacher',
                 'password' => $this->quickHash('password'),
-                'email_verified_at' => now(),
+                ...$loginDefaults,
             ]
         );
 
@@ -139,7 +147,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Demo Student',
                 'password' => $this->quickHash('password'),
-                'email_verified_at' => now(),
+                ...$loginDefaults,
             ]
         );
 
@@ -172,7 +180,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Dhaka IT Demo Student',
                 'password' => $this->quickHash('password'),
-                'email_verified_at' => now(),
+                ...$loginDefaults,
             ]
         );
 

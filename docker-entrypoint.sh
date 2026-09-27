@@ -14,6 +14,16 @@ php artisan storage:link || true
 # Apply migrations (fast when already applied)
 php artisan migrate --force
 
+# Optional one-shot reset for ephemeral/demo deploys.
+# Set FORCE_RESEED=true on the service to wipe the local SQLite database and
+# rebuild it from the seeders on the next boot. This is intentionally opt-in
+# (and only ever touches a SQLite file) so a managed MySQL/Postgres database
+# can never be destroyed by accident. Remember to unset it afterwards.
+if [ "$FORCE_RESEED" = "true" ] && [ "$DB_CONNECTION" = "sqlite" ]; then
+    echo "FORCE_RESEED=true - rebuilding SQLite database from seeders..."
+    php artisan migrate:fresh --seed --force
+fi
+
 # Seed only when the database is empty (first boot / fresh deploy)
 # Use Laravel's configured connection instead of opening a hard-coded SQLite
 # database. This works with SQLite, MySQL, and PostgreSQL alike.

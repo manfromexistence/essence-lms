@@ -149,6 +149,39 @@ curl -I https://portal.dhakaitinstitute.com
 php artisan migrate:status
 ```
 
+## Render deployment
+
+The service is defined in `render.yaml` (Docker runtime, health check `/up`).
+A push to `main` auto-deploys. The container seeds the database only when it is
+empty (see `docker-entrypoint.sh`), so redeploys never overwrite live data.
+
+### Reset the seeded (SQLite) database
+
+On the free plan the SQLite file is on an ephemeral filesystem, and the
+entrypoint skips seeding once users exist. To rebuild it from the current
+seeders after a change to the seed data:
+
+1. Render dashboard → the web service → **Environment**.
+2. Add `FORCE_RESEED` = `true`.
+3. Trigger **Manual Deploy → Deploy latest commit** (or push a commit).
+4. Once the deploy is healthy, **delete the `FORCE_RESEED` variable** so the
+   next boot does not wipe the database again.
+
+`FORCE_RESEED` is intentionally ignored unless `DB_CONNECTION=sqlite`, so it can
+never destroy a managed MySQL/PostgreSQL database.
+
+### Demo logins after a fresh seed
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | `admin@gmail.com` | `password` |
+| Teacher | `teacher@gmail.com` | `password` |
+| Student | `student@gmail.com` | `password` |
+
+For a real deployment, set `INITIAL_ADMIN_EMAIL` + a 16+ character
+`INITIAL_ADMIN_PASSWORD` (and, optionally, the `DEFAULT_*_EMAIL` /
+`DEFAULT_*_PASSWORD` pairs) instead of relying on the demo accounts above.
+
 ## Troubleshooting
 
 - `ext-fileinfo missing` / `league/flysystem requires ext-fileinfo` → enable `fileinfo` in Select PHP Version + `extension=fileinfo.so` in php.ini.

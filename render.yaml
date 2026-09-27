@@ -23,6 +23,12 @@ services:
       # WARNING: free-plan ephemeral filesystem — attach a paid persistent disk
       # at /var/www/html/database AND /var/www/html/storage, or switch
       # DB_CONNECTION/DB_URL to managed PostgreSQL before real admissions.
+      #
+      # One-shot reset: temporarily add FORCE_RESEED=true to rebuild this SQLite
+      # database from the seeders on the next deploy (remember to remove it
+      # afterwards so later boots do not wipe data).
+      - key: FORCE_RESEED
+        value: "false"
       - key: SESSION_DRIVER
         value: file
       - key: QUEUE_CONNECTION
