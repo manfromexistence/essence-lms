@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-09-27 — HOTFIX #2: admission 500 caused by a wedged ID sequence
+
+### Fixed — `StudentIdGenerator` could never recover from an occupied sequence
+
+- **Symptom (live):** after the overflow hotfix landed, the *first* admission
+  succeeded but **every subsequent one 500ed**, deterministically, for both
+  online and offline courses:
+  `RuntimeException: Unable to generate unique student ID after 10 attempts`
+  (`StudentIdGenerator.php:234`).
+- **Root cause:** `getNextSequence()` looked at a **single row — the last one by
+  `id`** — and incremented its trailing digits. That is not a safe source of
+  truth: whenever the most recent row's tail already equalled the value being
+  generated, `generateUnique()`'s ten retries each recomputed the *same*
+  colliding ID and the loop exhausted itself. Proven live with a temporary
+  diagnostic route that dumped the student table and the exact would-be ID.
+- **Fix:**
+  - `getNextSequence()` now scans **every registration number issued this year**
+    and returns `highest trailing sequence + 1`. The result is idempotent and
+    independent of insertion order, so retries make real progress.
+  - `generateUnique()` now passes an escalating `$sequenceOffset` on each retry,
+    so even a stubbornly occupied sequence can never wedge an admission.
+- Verified live: **6 sequential online admissions all return `302`** (they all
+  500ed before), and the earlier four-course matrix now passes.
+- Regression coverage: `StudentIdGeneratorTest` grew from 4 → 7 tests, including
+  `test_admission_succeeds_when_the_latest_row_collides_with_the_next_sequence`
+  and `test_next_sequence_uses_the_highest_number_not_the_last_row`. The latter
+  **fails on the old logic** and passes on the fix.
+
+### Added — test coverage
+
+- Suite is now **121 tests / 501 assertions** (was 118 / 495).
+
 ## 2026-09-27 — HOTFIX: admission 500 caused by an integer overflow in the ID generator
 
 ### Fixed — `StudentIdGenerator::getNextSequence()` returned a float

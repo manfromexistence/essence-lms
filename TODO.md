@@ -39,6 +39,8 @@ Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[
 - [x] V3. Newly created draft course appears in the `/admission/offline` dropdown.
 - [x] V4. **Live browser audit of `https://dhaka-it-institute.onrender.com`** — homepage, `/courses`, `/admission`, `/admission/offline`, `/login`, `/forgot-password`, `/certificates/verify` all render correctly.
 - [x] V5. **Live bug found & fixed:** `POST /admission` returned HTTP 500. Reproduced locally (`received 500`), root-caused to the inline sync-queue email dispatch, fixed with a `\Throwable` guard, and covered by a regression test.
+- [x] V6. **Live bug #2 found & fixed:** after the overflow hotfix, every admission *past the first* returned HTTP 500 with `RuntimeException: Unable to generate unique student ID after 10 attempts`. Root cause: `getNextSequence()` read only the **last row by id** and incremented its tail, so all 10 retries recomputed the same colliding ID. Fixed by scanning the whole year for the **highest** trailing sequence and escalating an offset per retry.
+- [x] V7. **Live verification after the fix:** 6 sequential online admissions + the full 4-course matrix (2 offline, 2 online) all return `302 → /login`. Suite **121 tests / 501 assertions**.
 
 ### Open — requires owner action in the Render dashboard
 
@@ -52,7 +54,7 @@ Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[
 ## Current engineering status
 
 - Repository-controlled production hardening: **complete for this release scope**
-- Automated release checks: **113 tests / 474 assertions passing** — verified 2026-09-27 (`php artisan test`)
+- Automated release checks: **121 tests / 501 assertions passing** — verified 2026-09-27 (`php artisan test`)
 - Browser end-to-end verification: **every admin (20), teacher (5) and student (9) route returns HTTP 200**; exam create submits and persists; public pages render off the compiled Vite bundle (no CDN)
 - Registration flow: **applicant-set passwords removed**; approval emails generated credentials and forces a change on first login
 - Admission dropdown: **newly uploaded courses appear immediately** (active + draft); only retired courses hidden
