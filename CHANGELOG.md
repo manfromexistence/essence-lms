@@ -1,6 +1,26 @@
 # Changelog
 
-## 2026-09-27 — HOTFIX: admission submission returned HTTP 500 in production
+## 2026-09-27 — HOTFIX: admission 500 caused by an integer overflow in the ID generator
+
+### Fixed — `StudentIdGenerator::getNextSequence()` returned a float
+
+- **Symptom (live):** from the **second** admission onwards, every
+  `POST /admission` returned `500 Server Error` (the first ever admission
+  succeeded, then all subsequent ones failed).
+- **Root cause:** `getNextSequence()` computed `(int) $matches[1] + 1`. When a
+  student's `registration_no` ends in a digit run longer than `PHP_INT_MAX`,
+  the `(int)` cast saturates to `PHP_INT_MAX`, and `+ 1` **overflows into a
+  float**. The method is declared `: int`, so PHP 8.3 throws
+  `TypeError: Return value must be of type int, float returned` — 500ing the
+  request. Reproduced byte-for-byte against the live container.
+- **Fix:** added a private `safeInt()` helper that clamps any parsed value to
+  `PHP_INT_MAX` and never lets arithmetic overflow. `getNextSequence()` now
+  always returns an `int`; absurd/legacy sequence values fall back to the
+  configured start number instead of crashing. `Student::creating()` also
+  casts its `str_pad()` argument explicitly.
+- Regression coverage: `tests/Feature/StudentIdGeneratorTest.php` (4 tests),
+  including an end-to-end double-admission test and a legacy-row test. Removing
+  the guard reproduces the exact live `TypeError`.
 
 ### Fixed — notification email could kill a successful admission
 
@@ -24,7 +44,7 @@
 
 ### Added — test coverage
 
-- Suite is now **114 tests / 479 assertions** (was 113 / 474).
+- Suite is now **118 tests / 495 assertions** (was 113 / 474).
 
 ## 2026-09-27 — Registration credential flow + admission course dropdown
 

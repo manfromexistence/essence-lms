@@ -146,7 +146,7 @@ class Student extends Model
                 $lastStudent = self::latest('id')->first();
                 $sequence = $lastStudent ? $lastStudent->id + 1 : 1;
 
-                $student->registration_no = $year . '-' . $batchCode . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+                $student->registration_no = $year . '-' . $batchCode . '-' . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
             }
         });
     }

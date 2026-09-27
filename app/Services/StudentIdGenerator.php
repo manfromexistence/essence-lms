@@ -84,12 +84,57 @@ class StudentIdGenerator
             ->lockForUpdate()
             ->first();
 
-        if ($lastStudent && preg_match('/(\d+)$/', $lastStudent->registration_no, $matches)) {
-            return (int) $matches[1] + 1;
+        if ($lastStudent && preg_match('/(\d+)$/', (string) $lastStudent->registration_no, $matches)) {
+            // Guard against integer overflow: a very long trailing digit run
+            // would saturate (int) to PHP_INT_MAX, and adding 1 to that yields
+            // a *float* — which fatals the strict `: int` return type on
+            // PHP 8.3 and 500s the whole admission. Cap the parsed value so the
+            // addition always stays inside the integer range.
+            $sequence = $this->safeInt($matches[1]);
+
+            if ($sequence < PHP_INT_MAX) {
+                return $sequence + 1;
+            }
+
+            // Absurdly large sequence — restart from the configured floor
+            // rather than crash the request.
+            return max(1, $this->safeInt($this->settingsService->get('student_id_sequence_start', 1)));
         }
 
         // Return the configured start number or default to 1
-        return (int) $this->settingsService->get('student_id_sequence_start', 1);
+        return max(1, $this->safeInt($this->settingsService->get('student_id_sequence_start', 1)));
+    }
+
+    /**
+     * Convert an arbitrary value to a non-negative int without ever
+     * overflowing (which would silently produce a float and break the
+     * `: int` return contract).
+     */
+    private function safeInt(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $value) ?? '';
+
+        if ($digits === '') {
+            return 0;
+        }
+
+        // Trim leading zeros; anything longer than PHP_INT_MAX's digit count
+        // can never fit in an int, so clamp it instead of letting (int)
+        // saturate and arithmetic overflow into a float.
+        $digits = ltrim($digits, '0');
+        $maxDigits = strlen((string) PHP_INT_MAX);
+
+        if (strlen($digits) > $maxDigits) {
+            return PHP_INT_MAX;
+        }
+
+        $int = (int) $digits;
+
+        return $int > PHP_INT_MAX ? PHP_INT_MAX : $int;
     }
 
     /**
