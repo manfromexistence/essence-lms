@@ -58,20 +58,27 @@ Route::get('/_diag2', function () {
         $app = app();
         $app->instance('request', $request);
 
-        $form = \App\Http\Requests\StoreStudentRequest::createFrom($request, $request);
+        // Build the FormRequest the same way the router does.
+        $form = \App\Http\Requests\StoreStudentRequest::create(
+            $request->getUri(), 'POST', $request->all(), [], [], $request->server->all()
+        );
         $form->setContainer($app);
         $form->setRedirector($app->make('redirect'));
         $form->setRouteResolver(fn () => $route);
+
+        $out['routeName_resolved'] = $form->route()?->getName();
+        $out['isPublic'] = (function () use ($form) {
+            $m = new \ReflectionMethod($form, 'isPublicAdmission');
+            $m->setAccessible(true);
+            return $m->invoke($form);
+        })();
+        $out['password_rules'] = json_encode($form->rules()['password']);
 
         $validator = \Illuminate\Support\Facades\Validator::make($form->all(), $form->rules());
         $out['passes'] = $validator->passes();
         if ($validator->fails()) {
             $out['errors'] = $validator->errors()->toArray();
         }
-        $out['routeName'] = $route?->getName();
-        $out['isPublic'] = method_exists($form, 'isPublicAdmission')
-            ? (function () use ($form) { $m = new \ReflectionMethod($form, 'isPublicAdmission'); $m->setAccessible(true); return $m->invoke($form); })()
-            : 'no method';
         $out['formrequest'] = 'OK';
     } catch (\Throwable $e) {
         $out['formrequest'] = 'FAILED';
