@@ -139,6 +139,12 @@ Route::middleware('auth')->group(function () {
 
         // Online Exam Management
         Route::middleware('student.exam.access')->group(function() {
+            // Literal `exams/...` routes MUST be registered before the resource
+            // route below: Route::resource('exams') declares GET exams/{exam},
+            // which would otherwise swallow "download-template" as an exam ID and
+            // fail route-model binding with a 404.
+            Route::get('exams/download-template', [\App\Http\Controllers\Admin\OnlineExamController::class, 'downloadTemplate'])->name('exams.download-template');
+
             Route::resource('exams', \App\Http\Controllers\Admin\OnlineExamController::class);
             Route::get('mcq-exams', [\App\Http\Controllers\Admin\OnlineExamController::class, 'mcq'])->name('exams.mcq');
             Route::get('cq-exams', [\App\Http\Controllers\Admin\OnlineExamController::class, 'cq'])->name('exams.cq');
@@ -158,7 +164,6 @@ Route::middleware('auth')->group(function () {
             Route::get('exams/{exam}/import-questions', [\App\Http\Controllers\Admin\OnlineExamController::class, 'importQuestions'])->name('exams.import-questions');
             Route::post('exams/{exam}/import-questions', [\App\Http\Controllers\Admin\OnlineExamController::class, 'processImport'])->name('exams.process-import');
             Route::get('exams/{exam}/export-questions', [\App\Http\Controllers\Admin\OnlineExamController::class, 'exportQuestions'])->name('exams.export-questions');
-            Route::get('exams/download-template', [\App\Http\Controllers\Admin\OnlineExamController::class, 'downloadTemplate'])->name('exams.download-template');
 
             // Results Management
             Route::get('exams/{exam}/results/{result}', [\App\Http\Controllers\Admin\OnlineExamController::class, 'viewResult'])->name('exams.view-result');

@@ -77,6 +77,19 @@ class SalaryController extends Controller
             ->with('success', 'Salary payment recorded successfully.');
     }
 
+    /**
+     * Show a single salary payment.
+     *
+     * Route::resource('salaries') registers GET salaries/{salary}, so this method
+     * must exist or every such request dies with "Call to undefined method".
+     */
+    public function show(TeacherSalary $salary)
+    {
+        $salary->load('teacher.user');
+
+        return view('dashboard.salaries.show', compact('salary'));
+    }
+
     public function edit(TeacherSalary $salary)
     {
         $teachers = Teacher::with('user')->get();

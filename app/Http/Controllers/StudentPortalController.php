@@ -144,7 +144,10 @@ class StudentPortalController extends Controller
         }
 
         $disk = Storage::disk(config('filesystems.private'));
-        if ($disk->exists($material->file_path)) {
+
+        // A material can legitimately have no file (e.g. a placeholder row), and
+        // Flysystem::has() rejects null, so guard before touching the disk.
+        if ($material->file_path && $disk->exists($material->file_path)) {
             return $disk->download($material->file_path, $material->title);
         }
 

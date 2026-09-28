@@ -416,8 +416,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if($invoice->items && count($invoice->items) > 0)
-                            @foreach($invoice->items as $item)
+                        @php
+                            // Older rows stored `items` as a JSON string (double-encoded by
+                            // the array cast), which made count() throw. Normalise to an
+                            // array so both shapes render safely.
+                            $invoiceItems = $invoice->items;
+                            if (is_string($invoiceItems)) {
+                                $decoded = json_decode($invoiceItems, true);
+                                $invoiceItems = is_array($decoded) ? $decoded : [];
+                            }
+                            if (!is_array($invoiceItems)) {
+                                $invoiceItems = [];
+                            }
+                        @endphp
+                        @if(count($invoiceItems) > 0)
+                            @foreach($invoiceItems as $item)
                                 <tr>
                                     <td class="description">{{ $item['description'] ?? 'Fee' }}</td>
                                     <td>{{ $item['quantity'] ?? 1 }}</td>

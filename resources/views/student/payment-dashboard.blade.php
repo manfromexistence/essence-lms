@@ -94,7 +94,11 @@
                 <div class="border-2 border-gray-200 rounded-lg p-6">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800">{{ $enrollment['course']->name }}</h3>
+                            {{-- Payments are grouped by course_id; legacy/seeded rows can
+                                 have a NULL course, so never dereference the relation blindly. --}}
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                {{ $enrollment['course']->name ?? 'General / Unassigned' }}
+                            </h3>
                             <p class="text-sm text-gray-600">{{ $enrollment['course']->code ?? '' }}</p>
                         </div>
                         <div class="text-right">
@@ -133,8 +137,8 @@
                                     @elseif($payment->status === 'rejected')
                                         <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
                                     @endif
-                                    <span class="text-sm text-gray-600">{{ $payment->submitted_at->format('M d, Y') }}</span>
-                                    <span class="text-sm text-gray-600">{{ strtoupper($payment->payment_method) }}</span>
+                                    <span class="text-sm text-gray-600">{{ optional($payment->submitted_at)->format('M d, Y') ?? '—' }}</span>
+                                    <span class="text-sm text-gray-600">{{ strtoupper($payment->payment_method ?? '—') }}</span>
                                 </div>
                                 <div class="text-right">
                                     <p class="font-semibold text-gray-800">৳{{ number_format($payment->amount, 2) }}</p>
@@ -178,7 +182,7 @@
                     @foreach($payments as $payment)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {{ $payment->submitted_at->format('M d, Y') }}
+                            {{ optional($payment->submitted_at)->format('M d, Y') ?? '—' }}
                         </td>
                         <td class="px-6 py-4">
                             <p class="font-medium text-gray-900">{{ $payment->course->name ?? 'N/A' }}</p>

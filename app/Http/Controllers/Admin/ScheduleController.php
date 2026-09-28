@@ -60,6 +60,19 @@ class ScheduleController extends Controller
             ->with('success', 'Schedule created successfully.');
     }
 
+    /**
+     * Show a single class schedule.
+     *
+     * Route::resource registers GET schedules/{schedule}; without this method
+     * every such request failed with "Call to undefined method".
+     */
+    public function show(ClassSchedule $schedule)
+    {
+        $schedule->load(['batch', 'teacher.user']);
+
+        return view('dashboard.schedules.show', compact('schedule'));
+    }
+
     public function edit(ClassSchedule $schedule)
     {
         $batches = Batch::active()->get();

@@ -54,6 +54,33 @@ class MaterialController extends Controller
             ->with('success', 'Material uploaded successfully.');
     }
 
+    /**
+     * Stream / redirect to a single material.
+     *
+     * Route::resource registers GET .../materials/{material}, so this method must
+     * exist. Files live on the private disk (not publicly reachable), so they are
+     * streamed through the app rather than linked directly.
+     */
+    public function show(Course $course, CourseMaterial $material)
+    {
+        abort_unless($material->course_id === $course->id, 404);
+
+        if ($material->type === 'link') {
+            abort_unless($material->file_path, 404, 'This material has no link.');
+
+            return redirect()->away($material->file_path);
+        }
+
+        $disk = Storage::disk(config('filesystems.private'));
+        abort_unless(
+            $material->file_path && $disk->exists($material->file_path),
+            404,
+            'The file for this material is no longer available.'
+        );
+
+        return $disk->download($material->file_path, $material->title);
+    }
+
     public function edit(Course $course, CourseMaterial $material)
     {
         abort_unless($material->course_id === $course->id, 404);

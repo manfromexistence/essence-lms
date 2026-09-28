@@ -605,12 +605,35 @@ class OnlineExamController extends Controller
     // Review Submissions List
     public function reviewSubmissions(Exam $exam)
     {
-        $submissions = \App\Models\CqSubmission::where('exam_id', $exam->id)
+        $base = \App\Models\CqSubmission::where('exam_id', $exam->id);
+
+        // Paginated: the view renders ->total() and ->links(), which only exist
+        // on a paginator (a plain get() collection made the page 500).
+        $submissions = (clone $base)
             ->with(['student.user'])
             ->latest('submitted_at')
-            ->get();
+            ->paginate(20);
 
-        return view('dashboard.exams.review-submissions', compact('exam', 'submissions'));
+        // Summary tiles. These were never passed, so the view died with
+        // "Undefined variable $pendingCount".
+        $pendingCount = (clone $base)->whereNull('evaluated_at')->count();
+        $reviewedCount = (clone $base)->whereNotNull('evaluated_at')->count();
+
+        // The tile renders this as a percentage, so express it against the exam's
+        // total marks rather than as a raw average.
+        $averageScore = 0.0;
+        $averageMarks = (clone $base)->whereNotNull('marks')->avg('marks');
+        if ($averageMarks !== null && (float) $exam->total_marks > 0) {
+            $averageScore = round((float) $averageMarks / (float) $exam->total_marks * 100, 1);
+        }
+
+        return view('dashboard.exams.review-submissions', compact(
+            'exam',
+            'submissions',
+            'pendingCount',
+            'reviewedCount',
+            'averageScore'
+        ));
     }
 
     // Review Single Submission
