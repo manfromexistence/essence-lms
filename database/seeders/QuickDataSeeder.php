@@ -114,7 +114,7 @@ class QuickDataSeeder extends Seeder
                 'amount' => $amount,
                 'due_date' => now()->addDays(30),
                 'status' => $isPaid ? 'paid' : 'pending',
-                'items' => json_encode([['description' => 'Tuition Fee', 'amount' => $amount]]),
+                'items' => [['description' => 'Tuition Fee', 'amount' => $amount]],
             ]);
             
             $invoiceCount++;

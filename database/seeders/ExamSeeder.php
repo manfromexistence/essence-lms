@@ -102,7 +102,7 @@ class ExamSeeder extends Seeder
                                 'student_id' => $student->id,
                                 'started_at' => $exam->start_time,
                                 'submitted_at' => $exam->start_time->addMinutes($exam->duration_minutes - rand(5, 15)),
-                                'answers' => json_encode([]),
+                                'answers' => [],
                                 'status' => 'submitted',
                             ]);
                             

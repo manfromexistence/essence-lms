@@ -1,5 +1,108 @@
 # Changelog
 
+## 2026-09-28 — Hardening pass: 13 missing views, 6 broken routes, zero CDN
+
+A systematic sweep (every `view()` reference statically checked; all 612
+route × role combinations probed) uncovered a cluster of routes that returned
+HTTP 500 in production. All are fixed and now guarded by regression tests.
+
+### Fixed — 13 `view()` references pointed at Blade files that never existed
+
+Every one of these produced `InvalidArgumentException: View [x] not found`:
+
+| Missing view | Route affected |
+|---|---|
+| `dashboard.users.create` | **`/dashboard/users/create`** — reachable from the "Add User" button |
+| `dashboard.users.edit` | `/dashboard/users/{user}/edit` |
+| `dashboard.users.show` | `/dashboard/users/{user}` |
+| `dashboard.salaries.create` | `/dashboard/salaries/create` |
+| `dashboard.salaries.edit` | `/dashboard/salaries/{salary}/edit` |
+| `dashboard.inventory.create` | `/dashboard/inventory/create` |
+| `dashboard.inventory.edit` | `/dashboard/inventory/{item}/edit` |
+| `dashboard.materials.create` | `/dashboard/courses/{course}/materials/create` |
+| `dashboard.materials.edit` | `/dashboard/courses/{course}/materials/{material}/edit` |
+| `dashboard.roles.show` | **`/dashboard/roles/{role}`** — reachable from the Roles list |
+| `dashboard.roles.edit` | `/dashboard/roles/{role}/edit` |
+| `dashboard.reports.index` | report hub (controller action existed, no route) |
+| `student.cq-submission` | **`/student/cq-submission/{submission}`** — reachable after uploading a CQ answer |
+
+### Fixed — resource routes whose controller methods were never written
+
+`Route::resource(...)` registers `show`/`edit` automatically, but three
+controllers never implemented `show`, so those URLs died with
+`Call to undefined method`:
+
+- `SalaryController::show()` — added, plus a detail view.
+- `MaterialController::show()` — added; streams the file from the **private**
+  disk (files are not publicly reachable) and redirects for external links.
+- `ScheduleController::show()` — added, plus a detail view.
+
+### Fixed — `/dashboard/exams/download-template` returned 404
+
+`Route::resource('exams', …)` registers `GET exams/{exam}`, and it was declared
+**before** the literal `exams/download-template` route — so "download-template"
+was bound as an exam ID, route-model binding failed and the request 404'd.
+The three "download template" links on the import page were all dead. Fixed by
+registering literal `exams/...` routes before the resource route.
+
+### Fixed — other broken routes
+
+- **`/dashboard/exams/{exam}/review`** → 500 `Collection::total does not exist`
+  (controller passed `->get()`, view called `->total()`/`->links()`) and
+  `Undefined variable $pendingCount`. Now paginated, with the pending /
+  reviewed / average-score tiles computed and passed.
+- **`/student/payment/dashboard`** → 500 `Attempt to read property "name" on
+  null`. 39 of 59 seeded payments have a `NULL course_id`, so the grouped
+  "course" was null and the view dereferenced it. Guarded the view and the
+  payment-date formatting.
+- **`/dashboard/payments/invoices/{invoice}`** → 500 `count(): Argument #1 must
+  be of type Countable|array, string given`. `Invoice::items` is array-cast but
+  three seeders wrapped the value in `json_encode()`, **double-encoding** it so
+  it hydrated as a string. Seeders fixed; the view also normalises legacy rows.
+- **`/student/payments/{payment}/receipt`** → 500 `View [pdf.receipt] not
+  found`. The receipt PDF template was missing entirely; added.
+- **`/student/materials/{material}/download`** → 500 `Flysystem::has():
+  Argument #1 must be of type string, null given` when a material has no file.
+
+### Fixed — `Exam::name` alias
+
+`Exam` stores `title`, but several views and PDF exports read `$exam->name`.
+An undefined attribute returns null, so those headings silently rendered blank.
+Added a `getNameAttribute()` accessor — one change fixes every call site.
+
+### Changed — removed all external CDN dependencies
+
+The public site, login and certificate pages previously hard-depended on
+`cdn.tailwindcss.com`, `cdn.jsdelivr.net` (Alpine, Chart.js, Sortable) and
+`cdnjs.cloudflare.com` (Font Awesome, Fabric). A CDN outage broke the UI, and
+every visitor's IP leaked to third parties. Now:
+
+- `resources/js/app.js` — Alpine + Font Awesome, loaded on every page.
+- `resources/js/admin.js` — Chart.js, Sortable, Fabric, loaded only by the
+  admin layout so the public site does not pay for ~500 KB it never uses.
+- Fabric migrated **v5 → v7.4.0** (`setBackgroundImage` removed; `fromURL` and
+  `loadFromJSON` now return Promises; `getPointer` → `getScenePoint`).
+- An `overrides.tar` entry pins a patched `tar`, clearing the advisory chain
+  pulled in by Fabric's optional `canvas` dependency.
+
+### Added — integrity regression tests
+
+`tests/Feature/ViewAndRouteIntegrityTest.php`:
+- every `view()` reference in `app/` + `routes/` must resolve to a Blade file;
+- every GET route must point at a controller method that exists;
+- every parameterless GET route must return non-5xx for a signed-in admin;
+- `Invoice::items` must round-trip as an array (not a JSON string);
+- `Exam::name` must alias `title`.
+
+Both guards were verified to fail when a view is deliberately removed.
+
+### Verified
+
+- `php artisan test` → **126 passed / 511 assertions**
+- `composer audit --locked` → **0 advisories**; `npm audit` → **0 vulnerabilities**
+- **612 route × role combinations probed → 0 server errors**
+- `migrate:fresh --seed` → clean; invoice `items` and exam `answers` hydrate as arrays
+
 ## 2026-09-27 — HOTFIX #2: admission 500 caused by a wedged ID sequence
 
 ### Fixed — `StudentIdGenerator` could never recover from an occupied sequence

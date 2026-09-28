@@ -28,6 +28,19 @@ class Exam extends Model
     ];
 
     /**
+     * Alias for the `title` column.
+     *
+     * Several views and exports were written against `$exam->name`, but the
+     * column is `title` — so those headings silently rendered empty (an
+     * undefined attribute returns null rather than raising). Exposing `name`
+     * as an accessor fixes every one of those call sites at once.
+     */
+    public function getNameAttribute(): ?string
+    {
+        return $this->attributes['title'] ?? null;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

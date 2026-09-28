@@ -453,7 +453,7 @@ class ComprehensiveDataSeeder extends Seeder
                                 'student_id' => $student->id,
                                 'started_at' => $exam->start_time,
                                 'submitted_at' => $exam->start_time->addMinutes($exam->duration_minutes - rand(5, 20)),
-                                'answers' => json_encode([]),
+                                'answers' => [],
                                 'status' => 'submitted',
                             ]);
                             
@@ -517,12 +517,15 @@ class ComprehensiveDataSeeder extends Seeder
                     'amount' => $amount,
                     'due_date' => $dueDate,
                     'status' => $isPaid ? 'paid' : ($isOverdue ? 'overdue' : 'pending'),
-                    'items' => json_encode([
+                    // Invoice::items is cast to 'array', so pass a plain array here.
+                    // Wrapping it in json_encode() double-encoded the value and made
+                    // $invoice->items resolve to a string, breaking the invoice page.
+                    'items' => [
                         [
                             'description' => $this->getInvoiceDescription($i),
                             'amount' => $amount,
                         ]
-                    ]),
+                    ],
                 ]);
                 
                 $invoiceCount++;

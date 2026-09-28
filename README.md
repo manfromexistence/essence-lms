@@ -9,7 +9,7 @@ Live: **https://portal.dhakaitinstitute.com** (cPanel subdomain `portal.dhakaiti
 ## Tech Stack
 
 - **Backend:** Laravel 12, PHP **8.2+** (local 8.5.8, cPanel 8.5.9), Composer 2.10
-- **Frontend:** Blade + Vite, Tailwind, vanilla JS
+- **Frontend:** Blade + Vite, Tailwind. Alpine.js, Chart.js, SortableJS, Fabric.js and Font Awesome are **bundled from npm** (no external CDN at runtime); Chart/Sortable/Fabric ship in a separate `admin.js` entry so the public site does not download them.
 - **DB:** SQLite locally (`database/database.sqlite`), **MySQL/MariaDB** on cPanel (`dhakaiti_portal`)
 - **Storage:** `public/images/` for public assets (no `storage:link` needed for homepage), `storage/app/private` for S3/private disks
 - **Tooling:** Node 24, npm, Pest/PHPUnit, Pint

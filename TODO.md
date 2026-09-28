@@ -41,6 +41,7 @@ Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[
 - [x] V5. **Live bug found & fixed:** `POST /admission` returned HTTP 500. Reproduced locally (`received 500`), root-caused to the inline sync-queue email dispatch, fixed with a `\Throwable` guard, and covered by a regression test.
 - [x] V6. **Live bug #2 found & fixed:** after the overflow hotfix, every admission *past the first* returned HTTP 500 with `RuntimeException: Unable to generate unique student ID after 10 attempts`. Root cause: `getNextSequence()` read only the **last row by id** and incremented its tail, so all 10 retries recomputed the same colliding ID. Fixed by scanning the whole year for the **highest** trailing sequence and escalating an offset per retry.
 - [x] V7. **Live verification after the fix:** 6 sequential online admissions + the full 4-course matrix (2 offline, 2 online) all return `302 → /login`. Suite **121 tests / 501 assertions**.
+- [x] V8. **Hardening sweep (2026-09-28).** Statically checked every `view()` reference and probed **all 612 route × role combinations**. Found and fixed **13 missing Blade views**, **3 unimplemented resource `show()` methods**, a route-ordering 404 on `exams/download-template`, a pagination bug on the exam review page, a null-course crash on the student payment dashboard, a double-encoded `Invoice::items`, a missing `pdf.receipt` template, and an unguarded null path in the material download. Also removed **all external CDN dependencies**. Suite is now **126 tests / 511 assertions**; `npm audit` back to **0 vulnerabilities**. New `ViewAndRouteIntegrityTest` guards the whole class.
 
 ### Open — requires owner action in the Render dashboard
 
@@ -54,11 +55,13 @@ Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[
 ## Current engineering status
 
 - Repository-controlled production hardening: **complete for this release scope**
-- Automated release checks: **121 tests / 501 assertions passing** — verified 2026-09-27 (`php artisan test`)
-- Browser end-to-end verification: **every admin (20), teacher (5) and student (9) route returns HTTP 200**; exam create submits and persists; public pages render off the compiled Vite bundle (no CDN)
+- Automated release checks: **126 tests / 511 assertions passing** — verified 2026-09-28 (`php artisan test`)
+- Route integrity: **612 route × role combinations probed with 0 server errors**; every `view()` reference resolves
+- External CDN dependencies: **none** — Alpine, Chart.js, Sortable, Fabric and Font Awesome all ship in the Vite bundle
+- Browser end-to-end verification: **every admin, teacher and student route returns HTTP 200**; exam create submits and persists; public pages render off the compiled Vite bundle (no CDN)
 - Registration flow: **applicant-set passwords removed**; approval emails generated credentials and forces a change on first login
 - Admission dropdown: **newly uploaded courses appear immediately** (active + draft); only retired courses hidden
-- Known dependency advisories: **0 Composer / 0 npm (dev + production)** — verified 2026-09-27 with `composer audit --locked` and `npm audit`
+- Known dependency advisories: **0 Composer / 0 npm (dev + production)** — re-verified 2026-09-28 with `composer audit --locked` and `npm audit`
 - Seed integrity: **0 exams with end_time < start_time**, all demo accounts have linked Student/Teacher profiles and batches
 - Public-launch acceptance: pending the client/infrastructure items below
 

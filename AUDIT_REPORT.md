@@ -166,3 +166,55 @@ All P0 and P1 items above are **fixed and verified**. See `docs/FIX_WALKTHROUGH.
 
 **Final score: 100/100** for deliverable engineering scope.
 Caveat unchanged: launch readiness still depends on the owner/infrastructure items in `TODO.md` (DNS, HTTPS, MySQL/S3, backups + restore drill, legal text, pen-test) — those are outside code and cannot be scored by a repo audit.
+
+---
+
+# SECOND PASS — 2026-09-28
+
+The 2026-09-27 re-score checked the *reported* P0/P1 items but did not exhaustively
+verify the route surface. A systematic sweep found a further cluster of
+production-breaking 500s that the original audit missed.
+
+**Method:** static check of every `view()` reference in `app/` + `routes/`
+against the actual Blade files, plus an in-process probe of **all 612
+route × role combinations** (every GET route × admin/teacher/student, with real
+model IDs substituted for route parameters).
+
+## What was found
+
+| # | Issue | Routes affected |
+|---|---|---|
+| 1 | **13 `view()` references had no Blade file** (`View [x] not found`) | `users.create/show/edit`, `salaries.create/edit`, `inventory.create/edit`, `materials.create/edit`, `roles.show/edit`, `reports.index`, `student.cq-submission` |
+| 2 | **3 resource `show()` methods never written** | `SalaryController::show`, `MaterialController::show`, `ScheduleController::show` |
+| 3 | **Route-ordering 404** — `exams/{exam}` swallowed `exams/download-template` | 3 "download template" links on the import page |
+| 4 | **Pagination bug** — `->get()` passed where the view called `->total()`/`->links()`; plus `$pendingCount`/`$reviewedCount`/`$averageScore` never passed | `/dashboard/exams/{exam}/review` |
+| 5 | **Null-course crash** — 39/59 seeded payments have `NULL course_id`; the view dereferenced the grouped course | `/student/payment/dashboard` |
+| 6 | **Double-encoded JSON** — 3 seeders wrapped array-cast `items`/`answers` in `json_encode()` | `/dashboard/payments/invoices/{invoice}` |
+| 7 | **Missing PDF template** | `/student/payments/{payment}/receipt` |
+| 8 | **Null path into Flysystem** | `/student/materials/{material}/download` |
+| 9 | **`Exam::name` read but the column is `title`** — headings silently rendered blank in 7 places | several views + PDF exports |
+| 10 | **All external CDNs** (Tailwind Play, jsDelivr, cdnjs) | public site, login, certificates, admin |
+
+Several of these were reachable from a normal click path — the "Add User"
+button, the Roles list "Details" button, and the CQ answer-upload redirect.
+
+## Status after the fix
+
+| Check | Result |
+|---|---|
+| `php artisan test` | **126 passed / 511 assertions** |
+| Route × role probe | **612 combinations, 0 server errors** |
+| `view()` reference check | **all resolve** |
+| `composer audit --locked` | **0 advisories** |
+| `npm audit` | **0 vulnerabilities** |
+| External CDN dependencies | **none** |
+| `migrate:fresh --seed` | clean; `Invoice::items` and `ExamAttempt::answers` hydrate as arrays |
+
+New guard: `tests/Feature/ViewAndRouteIntegrityTest.php` asserts that every
+`view()` reference resolves, every GET route maps to an existing controller
+method, and every parameterless GET route returns non-5xx. Both guards were
+verified to **fail** when a view is deliberately removed.
+
+**Lesson for the original audit:** probing "80+ routes" with a session was not
+enough — the broken routes were the ones nobody clicked. Checking the *whole*
+surface (every `view()` call, every route × role) is what actually finds these.

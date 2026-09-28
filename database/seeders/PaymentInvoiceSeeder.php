@@ -46,7 +46,10 @@ class PaymentInvoiceSeeder extends Seeder
                     'amount' => $amount,
                     'due_date' => $dueDate,
                     'status' => $isPaid ? 'paid' : ($isOverdue ? 'overdue' : 'pending'),
-                    'items' => json_encode([
+                    // Invoice::items is cast to 'array', so pass a plain array here.
+                    // Wrapping it in json_encode() double-encoded the value and made
+                    // $invoice->items resolve to a string, breaking the invoice page.
+                    'items' => [
                         [
                             'description' => $faker->randomElement([
                                 'Monthly Tuition Fee',
@@ -58,7 +61,7 @@ class PaymentInvoiceSeeder extends Seeder
                             ]),
                             'amount' => $amount,
                         ]
-                    ]),
+                    ],
                 ]);
                 
                 $invoiceCount++;
