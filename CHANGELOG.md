@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-09-28 (d) — Deploys were failing: Apache started too late
+
+Pushes appeared not to deploy. The Render build log showed the real cause:
+
+```
+==> Deploying...
+==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs
+==> Timed Out
+==> Port scan timeout reached, no open ports detected.
+```
+
+The Docker build **succeeded** — the container just never opened a port in time.
+`docker-entrypoint.sh` started `apache2-foreground` as its **last** step, after
+all the database work. Measured on a fast local machine:
+
+| Boot step | Time |
+|---|---|
+| `migrate --force` on a fresh DB (85 migrations) | ~30s |
+| full demo seed | ~20s |
+| Role + DefaultRoleAccount seeders | ~2s |
+| `artisan optimize` (view:cache) | ~13s |
+| **before Apache started** | **~65s** |
+
+Render's port-scan timeout is ~60s, and a free-tier CPU is slower still — so the
+deploy was killed before Apache ever bound port 80, Render marked it failed, and
+**kept serving the previous build**. That is indistinguishable from "my push
+never deployed", which is why it looked like GitHub was not connected.
+
+### Fixed
+
+`docker-entrypoint.sh` now starts Apache **first**, before any database work.
+Laravel's `/up` health route never touches the database, so Render's health check
+passes as soon as the port is open; migrations and seeding then run while the
+port is already bound.
+
+Verified with a stubbed `apache2-foreground` on a fresh database:
+
+| | Before | After |
+|---|---|---|
+| Port bound at | ~34–65s | **~2s** |
+
+Also in this file:
+- the "is the database seeded?" check no longer shells out to
+  `artisan tinker` — that boots PsySH (~4s) and can hang with no TTY attached.
+  It is now a direct query via `php -r`.
+- `TERM`/`INT` are trapped and forwarded to Apache so the container shuts down
+  cleanly instead of being SIGKILLed.
+
 ## 2026-09-28 (c) — Properly themed checkboxes (login looked native)
 
 The earlier checkbox fix only set `accent-color`, which merely tints the
