@@ -5,7 +5,6 @@
 @section('page-description', 'Review and grade student exam submissions')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.css">
 <style>
     .canvas-container {
         border: 2px solid #e5e7eb;

@@ -28,19 +28,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-    <!-- Tailwind CSS (compiled via Vite — includes all classes used by the
-         public views because resources/css/app.css scans resources/views/**) -->
+    <!-- Tailwind CSS + Alpine.js + Font Awesome, all compiled and served from
+         our own origin via Vite (no external CDN required). -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <!-- Alpine.js (required by x-ui components: tabs, dialogs, dropdowns...) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
     </style>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     @php
         $settingsService = app(\App\Services\SettingsService::class);

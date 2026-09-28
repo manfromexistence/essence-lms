@@ -216,7 +216,8 @@
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+{{-- Fabric.js ships in resources/js/admin.js (bundled by Vite), exposed as
+     window.fabric. This page uses the Fabric v7 API. --}}
 <script>
     let canvases = [];
     let currentCanvas = null;
@@ -243,25 +244,48 @@
             height: 1000
         });
 
-        // Load background image
-        fabric.Image.fromURL(imagePath, function(img) {
-            const scale = Math.min(800 / img.width, 1000 / img.height);
-            img.scale(scale);
-            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-            canvas.setWidth(img.width * scale);
-            canvas.setHeight(img.height * scale);
-        });
+        // Load background image.
+        // Fabric v7: fromURL() returns a Promise, and the background is assigned
+        // through the `backgroundImage` property because setBackgroundImage()
+        // was removed in v6.
+        fabric.FabricImage.fromURL(imagePath)
+            .then(function(img) {
+                const scale = Math.min(800 / img.width, 1000 / img.height);
+                img.scale(scale);
+                canvas.backgroundImage = img;
+                canvas.setWidth(img.width * scale);
+                canvas.setHeight(img.height * scale);
+                canvas.requestRenderAll();
+            })
+            .catch(function(err) {
+                console.error('Could not load answer sheet image', imagePath, err);
+            });
 
-        // Set initial brush
+        // Set initial brush.
+        // Fabric v7 does not always materialise a default free-drawing brush when
+        // isDrawingMode is enabled through the constructor options, so create one
+        // explicitly before touching its properties (the v5 code assumed it
+        // already existed and would throw a TypeError here otherwise).
+        if (!canvas.freeDrawingBrush) {
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+        }
         canvas.freeDrawingBrush.color = currentColor;
         canvas.freeDrawingBrush.width = brushSize;
 
         canvases[index] = canvas;
         if (index === 0) currentCanvas = canvas;
 
-        // Load existing annotations if any
         @if($submission->annotated_files && isset($submission->annotated_files[$index]))
-        canvas.loadFromJSON(@json($submission->annotated_files[$index]), canvas.renderAll.bind(canvas));
+        // Load existing annotations if any.
+        // Fabric v7: loadFromJSON() returns a Promise; the v5 trailing-callback
+        // form is gone (the 2nd argument is now a reviver, not a callback).
+        canvas.loadFromJSON(@json($submission->annotated_files[$index]))
+            .then(function() {
+                canvas.requestRenderAll();
+            })
+            .catch(function(err) {
+                console.error('Could not restore saved annotations', err);
+            });
         @endif
     }
 
@@ -308,7 +332,8 @@
                 canvas.isDrawingMode = false;
                 canvas.on('mouse:down', function(options) {
                     if (options.target) return;
-                    const pointer = canvas.getPointer(options.e);
+                    // Fabric v7 renamed getPointer() to getScenePoint().
+                    const pointer = canvas.getScenePoint(options.e);
                     const text = new fabric.IText('Type here', {
                         left: pointer.x,
                         top: pointer.y,

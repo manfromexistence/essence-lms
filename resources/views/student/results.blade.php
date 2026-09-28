@@ -145,8 +145,11 @@
 
 @if(count($trends['scores']) > 1)
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Chart.js is provided by the bundled admin.js module. Module scripts are
+    // deferred, so Chart is not defined yet while this inline script is parsed —
+    // defer initialisation until the DOM is ready.
+    document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('performance-chart').getContext('2d');
     new Chart(ctx, {
         type: 'line',
@@ -170,6 +173,7 @@
                 }
             }
         }
+    });
     });
 </script>
 @endpush

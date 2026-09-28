@@ -13,14 +13,11 @@
     <link rel="icon" href="{{ $faviconUrl }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=20260802">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
-    <!-- Alpine.js for interactive components -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
+    {{-- app.css (Tailwind + brand tokens), app.js (Alpine + Font Awesome) and
+         admin.js (Chart.js / Sortable / Fabric). Everything is served from our
+         own origin — no external script or stylesheet CDN is required. --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/admin.js'])
+
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">

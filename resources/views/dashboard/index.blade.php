@@ -370,8 +370,7 @@
 @endsection
 
 @push('scripts')
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{{-- Chart.js ships in resources/js/admin.js (bundled by Vite) --}}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
