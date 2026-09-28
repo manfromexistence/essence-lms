@@ -12,7 +12,17 @@
     $selectedValue = old($name, $selected);
 @endphp
 
-<div {{ $attributes->merge(['class' => ($label ? 'space-y-1.5 ' : '') . 'custom-select-group relative']) }} id="select-group-{{ $name }}" data-persist="{{ $persist ? 'true' : 'false' }}" data-name="{{ $name }}">
+{{--
+    `id` is deliberately excluded from $attributes on both elements below.
+    The wrapper needs id="select-group-{{ $name }}" and the native select needs
+    id="{{ $name }}". Merging the caller's id into BOTH produced two `id`
+    attributes per tag (HTML keeps the first), so the wrapper div ended up with
+    id="course_id" and came first in document order — meaning
+    getElementById('course_id') returned the DIV, not the <select>.
+    initCustomSelect() then read `.options` off a div, threw, and aborted the
+    init loop, which left EVERY custom dropdown on the page empty.
+--}}
+<div {{ $attributes->except(['id'])->merge(['class' => ($label ? 'space-y-1.5 ' : '') . 'custom-select-group relative']) }} id="select-group-{{ $name }}" data-persist="{{ $persist ? 'true' : 'false' }}" data-name="{{ $name }}">
     @if($label)
         <label for="{{ $name }}" class="block text-sm font-semibold text-gray-700">
             {{ $label }} @if($required)<span class="text-red-500">*</span>@endif
@@ -20,7 +30,7 @@
     @endif
 
     <!-- Native Hidden Select for Form Submission -->
-    <select name="{{ $name }}" id="{{ $name }}" {{ $attributes->merge(['class' => 'opacity-0 absolute z-[-1] w-full h-full pointer-events-none']) }} @if($required) required @endif tabindex="-1">
+    <select name="{{ $name }}" id="{{ $name }}" {{ $attributes->except(['id'])->merge(['class' => 'opacity-0 absolute z-[-1] w-full h-full pointer-events-none']) }} @if($required) required @endif tabindex="-1">
         {{ $slot }}
         @foreach($options as $value => $label)
              <option value="{{ $value }}" {{ $selectedValue == $value ? 'selected' : '' }}>{{ $label }}</option>
@@ -65,11 +75,18 @@
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize all custom selects
+            // Initialize all custom selects.
+            // Each one is wrapped in try/catch on purpose: a single broken select
+            // used to throw here and abort the whole loop, leaving every other
+            // dropdown on the page empty with no visible error.
             const selects = document.querySelectorAll('.custom-select-group');
             selects.forEach(group => {
                 const name = group.id.replace('select-group-', '');
-                initCustomSelect(name);
+                try {
+                    initCustomSelect(name);
+                } catch (e) {
+                    console.error('initCustomSelect failed for "' + name + '"', e);
+                }
 
                 // Persistence Load
                 const persist = group.dataset.persist === 'true';
@@ -112,6 +129,13 @@
             const nativeSelect = document.getElementById(name);
             const list = document.getElementById('select-list-' + name);
             const textSpan = document.getElementById('select-text-' + name);
+
+            // Guard: if the id resolves to something that is not a <select>
+            // (duplicate id, wrapper div, etc.) bail out instead of throwing.
+            if (!nativeSelect || !list || !nativeSelect.options) {
+                console.error('renderOptions: no native <select> found for "' + name + '"');
+                return;
+            }
             
             list.innerHTML = '';
             let hasSelection = false;

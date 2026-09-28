@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-09-28 (e) — CRITICAL: admission form unusable, no course selectable
+
+Reported by the client: on `/admission` both the **Learning Mode** and **Course**
+dropdowns showed only "Select Option" with nothing in them, so applicants could
+not choose a course and could not submit at all.
+
+Reproduced on the live site: both custom dropdowns rendered **0 items**.
+
+### Root cause 1 — a duplicate `id` shadowed the real `<select>`
+
+`components/ui/select.blade.php` merged the caller's `$attributes` into **both**
+the wrapper `<div>` and the native `<select>`, while also hard-coding an id on
+each. That produced two `id` attributes per tag, and HTML keeps the **first**:
+
+```html
+<div  ... id="course_id" id="select-group-course_id" ...>   <- div keeps course_id
+<select name="course_id" id="course_id" ... id="course_id">  <- duplicated
+```
+
+Since the wrapper comes first in document order,
+`document.getElementById('course_id')` returned the **div**, not the select.
+`initCustomSelect()` then read `.options` off a div, **threw, and aborted its
+`forEach` loop** — so every custom dropdown on the page stayed empty. That is why
+*Learning Mode* was broken too, even though it had nothing to do with courses.
+
+Fixed by excluding `id` from the merged attributes on both elements, so the
+wrapper owns `select-group-{name}` and the `<select>` owns `{name}`. The init
+loop is now also wrapped in try/catch and `renderOptions()` guards against a
+non-select, so one bad control can never blank the rest again.
+
+### Root cause 2 — the mode filter hid every course on load
+
+```js
+option.hidden = option.dataset.mode !== mode.value;
+```
+
+With no learning mode selected yet, `mode.value` is `''`, so **every** course
+failed the comparison and was hidden. Now courses are only narrowed once a mode
+is actually chosen. The same defect was present in the admin student create and
+edit forms and is fixed there too.
+
+### Verified
+
+- `/admission` dropdowns populate: Learning Mode 2 items, Course 4 items.
+- Mode filtering still works: Offline → 3 offline courses; Online → 2 online;
+  switching back restores offline.
+- New `CustomSelectComponentTest` (5 tests) asserts no duplicate ids, that the
+  plain id sits on the `<select>` and not the wrapper, and that the filter only
+  hides when a mode is chosen.
+
+Suite: **133 tests / 529 assertions**.
+
 ## 2026-09-28 (d) — Deploys were failing: Apache started too late
 
 Pushes appeared not to deploy. The Render build log showed the real cause:

@@ -149,7 +149,9 @@
             function filterCourses(resetSelection = false) {
                 Array.from(els.course.options).forEach(option => {
                     if (!option.value) return;
-                    option.hidden = option.dataset.mode !== els.mode.value;
+                    // Only narrow the list once a mode is chosen. Hiding when the
+                    // mode is still empty made every course disappear.
+                    option.hidden = els.mode.value !== '' && option.dataset.mode !== els.mode.value;
                     option.disabled = option.hidden;
                 });
 

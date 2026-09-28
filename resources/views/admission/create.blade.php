@@ -84,11 +84,28 @@
 document.addEventListener('DOMContentLoaded', () => {
     const mode = document.getElementById('admission_mode');
     const course = document.getElementById('course_id');
+    if (!mode || !course || !course.options) return;
+
     const filter = () => Array.from(course.options).forEach(option => {
-        if (option.value) option.hidden = option.dataset.mode !== mode.value;
+        // Never hide the placeholder.
+        if (!option.value) return;
+        // Hide only once a mode is actually chosen. Previously this ran with an
+        // empty mode on page load, so every course's data-mode failed the
+        // comparison and the whole list was hidden — leaving the applicant with
+        // nothing to pick and no way to submit.
+        option.hidden = mode.value !== '' && option.dataset.mode !== mode.value;
     });
-    mode.addEventListener('change', () => { course.value = ''; filter(); if (typeof renderOptions === 'function') renderOptions('course_id'); });
+
+    mode.addEventListener('change', () => {
+        course.value = '';
+        filter();
+        if (typeof renderOptions === 'function') renderOptions('course_id');
+    });
+
     filter();
+    // Re-render so the custom dropdown reflects the filter straight away
+    // (it rebuilds its list from the native options).
+    if (typeof renderOptions === 'function') renderOptions('course_id');
 });
 </script>
 @endpush
