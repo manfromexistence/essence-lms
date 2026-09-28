@@ -15,9 +15,18 @@ class BrevoEmailService
 
     public function __construct()
     {
-        $this->apiKey = Setting::getValue('brevo_api_key');
-        $this->senderEmail = Setting::getValue('brevo_sender_email') ?: config('mail.from.address');
-        $this->senderName = Setting::getValue('brevo_sender_name', 'Dhaka IT Institute');
+        // DB settings first (so an admin can override from Settings), but fall
+        // back to env vars. This matters on hosts with an ephemeral filesystem
+        // (e.g. Render's free plan): the settings table is wiped on every
+        // deploy, so a key entered through the admin UI would silently vanish
+        // and every transactional email would fail until it was re-entered.
+        // Env vars survive redeploys, so they are the durable source.
+        $this->apiKey = Setting::getValue('brevo_api_key') ?: env('BREVO_API_KEY');
+        $this->senderEmail = Setting::getValue('brevo_sender_email')
+            ?: env('BREVO_SENDER_EMAIL')
+            ?: config('mail.from.address');
+        $this->senderName = Setting::getValue('brevo_sender_name')
+            ?: env('BREVO_SENDER_NAME', 'Dhaka IT Institute');
     }
 
     /**

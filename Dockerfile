@@ -23,8 +23,12 @@ RUN composer dump-autoload --optimize --no-scripts \
 
 FROM php:8.3-apache
 
+# ca-certificates is installed explicitly so outbound HTTPS (the Brevo API used
+# for transactional email) can verify TLS. Without a CA bundle, curl fails with
+# "SSL certificate problem: unable to get local issuer certificate".
 RUN apt-get update && apt-get install -y \
-    libicu-dev libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev unzip \
+    ca-certificates libicu-dev libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev unzip \
+    && update-ca-certificates \
     && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip intl \
     && a2enmod rewrite
 

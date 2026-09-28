@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-09-28 (f) — Brevo email: config now survives deploys
+
+Transactional email (approval credentials, payment notifications) is sent through
+**Brevo's HTTP API**, not Laravel Mail — so `MAIL_MAILER` never affected it and
+the API key was the only thing that mattered.
+
+`BrevoEmailService` read the key **only** from the `settings` table. On Render's
+free plan that table is wiped on every deploy, so a key entered in the admin UI
+silently disappeared and every transactional email began failing — an approved
+applicant never received their password.
+
+### Fixed
+
+- `BrevoEmailService` now falls back to `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`
+  and `BREVO_SENDER_NAME`. DB settings still win when present, so an admin can
+  override from Settings; env vars are the durable source across redeploys.
+- `Dockerfile` installs `ca-certificates` and runs `update-ca-certificates`
+  explicitly, so outbound HTTPS to the Brevo API can verify TLS. Without a CA
+  bundle curl fails with *"SSL certificate problem: unable to get local issuer
+  certificate"* — which is exactly what happened when testing on Windows.
+- `render.yaml` declares the Brevo variables. `BREVO_API_KEY` uses `sync: false`
+  so the secret is **never committed** and must be set in the Render dashboard.
+
+### Verified against the live Brevo API
+
+- API key validated (`GET /v3/account` → 200) after the account's IP blocking was
+  deactivated — Brevo auto-activates blocking 30 days after a key's learning
+  phase, which is what produced `unrecognised IP address`.
+- Sender `ajju40959@gmail.com` confirmed `active: true`.
+- A real send returned HTTP 201 with a message id.
+- Full credential path exercised locally: `issueFor()` generated a 16-char
+  password, set `must_change_password`, and the `email_logs` row recorded
+  **`sent`** with no error.
+
+New `BrevoConfigTest` (4 tests) pins the env fallback, the DB-over-env
+precedence, and that a missing key is logged as a failed email rather than
+thrown.
+
+Suite: **137 tests / 534 assertions**.
+
 ## 2026-09-28 (e) — CRITICAL: admission form unusable, no course selectable
 
 Reported by the client: on `/admission` both the **Learning Mode** and **Course**

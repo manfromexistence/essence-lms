@@ -41,6 +41,17 @@ services:
         value: warning
       - key: MAIL_MAILER
         value: log
+      # Transactional email is sent through Brevo's HTTP API (not Laravel Mail),
+      # so MAIL_MAILER above does not affect it. The API key is deliberately NOT
+      # stored here: `sync: false` keeps it out of git and requires it to be set
+      # in the Render dashboard (Environment tab). The DB `settings` table is
+      # wiped on every deploy, so an env var is the only durable source.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        value: ajju40959@gmail.com
+      - key: BREVO_SENDER_NAME
+        value: "Dhaka IT Institute"
       # Trust Render's reverse proxy so Laravel generates https:// URLs for
       # assets and redirects (otherwise @vite emits http:// links that the
       # browser blocks as mixed content and the dashboard renders unstyled).
