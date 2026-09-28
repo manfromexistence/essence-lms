@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-28 (c) — Properly themed checkboxes (login looked native)
+
+The earlier checkbox fix only set `accent-color`, which merely tints the
+OS-drawn tick: the control kept its native square, had no hover state, no themed
+border and no control over size or radius. On the login page it still read as a
+raw browser checkbox.
+
+### Changed
+
+- `resources/css/app.css` now styles checkboxes **in full**: `appearance: none`,
+  18px box, 5px radius, themed border, a brand-tinted hover halo, a brand fill
+  with a white tick when checked, a brand focus ring, and a disabled state.
+  Indeterminate (used by "select all") gets its own dash glyph.
+- The rules live **outside `@layer base` on purpose**. Tailwind utilities are
+  layered, and an unlayered rule always wins the cascade — so the themed look
+  beats the `h-4 w-4 border border-gray-300 bg-white` classes that ~20 views
+  hand-write on their own `<input>`, with none of those views edited. Verified in
+  the browser: a checkbox carrying `h-4 w-4` still computes to 18px.
+- `components/ui/checkbox.blade.php` no longer duplicates the visual styling; it
+  keeps only layout utilities, so there is one source of truth.
+- Accent resolution falls back through every layout's variable name
+  (`--color-primary` → `--color-primary-rgb` → `--rgb-primary` → default brand
+  blue), because the auth pages, the frontend layout and the admin layout each
+  expose a different set.
+
+### Guarded
+
+- The rules **exclude `.sr-only`**. `components/ui/switch.blade.php` renders a
+  visually-hidden checkbox and paints the switch itself — styling that input
+  would make it visible and silently break every toggle. Verified in the browser
+  that an `sr-only` checkbox still computes to 1px/absolute/native, and a new
+  test asserts the exclusion can't be dropped in a refactor.
+
+Suite: **127 tests / 513 assertions**.
+
 ## 2026-09-28 (b) — Write-route authorization sweep + 2 more bugs
 
 The first hardening pass probed all **GET** routes but never the **127 write

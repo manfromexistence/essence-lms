@@ -4,6 +4,18 @@
     $id = $id ?? 'checkbox-' . uniqid();
 @endphp
 
+{{--
+    Visual styling (size, radius, themed border, hover halo, brand fill, white
+    tick, focus ring, disabled state) comes from the global "Themed checkboxes"
+    block in resources/css/app.css. It is deliberately NOT duplicated here:
+
+      * it has to apply to the ~20 views that hand-write <input type="checkbox">
+        instead of using this component, and
+      * those global rules are unlayered, so they beat Tailwind utilities
+        anyway — repeating them here would only mislead the next reader.
+
+    Only layout utilities belong on the element itself.
+--}}
 <div {{ $attributes->only('class')->merge(['class' => 'inline-flex items-center']) }}>
     <input
         type="checkbox"
@@ -12,7 +24,7 @@
         @if($value !== '') value="{{ $value }}" @endif
         {{ $checked ? 'checked' : '' }}
         {{ $attributes->except('class')->merge([
-            'class' => 'h-4 w-4 shrink-0 cursor-pointer rounded border border-gray-300 bg-white transition-colors accent-[var(--color-primary)] checked:border-[var(--color-primary)] checked:bg-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            'class' => 'shrink-0 cursor-pointer disabled:cursor-not-allowed',
         ]) }}
     >
     <label for="{{ $id }}" class="ml-2 text-sm font-medium leading-none cursor-pointer select-none">

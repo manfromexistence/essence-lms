@@ -296,6 +296,44 @@ class ViewAndRouteIntegrityTest extends TestCase
         );
     }
 
+    /**
+     * Themed checkboxes are applied globally from resources/css/app.css rather
+     * than per-view, so two invariants must hold:
+     *
+     *  1. the rules opt out of the native control (appearance: none), and
+     *  2. they EXCLUDE .sr-only — components/ui/switch.blade.php renders a
+     *     visually-hidden checkbox and paints the switch itself, so styling it
+     *     would make the hidden input visible and silently break every toggle.
+     *
+     * Both are easy to lose in a refactor and impossible to notice in a diff.
+     */
+    public function test_themed_checkbox_styles_are_global_and_exclude_sr_only(): void
+    {
+        $css = file_get_contents(resource_path('css/app.css'));
+
+        $this->assertStringContainsString(
+            'input[type=\'checkbox\']:not(.sr-only)',
+            $css,
+            'Themed checkbox rules must target input[type=checkbox]:not(.sr-only).'
+        );
+
+        $this->assertStringContainsString(
+            'appearance: none',
+            $css,
+            'Themed checkboxes must set appearance: none, otherwise the OS control renders instead.'
+        );
+
+        // The switch component depends on this exclusion.
+        $switch = file_get_contents(resource_path('views/components/ui/switch.blade.php'));
+        if (str_contains($switch, 'sr-only')) {
+            $this->assertStringContainsString(
+                'not(.sr-only)',
+                $css,
+                'ui/switch.blade.php relies on a .sr-only checkbox; the global checkbox rules MUST exclude it.'
+            );
+        }
+    }
+
     private function sampleIdFor(string $param): string
     {
         $model = match ($param) {
