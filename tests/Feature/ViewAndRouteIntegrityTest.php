@@ -2,7 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Models\Announcement;
+use App\Models\Batch;
+use App\Models\Course;
+use App\Models\CourseMaterial;
+use App\Models\CqSubmission;
+use App\Models\Exam;
+use App\Models\ExamAttempt;
+use App\Models\ExamResult;
+use App\Models\InventoryItem;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\ReportExport;
 use App\Models\Role;
+use App\Models\Service;
+use App\Models\Student;
+use App\Models\Teacher;
+use App\Models\TeacherSalary;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -39,11 +55,11 @@ class ViewAndRouteIntegrityTest extends TestCase
         $available = [];
         $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($viewsDir));
         foreach ($iterator as $file) {
-            if (!$file->isFile() || !str_ends_with($file->getFilename(), '.blade.php')) {
+            if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.blade.php')) {
                 continue;
             }
             $relative = str_replace(
-                [$viewsDir . DIRECTORY_SEPARATOR, '.blade.php'],
+                [$viewsDir.DIRECTORY_SEPARATOR, '.blade.php'],
                 '',
                 $file->getPathname()
             );
@@ -53,17 +69,30 @@ class ViewAndRouteIntegrityTest extends TestCase
         $this->assertNotEmpty($available, 'No Blade views were discovered — check the path.');
 
         $missing = [];
+
+        // Cover every way a view name can be resolved. Matching only view('x')
+        // previously missed PDF::loadView('exports.pdf.financial-report'), which
+        // then 500'd the account export.
+        $patterns = [
+            '/\bview\(\s*[\'"]([a-zA-Z0-9_.\-]+)[\'"]/',        // view('x')
+            '/\bloadView\(\s*[\'"]([a-zA-Z0-9_.\-]+)[\'"]/',    // PDF::loadView('x')
+            '/\bView::make\(\s*[\'"]([a-zA-Z0-9_.\-]+)[\'"]/',  // View::make('x')
+            '/\bmarkdown\(\s*[\'"]([a-zA-Z0-9_.\-]+)[\'"]/',    // Mail::markdown('x')
+        ];
+
         foreach ([base_path('app'), base_path('routes')] as $dir) {
             $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
             foreach ($files as $file) {
-                if (!$file->isFile() || !str_ends_with($file->getFilename(), '.php')) {
+                if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.php')) {
                     continue;
                 }
                 $source = file_get_contents($file->getPathname());
-                if (preg_match_all('/\bview\(\s*[\'"]([a-zA-Z0-9_.\-]+)[\'"]/', $source, $matches)) {
-                    foreach ($matches[1] as $name) {
-                        if (!isset($available[$name])) {
-                            $missing[] = $name . '  <- ' . str_replace(base_path() . DIRECTORY_SEPARATOR, '', $file->getPathname());
+                foreach ($patterns as $pattern) {
+                    if (preg_match_all($pattern, $source, $matches)) {
+                        foreach ($matches[1] as $name) {
+                            if (! isset($available[$name])) {
+                                $missing[] = $name.'  <- '.str_replace(base_path().DIRECTORY_SEPARATOR, '', $file->getPathname());
+                            }
                         }
                     }
                 }
@@ -73,7 +102,7 @@ class ViewAndRouteIntegrityTest extends TestCase
         $this->assertSame(
             [],
             array_values(array_unique($missing)),
-            "These view() references point at Blade files that do not exist:\n  " . implode("\n  ", array_unique($missing))
+            "These view() references point at Blade files that do not exist:\n  ".implode("\n  ", array_unique($missing))
         );
     }
 
@@ -87,7 +116,7 @@ class ViewAndRouteIntegrityTest extends TestCase
         $missing = [];
 
         foreach (Route::getRoutes() as $route) {
-            if (!in_array('GET', $route->methods(), true)) {
+            if (! in_array('GET', $route->methods(), true)) {
                 continue;
             }
 
@@ -97,12 +126,13 @@ class ViewAndRouteIntegrityTest extends TestCase
             // "Controller@method" pair actually has that method.
             if (is_string($action) && str_contains($action, '@')) {
                 [$class, $method] = explode('@', $action, 2);
-                if (!class_exists($class)) {
+                if (! class_exists($class)) {
                     $missing[] = "{$action} (class does not exist)";
+
                     continue;
                 }
-                if (!method_exists($class, $method)) {
-                    $missing[] = $route->uri() . "  ->  {$action}";
+                if (! method_exists($class, $method)) {
+                    $missing[] = $route->uri()."  ->  {$action}";
                 }
             }
         }
@@ -110,7 +140,7 @@ class ViewAndRouteIntegrityTest extends TestCase
         $this->assertSame(
             [],
             array_values(array_unique($missing)),
-            "These routes point at controller methods that do not exist:\n  " . implode("\n  ", array_unique($missing))
+            "These routes point at controller methods that do not exist:\n  ".implode("\n  ", array_unique($missing))
         );
     }
 
@@ -127,7 +157,7 @@ class ViewAndRouteIntegrityTest extends TestCase
         $checked = 0;
 
         foreach (Route::getRoutes() as $route) {
-            if (!in_array('GET', $route->methods(), true)) {
+            if (! in_array('GET', $route->methods(), true)) {
                 continue;
             }
             $uri = $route->uri();
@@ -135,16 +165,16 @@ class ViewAndRouteIntegrityTest extends TestCase
                 continue;
             }
 
-            $path = '/' . ltrim($uri, '/');
+            $path = '/'.ltrim($uri, '/');
             $checked++;
 
             try {
                 $response = $this->actingAs($admin)->get($path);
                 if ($response->getStatusCode() >= 500) {
-                    $failures[] = $path . ' -> ' . $response->getStatusCode();
+                    $failures[] = $path.' -> '.$response->getStatusCode();
                 }
             } catch (\Throwable $e) {
-                $failures[] = $path . ' -> ' . get_class($e) . ': ' . substr($e->getMessage(), 0, 90);
+                $failures[] = $path.' -> '.get_class($e).': '.substr($e->getMessage(), 0, 90);
             }
         }
 
@@ -153,7 +183,7 @@ class ViewAndRouteIntegrityTest extends TestCase
         $this->assertSame(
             [],
             $failures,
-            "These GET routes returned a server error:\n  " . implode("\n  ", $failures)
+            "These GET routes returned a server error:\n  ".implode("\n  ", $failures)
         );
     }
 
@@ -164,8 +194,8 @@ class ViewAndRouteIntegrityTest extends TestCase
      */
     public function test_invoice_items_round_trip_as_an_array(): void
     {
-        $invoice = \App\Models\Invoice::create([
-            'student_id' => \App\Models\Student::factory()->create()->id,
+        $invoice = Invoice::create([
+            'student_id' => Student::factory()->create()->id,
             'invoice_number' => 'INV-TEST-0001',
             'amount' => 5000,
             'due_date' => now()->addWeek(),
@@ -189,7 +219,7 @@ class ViewAndRouteIntegrityTest extends TestCase
      */
     public function test_exam_exposes_name_as_an_alias_for_title(): void
     {
-        $exam = \App\Models\Exam::create([
+        $exam = Exam::create([
             'title' => 'Midterm Physics',
             'type' => 'mcq',
             'total_marks' => 100,
@@ -199,6 +229,119 @@ class ViewAndRouteIntegrityTest extends TestCase
 
         $this->assertSame('Midterm Physics', $exam->name);
         $this->assertSame('Midterm Physics', $exam->title);
+    }
+
+    /**
+     * Write routes (POST/PUT/PATCH/DELETE) must not be reachable by a user who
+     * should not have access, and must not blow up.
+     *
+     * An EMPTY payload is sent, so no write route should ever answer 200 — every
+     * one of them either requires input (302/422), is forbidden (403), or does
+     * not exist for this actor (404). A 200 here means an unguarded action, and a
+     * 5xx means an unhandled error.
+     */
+    public function test_write_routes_are_not_reachable_without_authorisation(): void
+    {
+        $actors = [
+            'guest' => null,
+            'student' => $this->makeUserWithRole('student', 'student-write-probe@example.com'),
+            'teacher' => $this->makeUserWithRole('teacher', 'teacher-write-probe@example.com'),
+        ];
+
+        $targets = [];
+        foreach (Route::getRoutes() as $route) {
+            $methods = array_values(array_intersect($route->methods(), ['POST', 'PUT', 'PATCH', 'DELETE']));
+            if (! $methods) {
+                continue;
+            }
+            $uri = $route->uri();
+            if (str_starts_with($uri, '_')) {
+                continue;
+            }
+            $path = '/'.ltrim($uri, '/');
+            foreach ($route->parameterNames() as $param) {
+                $path = str_replace('{'.$param.'}', $this->sampleIdFor($param), $path);
+            }
+            $targets[] = [$methods[0], $path];
+        }
+
+        $this->assertGreaterThan(50, count($targets), 'Expected a meaningful number of write routes.');
+
+        $failures = [];
+
+        foreach ($actors as $label => $actor) {
+            foreach ($targets as [$method, $path]) {
+                try {
+                    $request = $actor ? $this->actingAs($actor) : $this;
+                    $response = $request->json($method, $path, []);
+
+                    if ($response->getStatusCode() === 200) {
+                        $failures[] = "[{$label}] {$method} {$path} -> 200 (action ran with an empty payload)";
+                    } elseif ($response->getStatusCode() >= 500) {
+                        // 503 is an intentional "feature not configured" refusal.
+                        if ($response->getStatusCode() !== 503) {
+                            $failures[] = "[{$label}] {$method} {$path} -> {$response->getStatusCode()}";
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $failures[] = "[{$label}] {$method} {$path} -> ".get_class($e).': '.substr($e->getMessage(), 0, 70);
+                }
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $failures,
+            "These write routes were reachable or errored:\n  ".implode("\n  ", $failures)
+        );
+    }
+
+    private function sampleIdFor(string $param): string
+    {
+        $model = match ($param) {
+            'user' => User::class,
+            'role' => Role::class,
+            'student' => Student::class,
+            'teacher' => Teacher::class,
+            'course' => Course::class,
+            'batch' => Batch::class,
+            'payment' => Payment::class,
+            'exam' => Exam::class,
+            'salary' => TeacherSalary::class,
+            'inventory' => InventoryItem::class,
+            'material' => CourseMaterial::class,
+            'announcement' => Announcement::class,
+            'submission' => CqSubmission::class,
+            'attempt' => ExamAttempt::class,
+            'result' => ExamResult::class,
+            'invoice' => Invoice::class,
+            'export' => ReportExport::class,
+            'service' => Service::class,
+            default => null,
+        };
+
+        if ($model && class_exists($model)) {
+            $id = $model::query()->value('id');
+            if ($id) {
+                return (string) $id;
+            }
+        }
+
+        return '1';
+    }
+
+    private function makeUserWithRole(string $slug, string $email): User
+    {
+        $role = Role::firstOrCreate(['slug' => $slug], ['name' => ucfirst($slug)]);
+
+        $user = User::factory()->create([
+            'email' => $email,
+            'is_active' => true,
+            'must_change_password' => false,
+        ]);
+        $user->roles()->attach($role->id);
+
+        return $user;
     }
 
     private function makeSuperAdmin(): User

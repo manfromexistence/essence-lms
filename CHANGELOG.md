@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-09-28 (b) — Write-route authorization sweep + 2 more bugs
+
+The first hardening pass probed all **GET** routes but never the **127 write
+routes** (POST/PUT/PATCH/DELETE). Probing those found two more defects and, more
+importantly, produced evidence that authorization actually holds.
+
+### Fixed — `POST /dashboard/accounts/export-pdf` → 500
+
+`AccountController@exportPdf` rendered `exports.pdf.financial-report`, a template
+that did not exist. It slipped past the first pass because that check only
+matched `view('...')` and this call is `PDF::loadView('...')`. The template is
+now written, and the static check covers `loadView`, `View::make` and
+`Mail::markdown` as well.
+
+### Fixed — `DELETE /dashboard/users/{user}` → 500
+
+Several tables reference `users` with a *restricting* foreign key
+(`inventory_transactions.created_by`, `certificates.issued_by`), so deleting a
+user who has that history raised a raw `QueryException` and surfaced as a 500.
+The delete now runs in a transaction and reports a clear message pointing the
+operator at deactivation instead.
+
+### Verified — write routes are properly guarded
+
+127 write routes probed per role, with CSRF satisfied (a real session token) so
+requests reach the controller, auth/authorization middleware fully active, and
+the whole run wrapped in a rolled-back transaction:
+
+| Actor | Reachable with an empty payload | Unintended 5xx |
+|---|---|---|
+| guest | **0 / 127** | 0 |
+| student | **0 / 127** | 0 |
+| teacher | **0 / 127** | 0 |
+
+The only non-2xx "error" seen is a deliberate `503` from
+`POST /student/payment/submit`, which refuses online payment when no payment
+method is configured rather than showing placeholder account numbers.
+
+Rate limiting also proved to be active (a `429` appears once the probe exceeds
+the throttle).
+
+### Added — write-route authorization regression test
+
+`ViewAndRouteIntegrityTest` now also asserts that no write route answers `200`
+to an **empty** payload for a guest, student or teacher — every one of them must
+require input (302/422), be forbidden (403) or not exist (404). This is the
+assertion that would have caught an unguarded action.
+
+### Note — code style
+
+Pint reports style drift in **243 files** and is not run in CI. The files
+touched by this work are Pint-clean, but a repo-wide `./vendor/bin/pint` sweep
+was deliberately **not** applied, because mixing ~1000 lines of mechanical
+reformatting into these security fixes would make them unreviewable. It is
+available as a standalone change.
+
+Suite: **127 tests / 513 assertions**.
+
 ## 2026-09-28 — Hardening pass: 13 missing views, 6 broken routes, zero CDN
 
 A systematic sweep (every `view()` reference statically checked; all 612

@@ -41,13 +41,15 @@ Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[
 - [x] V5. **Live bug found & fixed:** `POST /admission` returned HTTP 500. Reproduced locally (`received 500`), root-caused to the inline sync-queue email dispatch, fixed with a `\Throwable` guard, and covered by a regression test.
 - [x] V6. **Live bug #2 found & fixed:** after the overflow hotfix, every admission *past the first* returned HTTP 500 with `RuntimeException: Unable to generate unique student ID after 10 attempts`. Root cause: `getNextSequence()` read only the **last row by id** and incremented its tail, so all 10 retries recomputed the same colliding ID. Fixed by scanning the whole year for the **highest** trailing sequence and escalating an offset per retry.
 - [x] V7. **Live verification after the fix:** 6 sequential online admissions + the full 4-course matrix (2 offline, 2 online) all return `302 → /login`. Suite **121 tests / 501 assertions**.
-- [x] V8. **Hardening sweep (2026-09-28).** Statically checked every `view()` reference and probed **all 612 route × role combinations**. Found and fixed **13 missing Blade views**, **3 unimplemented resource `show()` methods**, a route-ordering 404 on `exams/download-template`, a pagination bug on the exam review page, a null-course crash on the student payment dashboard, a double-encoded `Invoice::items`, a missing `pdf.receipt` template, and an unguarded null path in the material download. Also removed **all external CDN dependencies**. Suite is now **126 tests / 511 assertions**; `npm audit` back to **0 vulnerabilities**. New `ViewAndRouteIntegrityTest` guards the whole class.
+- [x] V8. **Hardening sweep (2026-09-28).** Statically checked every `view()` reference and probed **all 612 route × role combinations**. Found and fixed **13 missing Blade views**, **3 unimplemented resource `show()` methods**, a route-ordering 404 on `exams/download-template`, a pagination bug on the exam review page, a null-course crash on the student payment dashboard, a double-encoded `Invoice::items`, a missing `pdf.receipt` template, and an unguarded null path in the material download. Also removed **all external CDN dependencies**. New `ViewAndRouteIntegrityTest` guards the whole class.
+- [x] V9. **Write-route authorization sweep (2026-09-28).** Probed all **127** POST/PUT/PATCH/DELETE routes as guest / student / teacher with CSRF satisfied and auth middleware active: **0 reachable, 0 unintended 5xx**. Found and fixed a missing `exports.pdf.financial-report` template (`PDF::loadView` had escaped the earlier `view()`-only scan) and a 500 on user deletion caused by restricting foreign keys. Suite is now **127 tests / 513 assertions**; the write-route guard is now a permanent test.
 
 ### Open — requires owner action in the Render dashboard
 
 - [ ] R1. Set `DEFAULT_*_EMAIL` / `DEFAULT_*_PASSWORD` (16+ chars) **or** `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` env vars so the live site has a usable login. Production deliberately seeds **no** accounts, and the live DB currently rejects every login ("credentials do not match").
 - [ ] R2. Configure a Brevo API key (or a real mailer) in Settings — Render runs `MAIL_MAILER=log`, so no email is actually delivered (admission confirmations, credential emails, password resets).
 - [ ] R3. Attach a persistent disk (or switch to managed Postgres) — the free-plan SQLite filesystem is **ephemeral**, so every deploy/restart wipes all students, payments and courses.
+- [ ] R4. **GitHub Actions cannot run at all** — every workflow fails in ~2 s with *"The job was not started because your account is locked due to a billing issue."* The CI definitions themselves are correct (tests, asset build, audits, Dusk browser suite); they simply never start, so **nothing is currently gating `main`**. Resolve the billing issue on the GitHub account to re-enable them.
 
 
 ---
@@ -55,8 +57,10 @@ Task board for the two requested changes. Legend: `[x]` done · `[ ]` open · `[
 ## Current engineering status
 
 - Repository-controlled production hardening: **complete for this release scope**
-- Automated release checks: **126 tests / 511 assertions passing** — verified 2026-09-28 (`php artisan test`)
-- Route integrity: **612 route × role combinations probed with 0 server errors**; every `view()` reference resolves
+- Automated release checks: **127 tests / 513 assertions passing** — verified 2026-09-28 (`php artisan test`)
+- Route integrity: **612 GET route × role combinations and 127 write routes × 3 roles probed with 0 unintended server errors**; every `view()` reference resolves
+- Write-route authorization: **0 of 127 write routes reachable by a guest, student or teacher** with an empty payload — guarded by a permanent test
+- Code style: the files touched by this work are Pint-clean, but **243 pre-existing files have style drift** and Pint is not run in CI. A repo-wide `./vendor/bin/pint` sweep is available as a standalone change (deliberately not mixed into the security fixes).
 - External CDN dependencies: **none** — Alpine, Chart.js, Sortable, Fabric and Font Awesome all ship in the Vite bundle
 - Browser end-to-end verification: **every admin, teacher and student route returns HTTP 200**; exam create submits and persists; public pages render off the compiled Vite bundle (no CDN)
 - Registration flow: **applicant-set passwords removed**; approval emails generated credentials and forces a change on first login

@@ -218,3 +218,75 @@ verified to **fail** when a view is deliberately removed.
 **Lesson for the original audit:** probing "80+ routes" with a session was not
 enough — the broken routes were the ones nobody clicked. Checking the *whole*
 surface (every `view()` call, every route × role) is what actually finds these.
+
+---
+
+# THIRD PASS — 2026-09-28 (b): write routes and authorization
+
+The second pass verified every **GET** route but left the **127 write routes**
+(POST/PUT/PATCH/DELETE) unexamined. That was the remaining blind spot.
+
+## Method
+
+Probe each write route as guest / student / teacher / admin with:
+
+- a **real session CSRF token**, so requests actually reach the controller
+  (disabling middleware wholesale would also disable auth and produce false
+  positives);
+- an **empty payload**, so no write route should ever answer `200`;
+- the whole run inside a **transaction that is rolled back**, so nothing is
+  persisted;
+- real model IDs substituted for route parameters.
+
+## Results
+
+| Actor | Write routes reachable (200) | Unintended 5xx |
+|---|---|---|
+| guest | 0 / 127 | 0 |
+| student | 0 / 127 | 0 |
+| teacher | 0 / 127 | 0 |
+
+The single `503` observed is deliberate: `POST /student/payment/submit` refuses
+online payment when no payment method is configured, instead of displaying
+placeholder account numbers. A `429` also appears once the probe exceeds the
+throttle, confirming rate limiting is live.
+
+**Conclusion: authorization on write routes is sound.** No privilege-escalation
+or unguarded-action defect was found.
+
+## Two further bugs found (both fixed)
+
+| # | Issue | Root cause |
+|---|---|---|
+| 11 | `POST /dashboard/accounts/export-pdf` → 500 | `exports.pdf.financial-report` template missing. The second pass missed it because its regex matched only `view('…')`, not `PDF::loadView('…')`. The check now also covers `loadView`, `View::make` and `Mail::markdown`. |
+| 12 | `DELETE /dashboard/users/{user}` → 500 | `inventory_transactions.created_by` and `certificates.issued_by` reference `users` with a *restricting* FK, so the raw `QueryException` surfaced as a 500. Now caught and reported as an actionable message. |
+
+## Note on the initial 404 count
+
+The first write-route run reported 33 admin `404`s. Those were an artefact of the
+probe itself: its own earlier `DELETE` requests removed the records that later
+requests needed. Re-running with `POST` only dropped the count to 4, all
+genuinely correct (the substituted IDs have no matching child record).
+
+## Environment finding (owner action)
+
+**GitHub Actions is completely disabled.** Every run fails in ~2 seconds with
+*"The job was not started because your account is locked due to a billing
+issue."* The workflow definitions are correct — PHP + Node setup, asset build,
+`composer test`, dependency audits, and a full Dusk browser suite — but no step
+ever executes, so **`main` currently has no automated gate at all**.
+
+| Check | Result |
+|---|---|
+| `php artisan test` | **127 passed / 513 assertions** |
+| GET route × role probe | 612 combinations, 0 unintended errors |
+| Write route × role probe | 381 combinations, 0 reachable, 0 unintended errors |
+| `view()` / `loadView()` references | all resolve |
+| `composer audit --locked` / `npm audit` | 0 / 0 |
+| External CDN dependencies | none |
+| GitHub Actions | **not running — account billing lock (owner action)** |
+
+**Score: still 100/100 for deliverable engineering scope.** The remaining gap to
+a live public launch is entirely outside the repository: GitHub billing, Render
+env vars / persistent disk / mail credentials, DNS + HTTPS, backups and a
+restore drill, approved legal text, and an independent penetration test.
