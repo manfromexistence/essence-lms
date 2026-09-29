@@ -29,8 +29,55 @@ class EmailController extends Controller
         $courses = Course::all();
         $recentLogs = $this->emailService->recentLogs(20);
         $stats = $this->emailService->stats();
+        // Resolved from env/DB without calling Brevo, so the page stays fast.
+        $config = $this->emailService->resolvedConfig();
 
-        return view('dashboard.email.index', compact('batches', 'courses', 'recentLogs', 'stats'));
+        return view('dashboard.email.index', compact('batches', 'courses', 'recentLogs', 'stats', 'config'));
+    }
+
+    /**
+     * Live Brevo connection self-test.
+     *
+     * Answers the question that "the email never arrived" always boils down to:
+     * is the key present, is it accepted, and is the sender verified?
+     */
+    public function diagnose(): JsonResponse
+    {
+        return response()->json($this->emailService->diagnose());
+    }
+
+    /**
+     * Re-issue and re-send login credentials for one student.
+     *
+     * The escape hatch when an approval happened while email was misconfigured:
+     * regenerates the password and emails it again, so an admin can fix a
+     * missed delivery without touching the database.
+     */
+    public function resendCredentials(Student $student): RedirectResponse
+    {
+        if (! $student->user) {
+            return back()->with('error', 'This student has no linked user account, so credentials cannot be issued.');
+        }
+
+        $email = trim((string) $student->user->email);
+
+        if (! $this->emailService->isDeliverableAddress($email)) {
+            return back()->with('error', 'This student has no valid email address. Add one before resending credentials.');
+        }
+
+        $password = app(\App\Services\StudentCredentialService::class)->issueFor($student);
+
+        if (! $password) {
+            return back()->with('error', 'Credentials could not be issued for this student.');
+        }
+
+        $log = EmailLog::where('to', $email)->latest('id')->first();
+
+        if ($log && $log->isSent()) {
+            return back()->with('success', "New credentials were generated and emailed to {$email}.");
+        }
+
+        return back()->with('error', "Credentials were reset, but the email to {$email} failed: " . ($log->error_message ?? 'unknown error'));
     }
 
     /**

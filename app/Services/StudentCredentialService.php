@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\SendEmailJob;
+use App\Models\EmailLog;
 use App\Models\Student;
 use Illuminate\Support\Str;
 
@@ -77,9 +78,34 @@ class StudentCredentialService
             ?? $student->course_name
             ?? 'your selected course';
 
+        // Fail loudly if the account has no reachable address: silently
+        // returning here is exactly how "the student never got an email"
+        // became invisible for so long.
+        $recipient = trim((string) $user->email);
+
+        if (! app(BrevoEmailService::class)->isDeliverableAddress($recipient)) {
+            \Illuminate\Support\Facades\Log::error('Cannot email credentials: student has no valid email address', [
+                'user_id' => $user->id,
+                'student_id' => $student->id,
+                'email' => $recipient,
+            ]);
+
+            EmailLog::create([
+                'to' => $recipient !== '' ? $recipient : '(missing)',
+                'subject' => 'Your Login Credentials',
+                'template_type' => 'admission',
+                'status' => 'failed',
+                'error_message' => 'Student account has no valid email address, so credentials could not be delivered.',
+                'user_id' => $user->id,
+                'user_type' => \App\Models\User::class,
+            ]);
+
+            return;
+        }
+
         $loginUrl = route('login');
         $name = e($user->name ?? 'Student');
-        $email = e($user->email);
+        $email = e($recipient);
         $safePassword = e($password);
 
         $html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">'
@@ -107,14 +133,19 @@ class StudentCredentialService
         // hence the broad Throwable catch.
         try {
             SendEmailJob::dispatch(
-                $user->email,
+                $recipient,
                 'Your Login Credentials — ' . $courseName,
                 $html,
-                ['type' => 'admission', 'subtype' => 'credentials']
+                [
+                    'type' => 'admission',
+                    'subtype' => 'credentials',
+                    'name' => $user->name ?? null,
+                    'related' => $student,
+                ]
             );
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Credential email failed to dispatch', [
-                'email' => $user->email,
+                'email' => $recipient,
                 'error' => $e->getMessage(),
             ]);
         }

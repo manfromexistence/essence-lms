@@ -26,6 +26,52 @@
         </div>
     </div>
 
+    <!-- Brevo Connection Health -->
+    <x-ui.card>
+        <x-ui.card-header>
+            <x-ui.card-title>Brevo Connection</x-ui.card-title>
+            <x-ui.card-description>
+                Credentials used for registration and admission emails. Run the test before blaming the inbox.
+            </x-ui.card-description>
+        </x-ui.card-header>
+        <x-ui.card-content>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 text-sm">
+                <div>
+                    <p class="text-gray-500">API key</p>
+                    <p class="font-medium text-gray-900" id="brevo-key">
+                        {{ $config['api_key_present'] ? $config['api_key_preview'] : 'Not set' }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">Source: {{ $config['api_key_source'] }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Sender</p>
+                    <p class="font-medium text-gray-900 break-all">{{ $config['sender_email'] ?: 'Not set' }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Source: {{ $config['sender_email_source'] }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Sender name</p>
+                    <p class="font-medium text-gray-900">{{ $config['sender_name'] ?: 'Not set' }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Recipient validation: {{ $config['recipient_validation'] }}</p>
+                </div>
+            </div>
+
+            @unless($config['api_key_present'])
+                <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                    <strong>No API key resolved.</strong> The host environment variable
+                    <code class="font-mono">BREVO_API_KEY</code> is not set. Emails will fail until it is added in the
+                    Render dashboard (Environment tab) and the service is redeployed.
+                </div>
+            @endunless
+
+            <button type="button" id="brevo-test"
+                    class="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors">
+                Test Brevo connection
+            </button>
+
+            <div id="brevo-result" class="mt-4 hidden"></div>
+        </x-ui.card-content>
+    </x-ui.card>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Send Single Email -->
         <x-ui.card>
@@ -154,7 +200,14 @@
                         @forelse($recentLogs as $log)
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-5 py-4 whitespace-nowrap text-gray-900 font-medium">{{ $log->to }}</td>
-                                <td class="px-5 py-4 text-gray-600 max-w-xs truncate" title="{{ $log->subject }}">{{ Str::limit($log->subject, 60) }}</td>
+                                <td class="px-5 py-4 text-gray-600 max-w-xs">
+                                    <span class="block truncate" title="{{ $log->subject }}">{{ Str::limit($log->subject, 60) }}</span>
+                                    @if($log->status === 'failed' && $log->error_message)
+                                        <span class="block text-xs text-red-600 mt-1" title="{{ $log->error_message }}">
+                                            {{ Str::limit($log->error_message, 110) }}
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-4 whitespace-nowrap">
                                     @php
                                         $statusColors = [
@@ -259,6 +312,46 @@ document.getElementById('bulkEmailForm').addEventListener('submit', async functi
         resultDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 font-medium">An error occurred. Please try again.</div>`;
         resultDiv.classList.remove('hidden');
     }
+document.getElementById('brevo-test').addEventListener('click', async function () {
+    const btn = this;
+    const resultDiv = document.getElementById('brevo-result');
+    btn.disabled = true;
+    btn.textContent = 'Testing...';
+    resultDiv.classList.add('hidden');
+
+    try {
+        const response = await fetch('{{ route("dashboard.email.diagnose") }}', {
+            headers: { 'Accept': 'application/json' },
+        });
+        const data = await response.json();
+
+        const ok = !!data.ok;
+        const palette = ok
+            ? 'bg-green-50 border-green-200 text-green-800'
+            : 'bg-red-50 border-red-200 text-red-800';
+
+        let senders = '';
+        if (Array.isArray(data.senders) && data.senders.length) {
+            senders = `<p class="mt-2 text-xs">Verified senders: ${data.senders.join(', ')}</p>`;
+        }
+
+        resultDiv.innerHTML = `
+            <div class="border rounded-lg p-4 text-sm ${palette}">
+                <p class="font-semibold">${ok ? 'Connection healthy' : 'Connection problem'}</p>
+                <p class="mt-1">${data.message}</p>
+                ${senders}
+            </div>`;
+    } catch (error) {
+        resultDiv.innerHTML = `
+            <div class="border border-red-200 bg-red-50 rounded-lg p-4 text-sm text-red-800">
+                <p class="font-semibold">Test failed</p>
+                <p class="mt-1">Could not reach the diagnostics endpoint.</p>
+            </div>`;
+    }
+
+    resultDiv.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Test Brevo connection';
 });
 </script>
 @endpush
