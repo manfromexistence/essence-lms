@@ -63,6 +63,20 @@
                 </div>
             @endunless
 
+            @if($config['api_key_present'] && str_contains($config['api_key_source'], 'demo fallback'))
+                <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                    <strong>Demo mode — using a hardcoded key.</strong>
+                    The Brevo API key is coming from <code class="font-mono">config/mail.php</code>, not from the
+                    environment. This repository is public, so <strong>this key must be treated as compromised</strong>.
+                    Before handling real student data:
+                    <ol class="list-decimal ml-5 mt-1 space-y-0.5">
+                        <li>Rotate the key in Brevo &rarr; SMTP &amp; API.</li>
+                        <li>Set <code class="font-mono">BREVO_API_KEY</code> in Render &rarr; Environment (it overrides this automatically).</li>
+                        <li>Remove the fallback from <code class="font-mono">config/mail.php</code>.</li>
+                    </ol>
+                </div>
+            @endif
+
             <button type="button" id="brevo-test"
                     class="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors">
                 Test Brevo connection

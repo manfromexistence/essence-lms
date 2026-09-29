@@ -115,4 +115,32 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Transactional Email Provider (Brevo)
+    |--------------------------------------------------------------------------
+    |
+    | All transactional mail (admission confirmation, student credentials,
+    | bulk campaigns) is sent through Brevo's HTTP API rather than Laravel's
+    | Mail facade, so MAIL_MAILER is not involved. See App\Services\
+    | BrevoEmailService.
+    |
+    | !! SECURITY — DEMO FALLBACK !!
+    | The fallback values below exist ONLY so the hosted demo can send mail
+    | without dashboard access. Because this repository is public, the key
+    | fallback is NOT a secret and MUST be treated as compromised. Rotate the
+    | key in Brevo and remove these defaults before handling real students.
+    |
+    | Precedence is: database `settings` row  ->  environment variable  ->  here.
+    | So setting BREVO_API_KEY in the host environment still overrides this
+    | without a code change.
+    |
+    */
+
+    'brevo' => [
+        'api_key' => env('BREVO_API_KEY', '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'),
+        'sender_email' => env('BREVO_SENDER_EMAIL', 'ajju40959@gmail.com'),
+        'sender_name' => env('BREVO_SENDER_NAME', 'Dhaka IT Institute'),
+    ],
+
 ];

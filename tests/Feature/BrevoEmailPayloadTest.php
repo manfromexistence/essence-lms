@@ -175,6 +175,9 @@ class BrevoEmailPayloadTest extends TestCase
         config(['mail.from.address' => null]);
         putenv('BREVO_SENDER_EMAIL');
         unset($_ENV['BREVO_SENDER_EMAIL'], $_SERVER['BREVO_SENDER_EMAIL']);
+        // config/mail.php ships a demo fallback key; clear it to reach the
+        // genuinely-unconfigured state.
+        config(['mail.brevo.api_key' => null, 'mail.brevo.sender_email' => null]);
         Http::fake();
 
         $result = (new BrevoEmailService())->diagnose();

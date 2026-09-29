@@ -15,18 +15,29 @@ class BrevoEmailService
 
     public function __construct()
     {
-        // DB settings first (so an admin can override from Settings), but fall
-        // back to env vars. This matters on hosts with an ephemeral filesystem
-        // (e.g. Render's free plan): the settings table is wiped on every
-        // deploy, so a key entered through the admin UI would silently vanish
-        // and every transactional email would fail until it was re-entered.
-        // Env vars survive redeploys, so they are the durable source.
-        $this->apiKey = Setting::getValue('brevo_api_key') ?: env('BREVO_API_KEY');
+        // Resolution order, most specific first:
+        //   1. the `settings` table (admin can override from the UI)
+        //   2. the environment variable (survives redeploys)
+        //   3. config/mail.php 'brevo.*' (demo fallback so the hosted demo
+        //      works without dashboard access)
+        //
+        // The DB layer matters on hosts with an ephemeral filesystem (e.g.
+        // Render's free plan): the settings table is wiped on every deploy, so
+        // a key entered through the admin UI would silently vanish and every
+        // transactional email would fail until it was re-entered.
+        $this->apiKey = Setting::getValue('brevo_api_key')
+            ?: env('BREVO_API_KEY')
+            ?: config('mail.brevo.api_key');
+
         $this->senderEmail = Setting::getValue('brevo_sender_email')
             ?: env('BREVO_SENDER_EMAIL')
+            ?: config('mail.brevo.sender_email')
             ?: config('mail.from.address');
+
         $this->senderName = Setting::getValue('brevo_sender_name')
-            ?: env('BREVO_SENDER_NAME', 'Dhaka IT Institute');
+            ?: env('BREVO_SENDER_NAME')
+            ?: config('mail.brevo.sender_name')
+            ?: 'Dhaka IT Institute';
     }
 
     /**
@@ -233,13 +244,25 @@ class BrevoEmailService
     {
         $dbKey = Setting::getValue('brevo_api_key');
         $dbSender = Setting::getValue('brevo_sender_email');
+        $envKey = env('BREVO_API_KEY');
+        $envSender = env('BREVO_SENDER_EMAIL');
 
         return [
             'api_key_present' => (bool) $this->apiKey,
             'api_key_preview' => $this->apiKey ? substr($this->apiKey, 0, 12) . '...' : null,
-            'api_key_source' => $dbKey ? 'database (Settings)' : (env('BREVO_API_KEY') ? 'environment' : 'missing'),
+            'api_key_source' => match (true) {
+                (bool) $dbKey => 'database (Settings)',
+                (bool) $envKey => 'environment variable',
+                (bool) config('mail.brevo.api_key') => 'config/mail.php demo fallback (NOT secret)',
+                default => 'missing',
+            },
             'sender_email' => $this->senderEmail,
-            'sender_email_source' => $dbSender ? 'database (Settings)' : (env('BREVO_SENDER_EMAIL') ? 'environment' : 'config/mail.php'),
+            'sender_email_source' => match (true) {
+                (bool) $dbSender => 'database (Settings)',
+                (bool) $envSender => 'environment variable',
+                (bool) config('mail.brevo.sender_email') => 'config/mail.php demo fallback',
+                default => 'config/mail.php mail.from',
+            },
             'sender_name' => $this->senderName,
             'recipient_validation' => 'enabled',
         ];

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Setting;
 use App\Services\BrevoEmailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -69,10 +70,58 @@ class BrevoConfigTest extends TestCase
         config(['mail.from.address' => null]);
         putenv('BREVO_SENDER_EMAIL');
         unset($_ENV['BREVO_SENDER_EMAIL'], $_SERVER['BREVO_SENDER_EMAIL']);
+        // config/mail.php ships a demo fallback key so the hosted demo can send
+        // mail without dashboard access. Blank it here so we are genuinely
+        // testing the "nothing configured anywhere" path.
+        config(['mail.brevo.api_key' => null, 'mail.brevo.sender_email' => null]);
 
         $log = (new BrevoEmailService())->send('someone@example.com', 'Subject', '<p>Hi</p>');
 
         $this->assertSame('failed', $log->status);
         $this->assertStringContainsString('not configured', (string) $log->error_message);
+    }
+
+    public function test_config_file_fallback_is_used_when_neither_db_nor_env_are_set(): void
+    {
+        Setting::query()->delete();
+        putenv('BREVO_API_KEY');
+        unset($_ENV['BREVO_API_KEY'], $_SERVER['BREVO_API_KEY']);
+        putenv('BREVO_SENDER_EMAIL');
+        unset($_ENV['BREVO_SENDER_EMAIL'], $_SERVER['BREVO_SENDER_EMAIL']);
+
+        config([
+            'mail.brevo.api_key' => 'config-fallback-key',
+            'mail.brevo.sender_email' => 'fallback@example.com',
+        ]);
+
+        // This is the Render demo scenario: no env var, no dashboard access.
+        Http::fake(['api.brevo.com/*' => Http::response(['messageId' => '<x@brevo>'], 201)]);
+        $service = new BrevoEmailService();
+
+        $this->assertSame('config-fallback-key', $this->resolved('apiKey'));
+        $this->assertSame('fallback@example.com', $this->resolved('senderEmail'));
+        $this->assertSame('config/mail.php demo fallback (NOT secret)', $service->resolvedConfig()['api_key_source']);
+
+        $log = $service->send('student@example.com', 'Subject', '<p>Hi</p>');
+
+        $this->assertSame('sent', $log->status);
+        Http::assertSent(fn ($request) => $request->data()['sender']['email'] === 'fallback@example.com');
+    }
+
+    public function test_env_var_still_wins_over_the_config_fallback(): void
+    {
+        Setting::query()->delete();
+        putenv('BREVO_API_KEY=env-wins-key');
+        $_ENV['BREVO_API_KEY'] = 'env-wins-key';
+        $_SERVER['BREVO_API_KEY'] = 'env-wins-key';
+        config(['mail.brevo.api_key' => 'config-fallback-key']);
+
+        // Setting a proper Render env var must override the demo fallback, so
+        // the two-line cleanup (rotate key + set env var) needs no code change.
+        $this->assertSame('env-wins-key', $this->resolved('apiKey'));
+        $this->assertSame(
+            'environment variable',
+            (new BrevoEmailService())->resolvedConfig()['api_key_source']
+        );
     }
 }
