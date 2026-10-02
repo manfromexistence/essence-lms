@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Certificate;
 use App\Models\CertificateVerification;
 use App\Models\Student;
-use App\Services\QrCodeService;
+use App\Services\SettingsService;
 use App\Services\StudentVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -17,14 +17,17 @@ use Illuminate\View\View;
  * Reached by scanning the QR code printed on a certificate, or by entering the
  * verification code shown on its face. Both exist so that a printed certificate
  * can be checked without contacting the institute.
+ *
+ * QR rendering deliberately does not happen here. This controller must stay
+ * constructible without the GD extension, because code-based verification has
+ * no need of it and a hard dependency would take the page down wherever GD is
+ * missing.
  */
 class CertificateController extends Controller
 {
     public function __construct(
         protected StudentVerificationService $verification,
-        protected QrCodeService $qrCodes,
-    ) {
-    }
+    ) {}
 
     public function index()
     {
@@ -103,7 +106,7 @@ class CertificateController extends Controller
         return view('certificates.student-profile', [
             'student' => $student,
             'profile' => $profile,
-            'institution' => app(\App\Services\SettingsService::class)->get('institution_name', config('app.name')),
+            'institution' => app(SettingsService::class)->get('institution_name', config('app.name')),
         ]);
     }
 

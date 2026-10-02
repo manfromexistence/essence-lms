@@ -91,19 +91,6 @@ class QrCodeServiceTest extends TestCase
         imagedestroy($image);
     }
 
-    public function test_svg_is_well_formed_and_sized(): void
-    {
-        $svg = $this->qr->svg('https://example.test/verify/student/abc', 300);
-
-        $this->assertStringContainsString('<svg', $svg);
-        $this->assertStringContainsString('xmlns="http://www.w3.org/2000/svg"', $svg);
-        $this->assertStringContainsString('width="300"', $svg);
-        $this->assertNotFalse(
-            @simplexml_load_string($svg),
-            'The SVG must be parseable, or the designer preview breaks.'
-        );
-    }
-
     public function test_different_payloads_produce_different_codes(): void
     {
         $base = $this->qr->png('https://example.test/verify/student/aaa', 300);

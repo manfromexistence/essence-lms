@@ -255,20 +255,40 @@ Additional keys introduced with the Catbox media host:
 > the request timeout on a large report. Use a Render background worker plus
 > `QUEUE_CONNECTION=database` before relying on scheduled exports.
 
-### 🔴 Secrets currently in git
+### 🔴 Brevo API key — removed from code, action required
 
-`config/mail.php` contains a **live Brevo API key** as a literal fallback value,
-committed in `ca58f33`. Anything in git is in the deploy history and in every
-clone of the repository.
+An earlier commit (`ca58f33`) put a **live Brevo API key** into `config/mail.php`
+as a literal fallback, so the hosted demo could send mail without dashboard
+access. A key in git is in the deploy history and in every clone, so it must be
+regarded as compromised.
 
-- Rotate that key in the Brevo dashboard now.
-- Replace the literal with `env('BREVO_API_KEY')` and set the real value as a
-  Render environment variable.
-- Never commit the Render API key either; use it from your shell only.
+The literal has now been **removed**. `config/mail.php` reads
+`env('BREVO_API_KEY')` with no default.
 
-The `render.yaml` comment claiming the key is "deliberately NOT stored here"
-became untrue when the fallback was added — `config/mail.php` and
-`render.yaml` must be read together.
+**Set the key on the service or email stops working:**
+
+Render dashboard → the service → **Environment** → add:
+
+```
+BREVO_API_KEY=<your key>
+BREVO_SENDER_EMAIL=<a verified Brevo sender>
+BREVO_SENDER_NAME=Dhaka IT Institute
+```
+
+`BREVO_SENDER_EMAIL` previously fell back to a literal as well, so it needs to
+be set explicitly.
+
+Until then every transactional email is recorded in `email_logs` as failed with
+*"Brevo API key / sender email is not configured in Settings."* — a visible
+failure rather than a silent one, but admission confirmations and student
+credentials will not reach anyone.
+
+**Also rotate the exposed key in the Brevo dashboard.** Removing it from the
+repository does not un-leak it; the old value is still in the git history of
+every clone. Rotation is deliberately not automated here — it is your credential.
+
+Precedence stays `settings` table → environment variable → config, so the
+environment variable wins.
 
 ### `render.yaml` is reference, not the source of truth
 

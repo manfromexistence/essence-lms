@@ -7,7 +7,6 @@ use Illuminate\Filesystem\FilesystemAdapter as LaravelFilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * The application's front door for remote media storage.
@@ -49,19 +48,10 @@ class CatboxStorage
     }
 
     /**
-     * Host the contents of a stream (used for generated files such as exports).
-     *
-     * @param  resource  $stream
-     */
-    public function storeStream($stream, string $extension, string $directory = ''): string
-    {
-        $this->context($directory, $extension);
-
-        return $this->adapter()->uploadStream($stream, $extension);
-    }
-
-    /**
      * Host a file that already lives on a local disk.
+     *
+     * Used for generated files such as report exports, which are written to disk
+     * first because Excel and dompdf both need a real filesystem path.
      */
     public function storeFromDisk(string $path, string $disk = 'local', string $directory = ''): string
     {
@@ -97,20 +87,6 @@ class CatboxStorage
     public function isRemote(?string $value): bool
     {
         return is_string($value) && preg_match('#^https?://\S+$#i', trim($value)) === 1;
-    }
-
-    /**
-     * Redirect to the hosted file.
-     *
-     * Used for video and downloads: proxying hundreds of megabytes through PHP
-     * would exhaust the request timeout, and Catbox serves Range requests
-     * itself, so the browser can seek and resume as it normally would.
-     */
-    public function redirectTo(?string $value): ?RedirectResponse
-    {
-        $url = $this->url($value);
-
-        return $url === null ? null : redirect()->away($url);
     }
 
     /**

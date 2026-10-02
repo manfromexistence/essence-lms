@@ -5,10 +5,7 @@ namespace App\Services;
 use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Renderer\Color\Rgb;
 use BaconQrCode\Renderer\GDLibRenderer;
-use BaconQrCode\Renderer\Image\SvgImageBackEnd;
-use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\Fill;
-use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use RuntimeException;
 
@@ -20,14 +17,12 @@ use RuntimeException;
  * institute. Codes are generated locally rather than fetched from a QR API, so
  * printing never depends on a third party being reachable.
  *
- * Two output formats are needed and they are not interchangeable:
- *
- *  - {@see pngDataUri()} returns a `data:image/png;base64,...` string. This is
- *    what certificates need: dompdf runs with `enable_remote => false`, so a QR
- *    referencing an http URL would render as an empty box in a generated PDF.
- *    A data URI is the one form dompdf reliably accepts.
- *  - {@see svg()} returns markup for the on-screen designer preview, which is
- *    scaled with a CSS transform and would blur if it were a raster image.
+ * The output is a `data:image/png;base64,...` string rather than markup or a
+ * remote URL. dompdf runs with `enable_remote => false`, so a QR referencing an
+ * http URL renders as an empty box in any generated PDF; a data URI is the one
+ * form dompdf reliably accepts. It is also what the designer preview uses, where
+ * a raster image is preferable to SVG because the preview is scaled *down* by a
+ * CSS transform and downscaling a large bitmap stays crisp.
  */
 class QrCodeService
 {
@@ -75,19 +70,6 @@ class QrCodeService
             'png',
             9,
             $this->fill(),
-        );
-
-        return (new Writer($renderer))->writeString($payload, self::ENCODING, ErrorCorrectionLevel::forBits(self::ERROR_CORRECTION_BITS));
-    }
-
-    /**
-     * The code as inline SVG markup.
-     */
-    public function svg(string $payload, int $size = 300): string
-    {
-        $renderer = new ImageRenderer(
-            new RendererStyle($size, self::MARGIN, null, null, $this->fill()),
-            new SvgImageBackEnd,
         );
 
         return (new Writer($renderer))->writeString($payload, self::ENCODING, ErrorCorrectionLevel::forBits(self::ERROR_CORRECTION_BITS));

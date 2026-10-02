@@ -83,15 +83,16 @@ services:
       - key: MEDIA_MAX_UPLOAD_KB
         value: "204800"
       # Transactional email goes through Brevo's HTTP API, not Laravel Mail, so
-      # MAIL_MAILER above does not affect it. Set this in the dashboard.
+      # MAIL_MAILER above does not affect it. Set these in the dashboard.
       #
-      # NOTE: config/mail.php currently carries a live Brevo key as a literal
-      # fallback, committed in ca58f33. That key must be rotated and the
-      # literal removed — see README.md → "Secrets currently in git".
+      # config/mail.php no longer carries a fallback key: the literal committed
+      # in ca58f33 is in every clone and must be treated as compromised. Until
+      # these are set, every send is recorded in email_logs as failed with
+      # "Brevo API key / sender email is not configured in Settings."
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_EMAIL
-        value: ajju40959@gmail.com
+        sync: false
       - key: BREVO_SENDER_NAME
         value: "Dhaka IT Institute"
       # Trust Render's reverse proxy so Laravel generates https:// URLs for

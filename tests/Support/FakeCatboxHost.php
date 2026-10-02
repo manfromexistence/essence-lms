@@ -93,19 +93,6 @@ class FakeCatboxHost
         return $this;
     }
 
-    public function contentsOf(string $url): ?string
-    {
-        $object = $this->find($url);
-
-        if ($object === null) {
-            return null;
-        }
-
-        $contents = file_get_contents($object['path']);
-
-        return $contents === false ? null : $contents;
-    }
-
     /**
      * Remove everything written during the test.
      */

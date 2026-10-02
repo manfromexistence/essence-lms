@@ -125,21 +125,26 @@ return [
     | Mail facade, so MAIL_MAILER is not involved. See App\Services\
     | BrevoEmailService.
     |
-    | !! SECURITY — DEMO FALLBACK !!
-    | The fallback values below exist ONLY so the hosted demo can send mail
-    | without dashboard access. Because this repository is public, the key
-    | fallback is NOT a secret and MUST be treated as compromised. Rotate the
-    | key in Brevo and remove these defaults before handling real students.
+    | There is deliberately NO fallback value for the API key. An earlier version
+    | carried a literal key here so the hosted demo could send mail without
+    | dashboard access, but a key committed to git is a key in every clone and
+    | in the deploy history, so it must be treated as compromised and cannot be
+    | treated as a secret. Set BREVO_API_KEY in the environment instead.
     |
     | Precedence is: database `settings` row  ->  environment variable  ->  here.
-    | So setting BREVO_API_KEY in the host environment still overrides this
-    | without a code change.
+    | The database is only consulted for environments that persist it; on an
+    | ephemeral filesystem it is wiped on every deploy, which is why the
+    | environment variable is the durable source.
+    |
+    | With no key configured, BrevoEmailService records the attempt in
+    | email_logs with "Brevo API key / sender email is not configured in
+    | Settings." — a loud, visible failure rather than a silent one.
     |
     */
 
     'brevo' => [
-        'api_key' => env('BREVO_API_KEY', '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'),
-        'sender_email' => env('BREVO_SENDER_EMAIL', 'ajju40959@gmail.com'),
+        'api_key' => env('BREVO_API_KEY'),
+        'sender_email' => env('BREVO_SENDER_EMAIL'),
         'sender_name' => env('BREVO_SENDER_NAME', 'Dhaka IT Institute'),
     ],
 
