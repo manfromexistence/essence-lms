@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\ExamTakingService;
+use App\Services\ExamTimeValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -175,6 +176,80 @@ class ExamIntegrityTest extends TestCase
 
         $this->assertGreaterThan(0, $attempt->remaining_time);
         $this->assertLessThanOrEqual(30 * 60, $attempt->remaining_time);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ExamTimeValidator duplicated the timing rule and got it wrong
+    |--------------------------------------------------------------------------
+    */
+
+    public function test_the_time_validator_agrees_with_the_attempt_it_validates(): void
+    {
+        // ExamTimeValidator reimplemented the countdown as
+        // $now->diffInSeconds($started_at). Carbon computes A.diff(B) as B - A,
+        // so that returned -7200 for two hours elapsed, and
+        // duration - (-7200) reported 150 minutes left on a 30 minute exam.
+        // The countdown never reached zero, so the client's auto-submit never
+        // fired and the student watched an impossible timer.
+        $exam = $this->makeExam(['duration_minutes' => 30]);
+
+        $attempt = ExamAttempt::create([
+            'student_id' => $this->student->id,
+            'exam_id' => $exam->id,
+            'started_at' => now()->subHours(2),
+            'status' => 'in_progress',
+        ]);
+
+        $validator = app(ExamTimeValidator::class);
+
+        $this->assertSame(
+            $attempt->remaining_time,
+            $validator->getRemainingTime($attempt),
+            'The validator must not hold a second, divergent copy of the rule.'
+        );
+
+        $this->assertSame(0, $validator->getRemainingTime($attempt), 'A blown deadline is zero, not extra time.');
+        $this->assertTrue($validator->isAttemptExpired($attempt));
+    }
+
+    public function test_the_time_validator_still_clamps_to_the_scheduled_end_time(): void
+    {
+        // The model accessor ignores end_time by design, so this is the one part
+        // the validator has to keep doing itself.
+        $exam = $this->makeExam(['duration_minutes' => 600, 'end_time' => now()->subMinute()]);
+
+        $attempt = ExamAttempt::create([
+            'student_id' => $this->student->id,
+            'exam_id' => $exam->id,
+            'started_at' => now()->subMinutes(5),
+            'status' => 'in_progress',
+        ]);
+
+        $validator = app(ExamTimeValidator::class);
+
+        $this->assertSame(0, $validator->getRemainingTime($attempt), 'A past end_time must win over a long duration.');
+        $this->assertTrue($validator->isAttemptExpired($attempt));
+    }
+
+    public function test_a_submitted_attempt_is_not_reported_as_expired(): void
+    {
+        // isAttemptExpired() used to short-circuit to 0 remaining for anything
+        // not in progress, which made every submitted attempt read as expired.
+        $exam = $this->makeExam();
+
+        $attempt = ExamAttempt::create([
+            'student_id' => $this->student->id,
+            'exam_id' => $exam->id,
+            'started_at' => now()->subMinutes(5),
+            'status' => 'submitted',
+            'submitted_at' => now(),
+        ]);
+
+        $validator = app(ExamTimeValidator::class);
+
+        $this->assertFalse($validator->isAttemptExpired($attempt), 'Meeting the deadline is not the same as missing it.');
+        $this->assertFalse($attempt->isExpired());
     }
 
     /*

@@ -32,6 +32,30 @@ use Illuminate\Support\Facades\Schema;
  * Duplicates are resolved before the index is added, because a unique index
  * cannot be created over data that violates it. Resolution is deliberately
  * conservative and logged.
+ *
+ * ---------------------------------------------------------------------------
+ * BACK UP THE DATABASE BEFORE DEPLOYING THIS. IT IS NOT REVERSIBLE.
+ * ---------------------------------------------------------------------------
+ *
+ * down() drops the constraints. It does not undo the de-duplication, because a
+ * migration cannot resurrect rows it deleted. Rolling back returns you to a
+ * schema without the indexes but with the duplicate rows already gone.
+ *
+ * What is kept, and what is discarded:
+ *
+ *   exam_results     keeps the highest awarded marks per student/exam; the
+ *                    lower-scoring rows are deleted outright
+ *   certificates     keeps the active certificate, then the most recently
+ *                    issued; certificate_verifications are repointed at the
+ *                    survivor so the audit trail is preserved, then the
+ *                    duplicate rows are deleted
+ *   students         no student is ever deleted: a colliding registration number
+ *                    is re-numbered to <original>-2, -3, ... and the change is
+ *                    logged
+ *   attendances      keeps the earliest row per student/batch/day
+ *
+ * On a production database, take a copy first. On a fresh one there is nothing
+ * to lose, because there are no duplicates to resolve.
  */
 return new class extends Migration
 {
@@ -191,11 +215,11 @@ return new class extends Migration
             foreach ($students as $student) {
                 $base = rtrim($group->registration_no, '-');
                 $suffix = 2;
-                $candidate = $base . '-' . $suffix;
+                $candidate = $base.'-'.$suffix;
 
                 while (DB::table('students')->where('registration_no', $candidate)->exists()) {
                     $suffix++;
-                    $candidate = $base . '-' . $suffix;
+                    $candidate = $base.'-'.$suffix;
                 }
 
                 DB::table('students')->where('id', $student->id)
