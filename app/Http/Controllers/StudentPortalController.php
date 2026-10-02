@@ -17,9 +17,10 @@ use App\Services\StudentPortalService;
 use App\Services\ExamTakingService;
 use App\Services\MarkSheetService;
 use App\Services\CertificateService;
+use App\Storage\CatboxStorage;
+use App\Storage\CatboxUploadFailed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class StudentPortalController extends Controller
@@ -143,15 +144,14 @@ class StudentPortalController extends Controller
             return redirect()->away($url);
         }
 
-        $disk = Storage::disk(config('filesystems.private'));
+        // A material can legitimately have no file (e.g. a placeholder row).
+        $url = app(CatboxStorage::class)->url($material->file_path);
 
-        // A material can legitimately have no file (e.g. a placeholder row), and
-        // Flysystem::has() rejects null, so guard before touching the disk.
-        if ($material->file_path && $disk->exists($material->file_path)) {
-            return $disk->download($material->file_path, $material->title);
+        if ($url === null) {
+            return back()->with('error', 'File not found.');
         }
 
-        return back()->with('error', 'File not found.');
+        return redirect()->away($url);
     }
 
     public function streamVideo(Course $course, CourseVideo $video)
@@ -161,13 +161,13 @@ class StudentPortalController extends Controller
         $authorized = Auth::user()->isAdmin() || ($student && CourseEnrollment::where('student_id', $student->id)
             ->where('course_id', $course->id)->exists());
         abort_unless($authorized, 403);
-        $disk = Storage::disk(config('filesystems.private'));
-        abort_unless($video->video_path && $disk->exists($video->video_path), 404);
 
-        return $disk->response($video->video_path, null, [
-            'Content-Type' => $disk->mimeType($video->video_path) ?: 'video/mp4',
-            'Cache-Control' => 'private, no-store',
-        ]);
+        $url = app(CatboxStorage::class)->url($video->video_path);
+        abort_unless($url, 404);
+
+        // Handed to the media host directly so that Range requests, and therefore
+        // seeking, behave normally instead of depending on PHP streaming.
+        return redirect()->away($url);
     }
 
     /**
@@ -525,23 +525,28 @@ class StudentPortalController extends Controller
         }
 
         try {
-            // Store the file
             $file = $request->file('screenshot');
-            $filename = 'exam_' . $attempt->exam_id . '_student_' . $student->id . '_q' . $request->question_id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('exam-screenshots', $filename);
 
-            // Get existing screenshots or initialize empty array
+            $url = app(CatboxStorage::class)->store(
+                $file,
+                'exam-screenshots',
+                sprintf(
+                    'exam-%d-student-%d-q%d',
+                    $attempt->exam_id,
+                    $student->id,
+                    $request->question_id,
+                )
+            );
+
             $screenshots = $attempt->screenshots ?? [];
-            
-            // Add new screenshot to the array
+
             $screenshots[$request->question_id] = [
-                'path' => $path,
+                'path' => $url,
                 'original_name' => $file->getClientOriginalName(),
                 'uploaded_at' => now()->toISOString(),
                 'size' => $file->getSize(),
             ];
 
-            // Update attempt with new screenshots
             $attempt->update([
                 'screenshots' => $screenshots,
             ]);
@@ -549,15 +554,19 @@ class StudentPortalController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Screenshot uploaded successfully',
-                'file_path' => $path,
+                'file_path' => $url,
                 'question_id' => $request->question_id,
             ]);
 
+        } catch (CatboxUploadFailed $e) {
+            \Log::warning('Screenshot rejected by the media host.', ['error' => $e->reason]);
+
+            return response()->json(['error' => $e->getMessage()], 503);
         } catch (\Exception $e) {
             \Log::error('Screenshot upload failed: ' . $e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to upload screenshot. Please try again.',
-                'message' => $e->getMessage(),
             ], 500);
         }
     }

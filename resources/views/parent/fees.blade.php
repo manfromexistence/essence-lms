@@ -22,7 +22,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-4">
                             @if($student->photo)
-                                <img src="{{ asset('storage/' . $student->photo) }}" alt="{{ $student->name }}" class="w-12 h-12 rounded-full object-cover">
+                                <img src="{{ $student->photo }}" alt="{{ $student->name }}" class="w-12 h-12 rounded-full object-cover">
                             @else
                                 <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
                                     <span class="text-white text-lg font-bold">{{ substr($student->name, 0, 1) }}</span>

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class CourseController extends Controller
 {
+    use HandlesHostedMedia;
     public function index(Request $request)
     {
         $query = Course::query();
@@ -136,10 +137,7 @@ class CourseController extends Controller
         // Handle image upload - file takes priority over URL
         $imagePath = $this->handleImageInput($request, 'image', 'courses');
         if ($imagePath) {
-            // Delete old image if it's a local file
-            if ($course->image && !filter_var($course->image, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($course->image)) {
-                Storage::disk('public')->delete($course->image);
-            }
+            $this->unlinkMedia($course->image);
             $validated['image'] = $imagePath;
         }
 
@@ -153,10 +151,7 @@ class CourseController extends Controller
 
     public function destroy(Course $course)
     {
-        // Delete associated image
-        if ($course->image && Storage::disk('public')->exists($course->image)) {
-            Storage::disk('public')->delete($course->image);
-        }
+        $this->unlinkMedia($course->image);
 
         $course->delete();
 
@@ -206,41 +201,6 @@ class CourseController extends Controller
      */
     private function handleImageInput(Request $request, string $name, string $directory): ?string
     {
-        $fileKey = $name . '_file';
-        $urlKey = $name . '_url';
-
-        // File upload takes priority
-        if ($request->hasFile($fileKey)) {
-            $file = $request->file($fileKey);
-            
-            \Log::info("Image upload attempt for {$name}", [
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'size' => $file->getSize(),
-                'is_valid' => $file->isValid(),
-            ]);
-
-            if (!$file->isValid()) {
-                \Log::error("Image upload failed for {$name}", ['error_code' => $file->getError()]);
-                return null;
-            }
-
-            try {
-                return $file->store($directory, 'public');
-            } catch (\Exception $e) {
-                \Log::error("Image storage failed", ['error' => $e->getMessage()]);
-                return null;
-            }
-        }
-
-        // Fall back to URL if provided
-        if ($request->filled($urlKey)) {
-            $url = $request->input($urlKey);
-            if (filter_var($url, FILTER_VALIDATE_URL)) {
-                return $url;
-            }
-        }
-
-        return null;
+        return $this->resolveImageInput($request, $name, $directory);
     }
 }

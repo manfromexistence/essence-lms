@@ -54,7 +54,7 @@ class CourseMaterial extends Model
         }
 
         if ($this->file_path) {
-            return asset('storage/' . $this->file_path);
+            return media_url($this->file_path);
         }
 
         return null;

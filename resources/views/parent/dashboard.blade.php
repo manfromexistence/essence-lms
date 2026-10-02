@@ -101,7 +101,7 @@
                         <div class="flex items-start space-x-4 mb-6">
                             <div class="flex-shrink-0">
                                 @if($student->photo)
-                                    <img src="{{ asset('storage/' . $student->photo) }}" alt="{{ $student->name }}" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg">
+                                    <img src="{{ $student->photo }}" alt="{{ $student->name }}" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg">
                                 @else
                                     <div class="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center border-4 border-white shadow-lg">
                                         <span class="text-white text-2xl font-bold">{{ substr($student->name, 0, 1) }}</span>

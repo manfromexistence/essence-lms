@@ -56,7 +56,7 @@ class CourseVideo extends Model
     public function getThumbnailUrl()
     {
         if ($this->thumbnail) {
-            return asset('storage/' . $this->thumbnail);
+            return media_url($this->thumbnail);
         }
         
         // Default thumbnail based on video type

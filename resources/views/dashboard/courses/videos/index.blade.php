@@ -34,7 +34,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="h-10 w-16 bg-gray-100 rounded overflow-hidden">
                             @if($video->thumbnail)
-                                <img src="{{ asset('storage/' . $video->thumbnail) }}" class="h-full w-full object-cover">
+                                <img src="{{ media_url($video->thumbnail) }}" class="h-full w-full object-cover">
                             @elseif($video->video_type == 'youtube' && $video->external_id)
                                 <img src="https://img.youtube.com/vi/{{ $video->external_id }}/hqdefault.jpg" class="h-full w-full object-cover" onerror="this.onerror=null; this.src='https://img.youtube.com/vi/{{ $video->external_id }}/mqdefault.jpg';">
                             @else

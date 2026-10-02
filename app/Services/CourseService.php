@@ -5,10 +5,10 @@ namespace App\Services;
 use App\Models\Course;
 use App\Models\CourseMaterial;
 use App\Models\Teacher;
+use App\Storage\CatboxStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class CourseService
@@ -59,10 +59,14 @@ class CourseService
                 throw new \RuntimeException('Cannot delete course with active batches');
             }
 
-            // Delete materials
+            // Unlink materials. Media is hosted on Catbox, where deletion needs
+            // an account key this deployment does not use, so this only stops the
+            // application pointing at the object.
+            $storage = app(CatboxStorage::class);
+
             foreach ($course->materials as $material) {
-                if ($material->file_path) {
-                    Storage::disk('public')->delete($material->file_path);
+                if ($material->file_path && ! $storage->isRemote($material->file_path)) {
+                    $storage->forget($material->file_path);
                 }
             }
             $course->materials()->delete();
@@ -91,7 +95,11 @@ class CourseService
      */
     public function uploadMaterial(Course $course, UploadedFile $file, array $data = []): CourseMaterial
     {
-        $path = $file->store('courses/' . $course->id . '/materials', 'public');
+        $url = app(CatboxStorage::class)->store(
+            $file,
+            'courses/' . $course->id . '/materials',
+            $file->getClientOriginalName()
+        );
 
         // Determine type from file extension
         $extension = strtolower($file->getClientOriginalExtension());
@@ -109,7 +117,7 @@ class CourseService
             'course_id' => $course->id,
             'title' => $data['title'] ?? $file->getClientOriginalName(),
             'type' => $data['type'] ?? $type,
-            'file_path' => $path,
+            'file_path' => $url,
             'description' => $data['description'] ?? null,
             'order' => $data['order'] ?? $maxOrder + 1,
         ]);
@@ -137,8 +145,10 @@ class CourseService
      */
     public function deleteMaterial(CourseMaterial $material): bool
     {
-        if ($material->file_path) {
-            Storage::disk('public')->delete($material->file_path);
+        $storage = app(CatboxStorage::class);
+
+        if ($material->file_path && ! $storage->isRemote($material->file_path)) {
+            $storage->forget($material->file_path);
         }
 
         return $material->delete();

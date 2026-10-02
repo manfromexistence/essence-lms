@@ -229,7 +229,7 @@
     // Initialize canvases
     document.addEventListener('DOMContentLoaded', function() {
         @foreach($submission->files as $index => $file)
-        initCanvas({{ $index }}, '{{ Storage::url($file['path']) }}');
+        initCanvas({{ $index }}, '{{ media_url($file['path']) }}');
         @endforeach
         
         // Show first page

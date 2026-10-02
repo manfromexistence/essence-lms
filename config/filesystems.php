@@ -7,29 +7,27 @@ return [
     | Default Filesystem Disk
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the default filesystem disk that should be used
-    | by the framework. The "local" disk, as well as a variety of cloud
-    | based disks are available to your application for file storage.
+    | Media — images, course video, exam screenshots, payment proofs — is hosted
+    | on Catbox rather than on this server's disk. Course video in particular
+    | exceeds what a shared host's disk, PHP's upload_max_filesize, and the
+    | client's own limits will comfortably carry.
+    |
+    | See config/media.php for the host settings.
     |
     */
 
-    // A Render deployment may still carry FILESYSTEM_DISK=s3 without an
-    // actual bucket configured. Fall back to the persistent public disk so
-    // image uploads and URL generation never crash the portal.
-    'default' => env('FILESYSTEM_DISK') === 's3' && env('AWS_BUCKET') ? 's3' : (env('FILESYSTEM_DISK') === 's3' ? 'public' : env('FILESYSTEM_DISK', 'public')),
+    'default' => env('FILESYSTEM_DISK', 'catbox'),
 
-    'private' => env('PRIVATE_FILESYSTEM_DISK') === 's3' && env('AWS_BUCKET') ? 's3' : (env('PRIVATE_FILESYSTEM_DISK') === 's3' ? 'local' : env('PRIVATE_FILESYSTEM_DISK', 'local')),
+    // Retained because eight call sites resolve `config('filesystems.private')`
+    // to decide how to stream or download an existing object.
+    'private' => env('PRIVATE_FILESYSTEM_DISK', 'catbox'),
 
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
-    | Below you may configure as many filesystem disks as necessary, and you
-    | may even configure multiple disks for the same driver. Examples for
-    | most supported storage drivers are configured here for reference.
-    |
-    | Supported drivers: "local", "ftp", "sftp", "s3"
+    | Supported drivers: "local", "catbox", "s3"
     |
     */
 
@@ -39,6 +37,21 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'serve' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Catbox-hosted media. The `catbox` driver is registered in
+        // App\Providers\StorageServiceProvider.
+        'catbox' => [
+            'driver' => 'catbox',
+            'endpoint' => env('CATBOX_API_URL', 'https://catbox.moe/user/api.php'),
+            'base_url' => env('CATBOX_BASE_URL', 'https://files.catbox.moe'),
+            'userhash' => env('CATBOX_USERHASH'),
+            'user_agent' => env('CATBOX_USER_AGENT', 'Laravel-LMS'),
+            'timeout' => (int) env('CATBOX_TIMEOUT', 300),
+            'connect_timeout' => (int) env('CATBOX_CONNECT_TIMEOUT', 15),
+            'read_timeout' => (int) env('CATBOX_READ_TIMEOUT', 300),
             'throw' => false,
             'report' => false,
         ],
@@ -71,11 +84,6 @@ return [
     |--------------------------------------------------------------------------
     | Symbolic Links
     |--------------------------------------------------------------------------
-    |
-    | Here you may configure the symbolic links that will be created when the
-    | `storage:link` Artisan command is executed. The array keys should be
-    | the locations of the links and the values should be their targets.
-    |
     */
 
     'links' => [

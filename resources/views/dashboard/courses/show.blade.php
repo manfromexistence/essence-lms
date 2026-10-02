@@ -214,7 +214,7 @@
                                                 </div>
                                                 @endif
                                             @elseif($video->thumbnail)
-                                                <img src="{{ asset('storage/' . $video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
+                                                <img src="{{ media_url($video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
                                             @else
                                                 <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-400 to-teal-500">
                                                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

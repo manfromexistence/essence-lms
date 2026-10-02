@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Student extends Model
 {
@@ -25,6 +26,7 @@ class Student extends Model
         'group',
         'shift',
         'registration_no',
+        'verification_token',
         'name_bn',
         'dob', // Date
         'gender', // Male, Female
@@ -124,6 +126,22 @@ class Student extends Model
     }
 
     /**
+     * A usable image URL for the student, falling back to generated initials.
+     *
+     * Profile images are hosted on Catbox, so `profile_image` holds an absolute
+     * URL; media_url() also copes with legacy storage-relative paths.
+     */
+    public function getPhotoAttribute(): string
+    {
+        if (filled($this->profile_image)) {
+            return (string) media_url($this->profile_image);
+        }
+
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name)
+            . '&background=168536&color=fff&size=512&bold=true';
+    }
+
+    /**
      * Bootstrap the model and its traits.
      */
     protected static function boot()
@@ -148,7 +166,54 @@ class Student extends Model
 
                 $student->registration_no = $year . '-' . $batchCode . '-' . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
             }
+
+            // Every student gets a public verification handle so that a QR code
+            // printed on a certificate resolves to their profile. Regenerated on
+            // save only if missing, so it stays stable for the life of the
+            // certificate — a token that rotated would break already-printed
+            // certificates.
+            if (empty($student->verification_token)) {
+                $student->verification_token = self::generateVerificationToken();
+            }
         });
+    }
+
+    /**
+     * Mint a token that is not already in use.
+     *
+     * 40 random characters is short enough for a QR code at certificate scale
+     * and long enough that the verification page cannot be walked.
+     */
+    public static function generateVerificationToken(): string
+    {
+        do {
+            $token = Str::random(40);
+        } while (self::where('verification_token', $token)->exists());
+
+        return $token;
+    }
+
+    /**
+     * Ensure a student has a verification token, minting one if a legacy row
+     * predates the column's backfill.
+     */
+    public function ensureVerificationToken(): string
+    {
+        if (blank($this->verification_token)) {
+            $this->forceFill([
+                'verification_token' => self::generateVerificationToken(),
+            ])->save();
+        }
+
+        return $this->verification_token;
+    }
+
+    /**
+     * The public URL a certificate's QR code points at.
+     */
+    public function verificationUrl(): string
+    {
+        return route('verification.student', ['token' => $this->ensureVerificationToken()]);
     }
 
     /**
@@ -165,6 +230,36 @@ class Student extends Model
     public function batch(): BelongsTo
     {
         return $this->belongsTo(Batch::class);
+    }
+
+    /**
+     * Certificates issued to this student.
+     *
+     * @return HasMany<Certificate>
+     */
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    /**
+     * Videos the student has watched, across all courses.
+     *
+     * @return HasMany<VideoView>
+     */
+    public function videoViews(): HasMany
+    {
+        return $this->hasMany(VideoView::class);
+    }
+
+    /**
+     * Written-exam answer scripts submitted by the student.
+     *
+     * @return HasMany<CqSubmission>
+     */
+    public function cqSubmissions(): HasMany
+    {
+        return $this->hasMany(CqSubmission::class);
     }
 
     /**

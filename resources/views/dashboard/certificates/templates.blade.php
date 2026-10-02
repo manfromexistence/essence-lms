@@ -75,7 +75,7 @@
                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-start gap-5 hover:border-bd-green hover:shadow-md transition group">
                     <div class="w-44 h-32 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 relative">
                         @if($template->background_image)
-                            <img src="{{ asset('storage/' . $template->background_image) }}" class="absolute inset-0 w-full h-full object-cover" style="opacity: 0.6;">
+                            <img src="{{ media_url($template->background_image) }}" class="absolute inset-0 w-full h-full object-cover" style="opacity: 0.6;">
                         @endif
                         {{-- Live preview of the layout, scaled down --}}
                         <div class="absolute inset-0 overflow-hidden" style="transform: scale(0.17); transform-origin: 0 0; width: {{ $template->width ?? 1200 }}px; height: {{ $template->height ?? 900 }}px;">

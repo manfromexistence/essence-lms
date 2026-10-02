@@ -9,7 +9,6 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class UploadContentScanTest extends TestCase
@@ -39,10 +38,8 @@ class UploadContentScanTest extends TestCase
         $this->assertDatabaseCount('payments', 0);
     }
 
-    public function test_valid_payment_proof_is_stored_on_private_disk(): void
+    public function test_valid_payment_proof_is_hosted_on_the_media_host(): void
     {
-        Storage::fake('local');
-        config(['filesystems.private' => 'local']);
         config(['payment-methods.methods.bkash.number' => '01700000000']);
 
         $studentUser = $this->makeStudent();
@@ -64,7 +61,12 @@ class UploadContentScanTest extends TestCase
         $payment = Payment::where('transaction_id', 'TRX8AAA888')->first();
         $this->assertNotNull($payment);
         $this->assertSame(Payment::STATUS_PENDING, $payment->status);
-        Storage::disk('local')->assertExists($payment->screenshot_path);
+
+        // The proof is hosted on Catbox, so the payment records the URL the host
+        // assigned and that URL is the only reference the application keeps.
+        $this->assertNotNull($payment->screenshot_path);
+        $this->assertStringStartsWith('https://files.catbox.moe/', $payment->screenshot_path);
+        $this->assertContains($payment->screenshot_path, $this->catbox->uploadedUrls());
     }
 
     private function makeStudent(): User

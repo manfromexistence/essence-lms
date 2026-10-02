@@ -9,7 +9,6 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class StudentManagementFilterTest extends TestCase
@@ -176,7 +175,6 @@ class StudentManagementFilterTest extends TestCase
 
     public function test_admin_can_create_student_with_profile_image_upload(): void
     {
-        Storage::fake('public');
         $admin = $this->createSuperAdmin();
         Role::firstOrCreate(['slug' => 'student'], ['name' => 'Student']);
 
@@ -192,8 +190,11 @@ class StudentManagementFilterTest extends TestCase
 
         $response->assertRedirect('/dashboard/students');
         $student = Student::where('phone', '01700000000')->firstOrFail();
-        $this->assertStringStartsWith('students/profiles/', $student->profile_image);
-        Storage::disk('public')->assertExists($student->profile_image);
+
+        // Media is hosted on Catbox, so the stored value is the URL the host
+        // assigned rather than a path under storage/.
+        $this->assertStringStartsWith('https://files.catbox.moe/', $student->profile_image);
+        $this->assertContains($student->profile_image, $this->catbox->uploadedUrls());
     }
 
     private function createSuperAdmin(): User

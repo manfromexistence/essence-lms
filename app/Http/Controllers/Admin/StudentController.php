@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
@@ -22,6 +23,8 @@ use Illuminate\Http\JsonResponse;
 
 class StudentController extends Controller
 {
+    use HandlesHostedMedia;
+
     public function __construct(
         protected StudentService $studentService,
         protected StudentIdGenerator $idGenerator,
@@ -440,6 +443,15 @@ class StudentController extends Controller
         ]);
 
         $approved = (bool) $request->batch_id;
+
+        // Captured before the update so that students who were already approved
+        // keep whatever password they have, rather than being reset to a new one.
+        $previouslyPending = $approved
+            ? Student::whereIn('id', $request->student_ids)
+                ->where('admission_status', '!=', 'approved')
+                ->pluck('id')
+            : collect();
+
         Student::whereIn('id', $request->student_ids)
             ->update([
                 'batch_id' => $request->batch_id,
@@ -451,7 +463,16 @@ class StudentController extends Controller
 
         if ($approved) {
             Student::whereIn('id', $request->student_ids)->get()
-                ->each(fn (Student $student) => $this->studentService->syncEnrollment($student));
+                ->each(function (Student $student) {
+                    $this->studentService->syncEnrollment($student);
+
+                    // Bulk assignment approves students exactly as the single
+                    // Approve button does, so it must also hand out credentials —
+                    // otherwise these applicants are approved but cannot log in.
+                    if ($previouslyPending->contains($student->id)) {
+                        $this->credentialService->issueFor($student);
+                    }
+                });
         }
 
         $count = count($request->student_ids);
@@ -637,12 +658,15 @@ class StudentController extends Controller
     }
 
     /**
-     * Upload a file and return the path.
+     * Upload a file and return the hosted URL.
      */
     private function uploadFile(Request $request, string $key, string $directory): ?string
     {
         if ($request->hasFile($key)) {
-            return $request->file($key)->store($directory, 'public');
+            return app(\App\Storage\CatboxStorage::class)->store(
+                $request->file($key),
+                $directory
+            );
         }
 
         return null;
@@ -655,77 +679,6 @@ class StudentController extends Controller
      */
     private function handleImageInput(Request $request, string $name, string $directory): ?string
     {
-        $fileKey = $name . '_file';
-        $urlKey = $name . '_url';
-
-        // File upload takes priority
-        if ($request->hasFile($fileKey)) {
-            $file = $request->file($fileKey);
-            
-            // Log for debugging
-            \Log::info("Image upload attempt for {$name}", [
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'size' => $file->getSize(),
-                'is_valid' => $file->isValid(),
-                'error' => $file->getError(),
-            ]);
-
-            if (!$file->isValid()) {
-                \Log::error("Image upload failed for {$name}", [
-                    'error_code' => $file->getError(),
-                    'error_message' => $this->getUploadErrorMessage($file->getError()),
-                ]);
-                return null;
-            }
-
-            if ($rejection = app(\App\Services\FileScanService::class)->inspect(
-                $file,
-                ['jpeg', 'jpg', 'png', 'gif', 'webp']
-            )) {
-                \Log::warning("Image upload rejected for {$name}", [
-                    'original_name' => $file->getClientOriginalName(),
-                    'reason' => $rejection,
-                ]);
-                return null;
-            }
-
-            try {
-                $path = $file->store($directory, 'public');
-                \Log::info("Image stored successfully", ['path' => $path]);
-                return $path;
-            } catch (\Exception $e) {
-                \Log::error("Image storage failed", ['error' => $e->getMessage()]);
-                return null;
-            }
-        }
-
-        // Fall back to URL if provided
-        if ($request->filled($urlKey)) {
-            $url = $request->input($urlKey);
-            // For external URLs, just store the URL directly
-            if (filter_var($url, FILTER_VALIDATE_URL)) {
-                return $url;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Get human-readable upload error message.
-     */
-    private function getUploadErrorMessage(int $errorCode): string
-    {
-        return match ($errorCode) {
-            UPLOAD_ERR_INI_SIZE => 'The uploaded file exceeds the upload_max_filesize directive in php.ini',
-            UPLOAD_ERR_FORM_SIZE => 'The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form',
-            UPLOAD_ERR_PARTIAL => 'The uploaded file was only partially uploaded',
-            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
-            UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder',
-            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
-            UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload',
-            default => 'Unknown upload error',
-        };
+        return $this->resolveImageInput($request, $name, $directory);
     }
 }

@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ServiceController extends Controller
 {
+    use HandlesHostedMedia;
     public function index(Request $request)
     {
         $q = Service::ordered();
@@ -94,9 +95,7 @@ class ServiceController extends Controller
 
         $image = $this->handleImage($request);
         if ($image) {
-            if ($service->image && !filter_var($service->image, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($service->image)) {
-                Storage::disk('public')->delete($service->image);
-            }
+            $this->unlinkMedia($service->image);
             $data['image'] = $image;
         }
         if (!empty($data['slug'])) $data['slug'] = Str::slug($data['slug']);
@@ -114,21 +113,14 @@ class ServiceController extends Controller
 
     public function destroy(Service $service)
     {
-        if ($service->image && !filter_var($service->image, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($service->image)) {
-            Storage::disk('public')->delete($service->image);
-        }
+        $this->unlinkMedia($service->image);
+
         $service->delete();
         return back()->with('success','Service deleted.');
     }
 
     private function handleImage(Request $request): ?string
     {
-        if ($request->hasFile('image_file') && $request->file('image_file')->isValid()) {
-            return $request->file('image_file')->store('services', 'public');
-        }
-        if ($request->filled('image_url') && filter_var($request->input('image_url'), FILTER_VALIDATE_URL)) {
-            return $request->input('image_url');
-        }
-        return null;
+        return $this->resolveImageInput($request, 'image', 'services');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Student;
 use App\Models\Exam;
+use App\Storage\CatboxStorage;
 use App\Models\ExamAttempt;
 use App\Models\ExamResult;
 use App\Models\CqSubmission;
@@ -208,12 +209,16 @@ class ExamTakingService
     public function submitCqAnswer(Student $student, Exam $exam, array $files): CqSubmission
     {
         $storedFiles = [];
+        $storage = app(CatboxStorage::class);
 
         foreach ($files as $file) {
             if ($file instanceof UploadedFile && $file->isValid()) {
-                $path = $file->store('cq-submissions/' . $exam->id, 'public');
                 $storedFiles[] = [
-                    'path' => $path,
+                    'path' => $storage->store(
+                        $file,
+                        'cq-submissions/' . $exam->id,
+                        $file->getClientOriginalName()
+                    ),
                     'original_name' => $file->getClientOriginalName(),
                     'size' => $file->getSize(),
                     'mime_type' => $file->getMimeType(),

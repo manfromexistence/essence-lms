@@ -9,10 +9,12 @@ use App\Models\Batch;
 use App\Models\CourseEnrollment;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\StudentCredentialService;
+use App\Storage\CatboxStorage;
+use App\Storage\CatboxUploadFailed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -90,9 +92,18 @@ class PaymentController extends Controller
             return back()->with('error', 'You already have a payment awaiting review for this course.');
         }
 
-        // Store screenshot
-        $privateDisk = config('filesystems.private');
-        $screenshotPath = $request->file('screenshot')->store('payment-proofs', $privateDisk);
+        // Host the transaction screenshot
+        try {
+            $screenshotUrl = app(CatboxStorage::class)->store(
+                $request->file('screenshot'),
+                'payment-proofs',
+                'payment-proof-' . $student->id . '-' . $course->id
+            );
+        } catch (CatboxUploadFailed $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['screenshot' => $e->getMessage()]);
+        }
 
         // Create payment record with pending status
         $payment = Payment::create([
@@ -102,7 +113,7 @@ class PaymentController extends Controller
             'transaction_id' => strtoupper(trim($validated['transaction_id'])),
             'sender_number' => $validated['sender_number'] ?? null,
             'transaction_reference' => $validated['payment_method'] . ':' . strtoupper(trim($validated['transaction_id'])),
-            'screenshot_path' => $screenshotPath,
+            'screenshot_path' => $screenshotUrl,
             'amount' => $course->price,
             'payment_date' => today(),
             'status' => Payment::STATUS_PENDING,
@@ -202,6 +213,11 @@ class PaymentController extends Controller
                 'status' => 'active',
             ]);
             $payment->student->user?->update(['is_active' => true]);
+
+            // An applicant who paid before the office approved their form still
+            // has no usable password, so approving the payment is the moment
+            // credentials are issued — the same rule as the Approve button.
+            $this->issueCredentialsIfNewlyApproved($payment->student);
 
             Notification::create([
                 'user_id' => $payment->student->user_id,
@@ -348,13 +364,26 @@ class PaymentController extends Controller
     {
         $student = Auth::user()->student;
         abort_unless(Auth::user()->isAdmin() || ($student && $payment->student_id === $student->id), 403);
-        $disk = Storage::disk(config('filesystems.private'));
-        abort_unless($payment->screenshot_path && $disk->exists($payment->screenshot_path), 404);
 
-        return $disk->response(
-            $payment->screenshot_path,
-            basename($payment->screenshot_path),
-            ['Cache-Control' => 'private, no-store']
-        );
+        $url = app(CatboxStorage::class)->url($payment->screenshot_path);
+        abort_unless($url, 404);
+
+        // The proof is hosted, so this hands the browser over to the media host
+        // rather than relaying the bytes through the application.
+        return redirect()->away($url);
+    }
+
+    /**
+     * Issue login credentials the first time a student is approved by payment.
+     *
+     * Skips students who were already approved through the admission form, so
+     * approving a second payment never resets a password the student has since
+     * changed.
+     */
+    private function issueCredentialsIfNewlyApproved(Student $student): void
+    {
+        if ($student->wasChanged('admission_status') || $student->wasRecentlyCreated) {
+            app(StudentCredentialService::class)->issueFor($student);
+        }
     }
 }

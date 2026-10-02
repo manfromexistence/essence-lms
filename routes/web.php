@@ -33,6 +33,11 @@ Route::get('/team', [HomeController::class, 'team'])->name('team');
 Route::get('/courses/{course}/demo', [HomeController::class, 'courseDemo'])->name('courses.demo');
 Route::get('/courses/{course}/demo/{video}/stream', [HomeController::class, 'streamCourseDemo'])->name('courses.demo.stream');
 Route::get('/certificates/verify/{code?}', [\App\Http\Controllers\CertificateController::class, 'verify'])->name('certificates.verify');
+// Where the QR code printed on a certificate lands. Public and unauthenticated
+// by design: it exists so a holder can prove a certificate is genuine.
+Route::get('/verify/student/{token}', [\App\Http\Controllers\CertificateController::class, 'studentProfile'])
+    ->middleware('throttle:30,1')
+    ->name('verification.student');
 Route::get('/admission/offline', [AdmissionController::class, 'createOffline'])->name('admission.offline');
 Route::get('/admission', [AdmissionController::class, 'create'])->name('admission.create');
 Route::post('/admission', [AdmissionController::class, 'store'])->middleware('throttle:10,1')->name('admission.store');

@@ -16,10 +16,33 @@
         'student_name' => 'Student Name', 'student_id' => 'Student ID', 'student_phone' => 'Phone',
         'student_email' => 'Email', 'course_name' => 'Course Name', 'course_code' => 'Course Code',
         'course_duration' => 'Course Duration', 'certificate_number' => 'Certificate No',
-        'verification_code' => 'Verify Code', 'issued_at' => 'Issue Date', 'grade' => 'Grade',
+        'verification_code' => 'Verify Code', 'verify_url' => 'Verification URL',
+        'issued_at' => 'Issue Date', 'grade' => 'Grade',
         'institution_name' => 'Institute Name', 'institution_phone' => 'Institute Phone',
         'institution_address' => 'Institute Address',
     ];
+
+    // Templates saved before QR verification have no QR element, and every
+    // certificate needs one. The designer shows the same auto-injected code the
+    // renderer will place, so an administrator can see and reposition it.
+    $qrDefaultSize = (int) max(90, min(150, round((int) $templateW / 8)));
+
+    $hasQrElement = collect($elements)->contains(
+        fn ($el) => is_array($el) && ($el['imageField'] ?? '') === 'qr'
+    );
+
+    if (! $hasQrElement) {
+        $elements[] = [
+            'type' => 'image',
+            'imageField' => 'qr',
+            'x' => max(0, (int) $templateW - $qrDefaultSize - 40),
+            'y' => max(0, (int) $templateH - $qrDefaultSize - 150),
+            'width' => $qrDefaultSize,
+            'height' => $qrDefaultSize,
+            'opacity' => 1,
+            'rotation' => 0,
+        ];
+    }
 @endphp
 
 <div class="space-y-4">
@@ -64,6 +87,7 @@
                     <div class="grid grid-cols-2 gap-2 mt-3">
                         <button type="button" draggable="true" id="dragAddText" onclick="addElement('text')" class="rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 cursor-grab active:cursor-grabbing"><i class="fa-solid fa-font mr-1"></i> Text</button>
                         <button type="button" draggable="true" id="dragAddImage" onclick="addElement('image')" class="rounded-lg border border-purple-200 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 cursor-grab active:cursor-grabbing"><i class="fa-solid fa-image mr-1"></i> Image</button>
+                        <button type="button" onclick="addQrElement()" class="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100" title="Add the certificate verification QR code"><i class="fa-solid fa-qrcode mr-1"></i> QR</button>
                         <button type="button" onclick="bringForward()" class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"><i class="fa-solid fa-arrow-up mr-1"></i> Forward</button>
                         <button type="button" onclick="sendBackward()" class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"><i class="fa-solid fa-arrow-down mr-1"></i> Backward</button>
                     </div>
@@ -102,7 +126,7 @@
                             {{-- Background layer --}}
                             <div id="bgLayer" class="absolute inset-0" style="opacity: {{ $bgOpacity }};">
                                 @if($template->background_image)
-                                    <img src="{{ asset('storage/' . $template->background_image) }}" class="w-full h-full object-cover">
+                                    <img src="{{ media_url($template->background_image) }}" class="w-full h-full object-cover">
                                 @else
                                     <div class="w-full h-full bg-gradient-to-br from-green-100 via-white to-emerald-100"></div>
                                 @endif
@@ -156,7 +180,9 @@
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Image Source</label>
                                 <select id="el_imageField" class="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm">
                                     <option value="logo">Logo</option><option value="signature">Signature</option>
-                                    <option value="background">Background</option><option value="custom">Custom URL</option>
+                                    <option value="background">Background</option>
+                                    <option value="qr">QR code (verification)</option>
+                                    <option value="custom">Custom URL</option>
                                 </select>
                             </div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Width</label><input type="number" id="el_width" min="20" max="1000" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"></div>
@@ -218,9 +244,12 @@
     function renderPreview() {
         const canvas = document.getElementById('canvas');
         canvas.innerHTML = '';
-        const logoUrl = @json($template->logo_image ? asset('storage/' . $template->logo_image) : app(\App\Services\SettingsService::class)->getLogo());
-        const sigUrl = @json($template->signature_image ? asset('storage/' . $template->signature_image) : '');
-        const bgUrl = @json($template->background_image ? asset('storage/' . $template->background_image) : '');
+        const logoUrl = @json($template->logo_image ? media_url($template->logo_image) : app(\App\Services\SettingsService::class)->getLogo());
+        const sigUrl = @json($template->signature_image ? media_url($template->signature_image) : '');
+        const bgUrl = @json($template->background_image ? media_url($template->background_image) : '');
+        // A representative QR so the designer can position a real, scannable code
+        // rather than a placeholder. The real payload differs per student.
+        const qrUrl = @json(app(\App\Services\QrCodeService::class)->pngDataUri('https://'.request()->getHost().'/verify/student/sample-verification-token', 600));
         const values = {
             institution_name: 'Dhaka IT Institute', student_name: 'Rafiqul Islam',
             course_name: 'Full Stack Web Development', certificate_number: 'DII-202608-00001-001',
@@ -228,6 +257,7 @@
             student_id: 'STU-0001', student_phone: '017XXXXXXXX', student_email: 'student@example.test',
             course_code: 'DIT-WD-01', course_duration: '12 months',
             institution_phone: '+880 1682-715570', institution_address: 'Mirpur-10, Dhaka',
+            verify_url: 'https://' + window.location.host + '/verify/student/sample-verification-token',
         };
 
         elements.forEach((el, i) => {
@@ -247,7 +277,11 @@
                 if (el.underline) style += 'text-decoration:underline;';
                 if (el.letterSpacing) style += `letter-spacing:${el.letterSpacing}px;`;
             } else {
-                let src = el.imageField === 'logo' ? logoUrl : el.imageField === 'signature' ? sigUrl : el.imageField === 'background' ? bgUrl : el.imageUrl || '';
+                let src = el.imageField === 'logo' ? logoUrl
+                    : el.imageField === 'signature' ? sigUrl
+                    : el.imageField === 'background' ? bgUrl
+                    : el.imageField === 'qr' ? qrUrl
+                    : el.imageUrl || '';
                 if (!src) return;
                 node.src = src;
                 style += `width:${el.width||160}px;height:${el.height||60}px;object-fit:contain;`;
@@ -386,6 +420,28 @@
             ? { type: 'text', content: 'New Text', x: 100, y: 100, width: 700, fontSize: 24, fontFamily: 'Georgia, serif', color: '#111827', bold: false, italic: false, align: 'center', letterSpacing: 0, opacity: 1, rotation: 0 }
             : { type: 'image', imageField: 'logo', x: 100, y: 100, width: 160, height: 60, opacity: 1, rotation: 0 };
         elements.push(el);
+        renderElementList();
+        renderPreview();
+        selectElement(elements.length - 1);
+    }
+
+    // Adds the verification QR code. A certificate should carry exactly one, so
+    // an existing QR is selected rather than a duplicate being added.
+    function addQrElement() {
+        const existing = elements.findIndex(el => el.imageField === 'qr');
+
+        if (existing !== -1) {
+            selectElement(existing);
+            return;
+        }
+
+        elements.push({
+            type: 'image', imageField: 'qr',
+            x: {{ max(0, (int) $templateW - $qrDefaultSize - 40) }},
+            y: {{ max(0, (int) $templateH - $qrDefaultSize - 150) }},
+            width: {{ $qrDefaultSize }}, height: {{ $qrDefaultSize }},
+            opacity: 1, rotation: 0,
+        });
         renderElementList();
         renderPreview();
         selectElement(elements.length - 1);

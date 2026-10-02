@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\SettingsService;
+use App\Storage\CatboxStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -97,8 +98,12 @@ class SettingsController extends Controller
         try {
             // Handle logo file upload
             if ($request->hasFile('institution_logo_file')) {
-                $logoPath = $request->file('institution_logo_file')->store('logos', 'public');
-                $this->settingsService->set('institution_logo', $logoPath);
+                $logoUrl = app(CatboxStorage::class)->store(
+                    $request->file('institution_logo_file'),
+                    'logos',
+                    'institution-logo'
+                );
+                $this->settingsService->set('institution_logo', $logoUrl);
             } elseif ($request->filled('institution_logo_url') && !str_contains($request->input('institution_logo_url'), '/logo.png')) {
                 // Only save URL if it's not the default logo
                 $this->settingsService->set('institution_logo', $request->input('institution_logo_url'));
@@ -106,8 +111,12 @@ class SettingsController extends Controller
 
             // Handle favicon file upload
             if ($request->hasFile('institution_favicon_file')) {
-                $faviconPath = $request->file('institution_favicon_file')->store('favicons', 'public');
-                $this->settingsService->set('institution_favicon', $faviconPath);
+                $faviconUrl = app(CatboxStorage::class)->store(
+                    $request->file('institution_favicon_file'),
+                    'favicons',
+                    'institution-favicon'
+                );
+                $this->settingsService->set('institution_favicon', $faviconUrl);
             } elseif ($request->filled('institution_favicon_url') && !str_contains($request->input('institution_favicon_url'), '/favicon.ico')) {
                 // Only save URL if it's not the default favicon
                 $this->settingsService->set('institution_favicon', $request->input('institution_favicon_url'));

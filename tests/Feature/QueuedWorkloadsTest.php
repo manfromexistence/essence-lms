@@ -10,7 +10,6 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class QueuedWorkloadsTest extends TestCase
@@ -80,8 +79,6 @@ class QueuedWorkloadsTest extends TestCase
 
     public function test_export_job_generates_file_and_notifies_requester(): void
     {
-        Storage::fake('local');
-        config(['filesystems.private' => 'local']);
         $admin = $this->makeAdmin();
 
         $export = ReportExport::create([
@@ -99,7 +96,10 @@ class QueuedWorkloadsTest extends TestCase
 
         $export->refresh();
         $this->assertSame(ReportExport::STATUS_COMPLETED, $export->status);
-        Storage::disk('local')->assertExists($export->path);
+
+        // The export is hosted, so the record holds the URL the host assigned.
+        $this->assertStringStartsWith('https://files.catbox.moe/', (string) $export->path);
+        $this->assertContains($export->path, $this->catbox->uploadedUrls());
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $admin->id,
@@ -109,12 +109,20 @@ class QueuedWorkloadsTest extends TestCase
 
     public function test_only_owner_or_super_admin_can_download_export(): void
     {
-        Storage::fake('local');
-        config(['filesystems.private' => 'local']);
-
         $owner = $this->makeAdmin();
         $other = $this->makeAdmin();
         $super = $this->makeSuperAdmin();
+
+        // Stage a hosted export so the download route has something to serve.
+        $staged = tempnam(sys_get_temp_dir(), 'export-') . '.xlsx';
+        file_put_contents($staged, 'binary-content');
+
+        $hostedUrl = app(\App\Storage\CatboxStorage::class)->store(
+            $staged,
+            'report-exports',
+            'Student_Report.xlsx'
+        );
+        @unlink($staged);
 
         $export = ReportExport::create([
             'uuid' => \Illuminate\Support\Str::uuid()->toString(),
@@ -123,23 +131,24 @@ class QueuedWorkloadsTest extends TestCase
             'format' => 'xlsx',
             'filters' => [],
             'status' => ReportExport::STATUS_COMPLETED,
-            'disk' => 'local',
-            'path' => 'report-exports/test.xlsx',
+            'disk' => 'catbox',
+            'path' => $hostedUrl,
             'filename' => 'Student_Report.xlsx',
         ]);
-        Storage::disk('local')->put('report-exports/test.xlsx', 'binary-content');
 
         $this->actingAs($other)
             ->get("/dashboard/reports/exports/{$export->uuid}/download")
             ->assertForbidden();
 
+        // Permitted users are handed off to the media host rather than served
+        // the bytes through the application.
         $this->actingAs($super)
             ->get("/dashboard/reports/exports/{$export->uuid}/download")
-            ->assertSuccessful();
+            ->assertRedirect($hostedUrl);
 
         $this->actingAs($owner)
             ->get("/dashboard/reports/exports/{$export->uuid}/download")
-            ->assertSuccessful();
+            ->assertRedirect($hostedUrl);
     }
 
     private function makeAdmin(): User

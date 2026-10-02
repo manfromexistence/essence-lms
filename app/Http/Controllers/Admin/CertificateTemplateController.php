@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\CertificateTemplate;
+use App\Storage\CatboxStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class CertificateTemplateController extends Controller
 {
+    use HandlesHostedMedia;
+
+    /** Template artwork that may be replaced with a hosted upload. */
+    private const ARTWORK_FIELDS = ['background_image', 'logo_image', 'signature_image'];
+
     public function index()
     {
         $templates = CertificateTemplate::orderBy('is_default', 'desc')->orderBy('name')->get();
@@ -28,15 +34,7 @@ class CertificateTemplateController extends Controller
             'is_default' => 'nullable|boolean',
         ]);
 
-        if ($request->hasFile('background_image')) {
-            $data['background_image'] = $request->file('background_image')->store('certificate-templates', 'public');
-        }
-        if ($request->hasFile('logo_image')) {
-            $data['logo_image'] = $request->file('logo_image')->store('certificate-templates', 'public');
-        }
-        if ($request->hasFile('signature_image')) {
-            $data['signature_image'] = $request->file('signature_image')->store('certificate-templates', 'public');
-        }
+        $data = array_merge($data, $this->hostTemplateArtwork($request));
 
         $data['is_default'] = $request->boolean('is_default');
         $data['is_active'] = true;
@@ -74,15 +72,7 @@ class CertificateTemplateController extends Controller
             'layout_config' => 'nullable|json',
         ]);
 
-        if ($request->hasFile('background_image')) {
-            $data['background_image'] = $request->file('background_image')->store('certificate-templates', 'public');
-        }
-        if ($request->hasFile('logo_image')) {
-            $data['logo_image'] = $request->file('logo_image')->store('certificate-templates', 'public');
-        }
-        if ($request->hasFile('signature_image')) {
-            $data['signature_image'] = $request->file('signature_image')->store('certificate-templates', 'public');
-        }
+        $data = array_merge($data, $this->hostTemplateArtwork($request));
 
         $data['is_active'] = $request->boolean('is_active');
         $data['is_default'] = $request->boolean('is_default');
@@ -117,11 +107,12 @@ class CertificateTemplateController extends Controller
             return back()->with('error', 'This template has issued certificates and cannot be deleted. Deactivate it instead.');
         }
 
-        foreach (['background_image', 'logo_image', 'signature_image'] as $field) {
-            if ($template->{$field} && Storage::disk('public')->exists($template->{$field})) {
-                Storage::disk('public')->delete($template->{$field});
-            }
-        }
+        $this->unlinkMedia(
+            $template->background_image,
+            $template->logo_image,
+            $template->signature_image,
+        );
+
         $template->delete();
 
         return back()->with('success', 'Certificate template deleted.');
@@ -133,5 +124,27 @@ class CertificateTemplateController extends Controller
         $template->update(['is_default' => true, 'is_active' => true]);
 
         return back()->with('success', "{$template->name} is now the default template.");
+    }
+
+    /**
+     * Host whichever template artwork files were submitted.
+     *
+     * @return array<string, string>  Field => hosted URL, for the fields supplied.
+     */
+    private function hostTemplateArtwork(Request $request): array
+    {
+        $hosted = [];
+
+        foreach (self::ARTWORK_FIELDS as $field) {
+            if ($request->hasFile($field)) {
+                $hosted[$field] = app(CatboxStorage::class)->store(
+                    $request->file($field),
+                    'certificate-templates',
+                    $field
+                );
+            }
+        }
+
+        return $hosted;
     }
 }

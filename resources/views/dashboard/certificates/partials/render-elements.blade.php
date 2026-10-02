@@ -3,6 +3,18 @@
     $elements = $layout['elements'] ?? (is_array($layout) && isset($layout[0]) ? $layout : []);
     $bgOpacity = $layout['background_opacity'] ?? 0.6;
 
+    $templateWidth = (int) ($template->width ?? 1200);
+    $templateHeight = (int) ($template->height ?? 900);
+
+    // The payload encoded by the certificate's QR code. Callers rendering a real
+    // certificate pass the student's own verification URL; the designer and the
+    // template list fall back to a sample, since neither has a student.
+    $qrPayload = $values['verification_url'] ?? 'https://example.test/verify/student/sample-verification-token';
+
+    $hasQrElement = collect($elements)->contains(
+        fn ($el) => is_array($el) && ($el['imageField'] ?? '') === 'qr'
+    );
+
     if (empty($elements)) {
         $elements = [
             ['type' => 'text', 'content' => '{institution_name}', 'x' => 50, 'y' => 110, 'width' => 1100, 'fontSize' => 46, 'fontFamily' => 'Georgia, serif', 'color' => '#14532d', 'bold' => true, 'align' => 'center', 'opacity' => 1],
@@ -34,7 +46,29 @@
         'course_duration' => $values['course_duration'] ?? '12 months',
         'institution_phone' => $values['institution_phone'] ?? '+880 1682-715570',
         'institution_address' => $values['institution_address'] ?? 'Mirpur-10, Dhaka',
+        // Available to any text element as {verify_url}.
+        'verify_url' => $values['verification_url'] ?? $qrPayload,
     ];
+
+    // Every certificate carries a QR code so a holder can prove it is genuine by
+    // scanning it. Templates that predate the feature have no `qr` element, so
+    // one is injected into the bottom-right corner rather than leaving existing
+    // certificates unverifiable. Templates that do define one keep the position
+    // and size the administrator chose.
+    if (! $hasQrElement) {
+        $qrSize = (int) max(90, min(150, round($templateWidth / 8)));
+        $elements[] = [
+            'type' => 'image',
+            'imageField' => 'qr',
+            'x' => max(0, $templateWidth - $qrSize - 40),
+            'y' => max(0, $templateHeight - $qrSize - 150),
+            'width' => $qrSize,
+            'height' => $qrSize,
+            'opacity' => 1,
+            'rotation' => 0,
+            'injected' => true,
+        ];
+    }
 
     $fontMap = [
         'Georgia, serif' => 'Georgia, "Times New Roman", serif',
@@ -86,17 +120,26 @@
         @php
             $imgUrl = '';
             if (($el['imageField'] ?? '') === 'logo') {
-                $imgUrl = $template->logo_image ? asset('storage/' . $template->logo_image) : app(\App\Services\SettingsService::class)->getLogo();
+                $imgUrl = $template->logo_image ? media_url($template->logo_image) : app(\App\Services\SettingsService::class)->getLogo();
             } elseif (($el['imageField'] ?? '') === 'signature') {
-                $imgUrl = $template->signature_image ? asset('storage/' . $template->signature_image) : '';
+                $imgUrl = $template->signature_image ? media_url($template->signature_image) : '';
             } elseif (($el['imageField'] ?? '') === 'background') {
-                $imgUrl = $template->background_image ? asset('storage/' . $template->background_image) : '';
+                $imgUrl = $template->background_image ? media_url($template->background_image) : '';
             } elseif (($el['imageField'] ?? '') === 'custom' && !empty($el['imageUrl'])) {
                 $imgUrl = $el['imageUrl'];
+            } elseif (($el['imageField'] ?? '') === 'qr') {
+                // Rendered at twice the display size so the code stays crisp when
+                // the certificate is printed at A3 or larger.
+                $imgUrl = app(\App\Services\QrCodeService::class)->pngDataUri(
+                    $qrPayload,
+                    600
+                );
             }
             if ($imgUrl) {
                 $style .= 'width:' . ($el['width'] ?? 160) . 'px;';
                 $style .= 'height:' . ($el['height'] ?? 60) . 'px;';
+                // Always 'contain': a QR whose modules get stretched or squashed
+                // by object-fit:cover will not scan.
                 $style .= 'object-fit:contain;';
             }
         @endphp

@@ -514,49 +514,51 @@ class SettingsService
     /**
      * Get the institution logo URL with fallback to default.
      */
+    /**
+     * The institution logo URL.
+     *
+     * Uploaded logos are hosted on Catbox and stored as absolute URLs; the
+     * shipped brand assets are paths under public/ and get a cache-busting
+     * query string. media_url() resolves both, so only the cache-buster needs
+     * handling here.
+     */
     public function getLogo(): string
     {
         $logo = $this->get('institution_logo', '');
-        
+
         if (empty($logo)) {
             return asset('logo.png');
         }
-        
-        // If it's a full URL, return as is
-        if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
-            return $logo;
-        }
-        
-        // If it's a storage path, convert to asset URL
+
         if (str_starts_with($logo, 'images/')) {
             return asset($logo) . '?v=20260802';
         }
 
-        return asset('storage/' . $logo);
+        return (string) media_url($logo, asset('logo.png'));
     }
 
     /**
      * Get the institution favicon URL with fallback to default.
      */
+    /**
+     * The institution favicon URL.
+     *
+     * @see self::getLogo() for how hosted and on-disk values are distinguished.
+     */
     public function getFavicon(): string
     {
         $favicon = $this->get('institution_favicon', 'images/brand/dhaka-it-institute-favicon.png');
-        
+
         if (empty($favicon)) {
             return asset('images/brand/dhaka-it-institute-favicon.png') . '?v=20260802';
         }
-        
-        // If it's a full URL, return as is
-        if (str_starts_with($favicon, 'http://') || str_starts_with($favicon, 'https://')) {
-            return $favicon;
-        }
 
-        // Brand assets live directly under public/, while uploaded icons use storage/.
+        // Brand assets live directly under public/ and are cache-busted;
+        // anything else is an uploaded icon.
         if (str_starts_with($favicon, 'images/')) {
             return asset($favicon) . '?v=20260802';
         }
-        
-        // If it's a storage path, convert to asset URL
-        return asset('storage/' . $favicon);
+
+        return (string) media_url($favicon, asset('images/brand/dhaka-it-institute-favicon.png') . '?v=20260802');
     }
 }

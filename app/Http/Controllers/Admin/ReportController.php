@@ -8,6 +8,7 @@ use App\Models\Batch;
 use App\Models\Course;
 use App\Models\Exam;
 use App\Models\ReportExport;
+use App\Storage\CatboxStorage;
 use App\Services\ExportService;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
@@ -502,10 +503,10 @@ class ReportController extends Controller
         );
         abort_unless($export->isCompleted(), 404, 'This export is not available.');
 
-        $disk = Storage::disk($export->disk);
-        abort_unless($export->path && $disk->exists($export->path), 404, 'The export file is no longer available.');
+        $url = app(CatboxStorage::class)->url($export->path);
+        abort_unless($url, 404, 'The export file is no longer available.');
 
-        return $disk->download($export->path, $export->filename);
+        return redirect()->away($url);
     }
 
     // =========================================================================

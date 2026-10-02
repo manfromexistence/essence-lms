@@ -94,7 +94,7 @@
                                         <i class="fas fa-external-link-alt"></i>
                                     </x-ui.button>
                                 @else
-                                    <x-ui.button variant="outline" size="sm" as="a" href="{{ Storage::url($material->file_path) }}" target="_blank">
+                                    <x-ui.button variant="outline" size="sm" as="a" href="{{ media_url($material->file_path) }}" target="_blank">
                                         <i class="fas fa-download"></i>
                                     </x-ui.button>
                                 @endif

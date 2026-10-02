@@ -46,8 +46,13 @@ Schedule::command('queue:prune-failed --hours=720')->daily();
 | Report export housekeeping
 |--------------------------------------------------------------------------
 |
-| Generated export files contain student/payment data; they and their
-| database rows are removed after 7 days to limit data retention exposure.
+| Removes the database rows for generated exports after 7 days.
+|
+| The exported file itself is hosted on Catbox, which cannot delete without an
+| account key, so this no longer reduces data-retention exposure for the file —
+| it only stops the portal advertising the link. Anyone holding a previously
+| issued export URL keeps access to it. If exports must genuinely expire, they
+| need to be hosted somewhere the application controls.
 |
 */
 
@@ -56,6 +61,7 @@ Schedule::call(function () {
         ->get()
         ->each(function (ReportExport $export) {
             if ($export->path) {
+                // Best-effort: a no-op with a log line for Catbox-hosted exports.
                 Storage::disk($export->disk)->delete($export->path);
             }
             $export->delete();

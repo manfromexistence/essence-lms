@@ -1,17 +1,19 @@
 <?php
 
-if (!function_exists('media_url')) {
+if (! function_exists('media_url')) {
     /**
-     * Resolve a stored image/media path to a working URL.
+     * Resolve a stored image/media value to a working URL.
      *
-     * Handles:
-     *  - External URLs (http/https): returned unchanged.
-     *  - Webroot absolute paths (/images/... or /...): returned via asset().
-     *  - Storage-relative paths (images/..., uploads/...): returned via asset('storage/...').
-     *  - Null/empty: returns null.
+     * Media lives on Catbox, so a stored value is normally an absolute
+     * `https://files.catbox.moe/...` URL. Values written before that migration
+     * are still storage-relative paths (`courses/x.png`), and brand assets are
+     * webroot paths (`images/brand/logo.png`), so all three shapes are accepted.
      *
-     * @param string|null $value
-     * @param mixed       $fallback
+     * Keeping every shape working in one place means a column can be migrated
+     * row by row without breaking the views that read it.
+     *
+     * @param  string|null  $value
+     * @param  mixed  $fallback
      * @return string|null
      */
     function media_url(?string $value, $fallback = null): ?string
@@ -20,16 +22,19 @@ if (!function_exists('media_url')) {
             return $fallback;
         }
 
-        if (filter_var($value, FILTER_VALIDATE_URL)) {
+        $value = trim($value);
+
+        // Already hosted, or any other absolute URL.
+        if (preg_match('#^https?://\S+$#i', $value) === 1) {
             return $value;
         }
 
-        $clean = ltrim($value, '/');
-
+        // A webroot path such as /images/brand/logo.png.
         if (str_starts_with($value, '/')) {
-            return asset($clean === '' ? '/' : '/' . $clean);
+            return asset(ltrim($value, '/'));
         }
 
-        return asset('storage/' . $clean);
+        // Anything left is a path on the local public disk.
+        return asset('storage/' . ltrim($value, '/'));
     }
 }

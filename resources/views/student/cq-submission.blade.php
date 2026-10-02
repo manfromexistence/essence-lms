@@ -98,7 +98,7 @@
                             </div>
                             @if (!empty($file['path']))
                                 <x-ui.button variant="outline" size="sm" as="a"
-                                    href="{{ Storage::url($file['path']) }}" target="_blank" rel="noopener">
+                                    href="{{ media_url($file['path']) }}" target="_blank" rel="noopener">
                                     <i class="fas fa-up-right-from-square mr-2"></i> View
                                 </x-ui.button>
                             @endif

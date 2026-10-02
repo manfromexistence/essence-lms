@@ -292,6 +292,21 @@
                                     </button>
                                 </form>
                             @endif
+                            @if($admissionStatus === 'approved')
+                                {{-- Approved students were emailed a generated password at
+                                     approval time. This reissues it when that email
+                                     never arrived. --}}
+                                <form method="POST" action="{{ route('dashboard.email.resend-credentials', $student) }}"
+                                    class="inline"
+                                    onsubmit="return confirm('Generate a new password for {{ $student->user?->name ?? 'this student' }} and email it to them? Their current password will stop working.')">
+                                    @csrf
+                                    <button type="submit"
+                                        class="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 text-xs font-semibold hover:bg-blue-200 transition-colors"
+                                        title="Generate a new password and email it to this student">
+                                        Resend login
+                                    </button>
+                                </form>
+                            @endif
                             <a href="{{ route('dashboard.students.edit', $student) }}"
                                 class="text-gray-500 hover:text-bd-green transition-colors" title="Edit">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

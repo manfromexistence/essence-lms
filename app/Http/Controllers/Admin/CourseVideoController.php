@@ -2,14 +2,31 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseVideo;
+use App\Storage\CatboxStorage;
+use App\Storage\CatboxUploadFailed;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\ValidationException;
 
 class CourseVideoController extends Controller
 {
+    use HandlesHostedMedia;
+
+    /**
+     * Formats accepted for course video.
+     *
+     * @var array<int, string>
+     */
+    private const VIDEO_TYPES = ['mp4', 'm4v', 'mov', 'webm'];
+
+    /** MIME types the browser-side <video> element reliably decodes. */
+    private const VIDEO_MIMES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
+
     public function index(Course $course)
     {
         $videos = $course->videos()->orderBy('order')->get();
@@ -28,9 +45,9 @@ class CourseVideoController extends Controller
             'description' => 'nullable|string',
             'video_type' => 'required|in:upload,youtube,vimeo,facebook',
             'video_file' => [
-                'required_if:video_type,upload', 'nullable', 'file',
-                'mimetypes:video/mp4,video/quicktime,video/x-msvideo', 'max:512000', // 500MB
-                new \App\Rules\SafeUpload(['mp4', 'm4v', 'mov', 'webm']),
+                'required_if:video_type,upload', 'nullable',
+                File::types(self::VIDEO_MIMES)->max($this->maxUploadKb()),
+                new \App\Rules\SafeUpload(self::VIDEO_TYPES),
             ],
             'external_id' => 'required_if:video_type,youtube,vimeo,facebook|nullable|string',
             'thumbnail_file' => ['nullable', 'image', 'max:2048', new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'gif', 'webp'])],
@@ -48,35 +65,16 @@ class CourseVideoController extends Controller
             'order' => $course->videos()->max('order') + 1,
         ];
 
-        // Handle External ID extraction from URL
-        if (in_array($request->video_type, ['youtube', 'vimeo', 'facebook']) && $request->external_id) {
-            $url = $request->external_id;
-            $id = $url;
-            
-            if ($request->video_type === 'youtube') {
-                // Extract YouTube ID
-                if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $url, $matches)) {
-                    $id = $matches[1];
-                }
-            } elseif ($request->video_type === 'vimeo') {
-                // Extract Vimeo ID
-                if (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/', $url, $matches)) {
-                    $id = $matches[1];
-                }
-            } elseif ($request->video_type === 'facebook') {
-                // For Facebook, store the full URL
-                $id = $url;
-            }
-            
-            $videoData['external_id'] = $id;
+        if (in_array($request->video_type, ['youtube', 'vimeo', 'facebook'], true) && $request->external_id) {
+            $videoData['external_id'] = $this->externalIdFor($request->video_type, $request->external_id);
         }
 
         if ($request->video_type === 'upload' && $request->hasFile('video_file')) {
-            $videoData['video_path'] = $request->file('video_file')->store('courses/videos', config('filesystems.private'));
+            $videoData['video_path'] = $this->hostVideo($request->file('video_file'));
         }
 
         if ($request->hasFile('thumbnail_file')) {
-            $videoData['thumbnail'] = $request->file('thumbnail_file')->store('courses/thumbnails', 'public');
+            $videoData['thumbnail'] = $this->hostImage($request->file('thumbnail_file'), 'courses/thumbnails');
         }
 
         CourseVideo::create($videoData);
@@ -99,8 +97,9 @@ class CourseVideoController extends Controller
             'description' => 'nullable|string',
             'video_type' => 'required|in:upload,youtube,vimeo,facebook',
             'video_file' => [
-                'nullable', 'file', 'mimetypes:video/mp4,video/quicktime,video/x-msvideo', 'max:512000',
-                new \App\Rules\SafeUpload(['mp4', 'm4v', 'mov', 'webm']),
+                'nullable',
+                File::types(self::VIDEO_MIMES)->max($this->maxUploadKb()),
+                new \App\Rules\SafeUpload(self::VIDEO_TYPES),
             ],
             'external_id' => 'required_if:video_type,youtube,vimeo,facebook|nullable|string',
             'thumbnail_file' => ['nullable', 'image', 'max:2048', new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'gif', 'webp'])],
@@ -116,44 +115,22 @@ class CourseVideoController extends Controller
             'is_preview' => $request->has('is_preview'),
         ];
 
-        // Handle External ID change
-        if (in_array($request->video_type, ['youtube', 'vimeo', 'facebook'])) {
-            $url = $request->external_id;
-            $id = $url;
-            
-            if ($request->video_type === 'youtube') {
-                if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $url, $matches)) {
-                    $id = $matches[1];
-                }
-            } elseif ($request->video_type === 'vimeo') {
-                if (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/', $url, $matches)) {
-                    $id = $matches[1];
-                }
-            } elseif ($request->video_type === 'facebook') {
-                $id = $url;
-            }
-            
-            $updateData['external_id'] = $id;
-            $updateData['video_path'] = null; // clear path if validation passes
+        // Switching to an embedded provider drops any file we were serving.
+        if (in_array($request->video_type, ['youtube', 'vimeo', 'facebook'], true)) {
+            $this->unlinkMedia($video->video_path);
+            $updateData['external_id'] = $this->externalIdFor($request->video_type, $request->external_id);
+            $updateData['video_path'] = null;
         }
 
-        // Handle Video File Upload
         if ($request->video_type === 'upload' && $request->hasFile('video_file')) {
-            // Delete old file
-            if ($video->video_path) {
-                Storage::disk(config('filesystems.private'))->delete($video->video_path);
-            }
-            $updateData['video_path'] = $request->file('video_file')->store('courses/videos', config('filesystems.private'));
+            $this->unlinkMedia($video->video_path);
+            $updateData['video_path'] = $this->hostVideo($request->file('video_file'));
             $updateData['external_id'] = null;
         }
 
-        // Handle Thumbnail Upload
         if ($request->hasFile('thumbnail_file')) {
-            // Delete old thumbnail
-            if ($video->thumbnail) {
-                Storage::disk('public')->delete($video->thumbnail);
-            }
-            $updateData['thumbnail'] = $request->file('thumbnail_file')->store('courses/thumbnails', 'public');
+            $this->unlinkMedia($video->thumbnail);
+            $updateData['thumbnail'] = $this->hostImage($request->file('thumbnail_file'), 'courses/thumbnails');
         }
 
         $video->update($updateData);
@@ -165,13 +142,8 @@ class CourseVideoController extends Controller
     public function destroy(Course $course, CourseVideo $video)
     {
         abort_unless($video->course_id === $course->id, 404);
-        // Delete files
-        if ($video->video_path) {
-            Storage::disk(config('filesystems.private'))->delete($video->video_path);
-        }
-        if ($video->thumbnail) {
-            Storage::disk('public')->delete($video->thumbnail);
-        }
+
+        $this->unlinkMedia($video->video_path, $video->thumbnail);
 
         $video->delete();
 
@@ -196,17 +168,90 @@ class CourseVideoController extends Controller
     }
 
     /**
-     * Stream a privately-stored uploaded video (admin preview).
+     * Send the browser to the hosted video (admin preview).
+     *
+     * A redirect rather than a proxied stream: the media host serves HTTP Range
+     * itself, so seeking and resuming work as they normally would, whereas
+     * pushing hundreds of megabytes through PHP would exhaust the request
+     * timeout and hold a worker for the duration.
      */
-    public function stream(Course $course, CourseVideo $video)
+    public function stream(Course $course, CourseVideo $video): RedirectResponse
     {
         abort_unless($video->course_id === $course->id, 404);
-        $disk = Storage::disk(config('filesystems.private'));
-        abort_unless($video->video_path && $disk->exists($video->video_path), 404);
 
-        return $disk->response($video->video_path, null, [
-            'Content-Type' => $disk->mimeType($video->video_path) ?: 'video/mp4',
-            'Cache-Control' => 'private, no-store',
-        ]);
+        $storage = app(CatboxStorage::class);
+
+        abort_unless($video->video_path && $storage->isRemote($video->video_path), 404);
+
+        return redirect()->away($storage->url($video->video_path));
+    }
+
+    /**
+     * The provider's own identifier for an embed URL.
+     */
+    private function externalIdFor(string $type, string $input): string
+    {
+        return match ($type) {
+            'youtube' => $this->youtubeId($input) ?? $input,
+            'vimeo' => $this->vimeoId($input) ?? $input,
+            // Facebook embeds are referenced by URL.
+            default => $input,
+        };
+    }
+
+    private function youtubeId(string $url): ?string
+    {
+        return preg_match(
+            '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/',
+            $url,
+            $m
+        ) === 1 ? $m[1] : null;
+    }
+
+    private function vimeoId(string $url): ?string
+    {
+        return preg_match(
+            '/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/',
+            $url,
+            $m
+        ) === 1 ? $m[1] : null;
+    }
+
+    /**
+     * Host an uploaded lecture.
+     *
+     * Course video is the reason media lives on Catbox at all, so the failure
+     * message names the size limit rather than surfacing a generic HTTP error.
+     */
+    private function hostVideo(\Illuminate\Http\UploadedFile $file): string
+    {
+        try {
+            return app(CatboxStorage::class)->store($file, 'courses/videos', $file->getClientOriginalName());
+        } catch (CatboxUploadFailed $e) {
+            throw ValidationException::withMessages([
+                'video_file' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function hostImage(\Illuminate\Http\UploadedFile $file, string $directory): string
+    {
+        try {
+            return app(CatboxStorage::class)->store($file, $directory, $file->getClientOriginalName());
+        } catch (CatboxUploadFailed $e) {
+            throw ValidationException::withMessages(['thumbnail_file' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * The host's own ceiling, in kilobytes.
+     *
+     * Catbox rejects anything over 200 MB. Validating against our own larger
+     * limit instead would only move the failure to the upload, after the user
+     * had already waited out the whole transfer.
+     */
+    private function maxUploadKb(): int
+    {
+        return (int) config('media.max_upload_kb', 200 * 1024);
     }
 }

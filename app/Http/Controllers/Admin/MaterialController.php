@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseMaterial;
+use App\Storage\CatboxStorage;
+use App\Storage\CatboxUploadFailed;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class MaterialController extends Controller
 {
+    use HandlesHostedMedia;
+
     public function index(Course $course)
     {
         $materials = $course->materials()->orderBy('order')->get();
@@ -38,8 +43,7 @@ class MaterialController extends Controller
         $order = $course->materials()->max('order') + 1;
 
         if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('materials/' . $course->id, config('filesystems.private'));
-            $validated['file_path'] = $path;
+            $validated['file_path'] = $this->hostMaterial($request, $course);
         }
 
         $course->materials()->create([
@@ -58,8 +62,9 @@ class MaterialController extends Controller
      * Stream / redirect to a single material.
      *
      * Route::resource registers GET .../materials/{material}, so this method must
-     * exist. Files live on the private disk (not publicly reachable), so they are
-     * streamed through the app rather than linked directly.
+     * exist. Hosted files are fetched through the media host rather than read
+     * off local disk, so this issues a redirect instead of streaming bytes
+     * through PHP.
      */
     public function show(Course $course, CourseMaterial $material)
     {
@@ -71,14 +76,12 @@ class MaterialController extends Controller
             return redirect()->away($material->file_path);
         }
 
-        $disk = Storage::disk(config('filesystems.private'));
-        abort_unless(
-            $material->file_path && $disk->exists($material->file_path),
-            404,
-            'The file for this material is no longer available.'
-        );
+        $storage = app(CatboxStorage::class);
+        $url = $storage->url($material->file_path);
 
-        return $disk->download($material->file_path, $material->title);
+        abort_unless($url, 404, 'The file for this material is no longer available.');
+
+        return redirect()->away($url);
     }
 
     public function edit(Course $course, CourseMaterial $material)
@@ -103,11 +106,8 @@ class MaterialController extends Controller
         ]);
 
         if ($request->hasFile('file')) {
-            if ($material->file_path && Storage::disk(config('filesystems.private'))->exists($material->file_path)) {
-                Storage::disk(config('filesystems.private'))->delete($material->file_path);
-            }
-            $path = $request->file('file')->store('materials/' . $course->id, config('filesystems.private'));
-            $validated['file_path'] = $path;
+            $this->unlinkMedia($material->file_path);
+            $validated['file_path'] = $this->hostMaterial($request, $course);
         } elseif ($validated['type'] === 'link') {
             $material->file_path = $validated['file_path'];
         }
@@ -126,9 +126,8 @@ class MaterialController extends Controller
     public function destroy(Course $course, CourseMaterial $material)
     {
         abort_unless($material->course_id === $course->id, 404);
-        if ($material->file_path && Storage::disk(config('filesystems.private'))->exists($material->file_path)) {
-            Storage::disk(config('filesystems.private'))->delete($material->file_path);
-        }
+
+        $this->unlinkMedia($material->file_path);
 
         $material->delete();
 
@@ -150,5 +149,21 @@ class MaterialController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Host a course material upload and return its URL.
+     */
+    private function hostMaterial(Request $request, Course $course): string
+    {
+        try {
+            return app(CatboxStorage::class)->store(
+                $request->file('file'),
+                'materials/' . $course->id,
+                $request->file('file')->getClientOriginalName()
+            );
+        } catch (CatboxUploadFailed $e) {
+            throw ValidationException::withMessages(['file' => $e->getMessage()]);
+        }
     }
 }

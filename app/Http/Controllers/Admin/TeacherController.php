@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\Teacher;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Illuminate\Validation\Rules\Password;
 
 class TeacherController extends Controller
 {
+    use HandlesHostedMedia;
     public function index()
     {
         $query = Teacher::with('user');
@@ -313,41 +315,6 @@ class TeacherController extends Controller
      */
     private function handleImageInput(Request $request, string $name, string $directory): ?string
     {
-        $fileKey = $name . '_file';
-        $urlKey = $name . '_url';
-
-        // File upload takes priority
-        if ($request->hasFile($fileKey)) {
-            $file = $request->file($fileKey);
-            
-            \Log::info("Image upload attempt for {$name}", [
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'size' => $file->getSize(),
-                'is_valid' => $file->isValid(),
-            ]);
-
-            if (!$file->isValid()) {
-                \Log::error("Image upload failed for {$name}", ['error_code' => $file->getError()]);
-                return null;
-            }
-
-            try {
-                return $file->store($directory, 'public');
-            } catch (\Exception $e) {
-                \Log::error("Image storage failed", ['error' => $e->getMessage()]);
-                return null;
-            }
-        }
-
-        // Fall back to URL if provided
-        if ($request->filled($urlKey)) {
-            $url = $request->input($urlKey);
-            if (filter_var($url, FILTER_VALIDATE_URL)) {
-                return $url;
-            }
-        }
-
-        return null;
+        return $this->resolveImageInput($request, $name, $directory);
     }
 }

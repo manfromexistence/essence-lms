@@ -8,8 +8,8 @@ use App\Models\Teacher;
 use App\Models\Announcement;
 use App\Models\Course;
 use App\Models\CourseVideo;
+use App\Storage\CatboxStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
@@ -149,13 +149,12 @@ class HomeController extends Controller
     public function streamCourseDemo(Course $course, CourseVideo $video)
     {
         abort_unless($course->status === 'active' && $video->course_id === $course->id && $video->is_preview, 404);
-        $disk = Storage::disk(config('filesystems.private'));
-        abort_unless($video->video_path && $disk->exists($video->video_path), 404);
 
-        return $disk->response($video->video_path, null, [
-            'Content-Type' => $disk->mimeType($video->video_path) ?: 'video/mp4',
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
+        $url = app(CatboxStorage::class)->url($video->video_path);
+        abort_unless($url, 404);
+
+        // Redirect to the media host so the browser gets native Range support.
+        return redirect()->away($url);
     }
 
     public function courses()

@@ -64,7 +64,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail</label>
                      @if($video->thumbnail)
                         <div class="mb-2">
-                             <img src="{{ asset('storage/' . $video->thumbnail) }}" class="h-20 w-32 object-cover rounded">
+                             <img src="{{ media_url($video->thumbnail) }}" class="h-20 w-32 object-cover rounded">
                         </div>
                     @endif
                     <input type="file" name="thumbnail_file" accept="image/*" class="block w-full text-sm text-gray-500

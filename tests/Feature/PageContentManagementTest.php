@@ -85,9 +85,8 @@ class PageContentManagementTest extends TestCase
         $this->assertNull($page->fresh()->getContent('slide1_image'));
     }
 
-    public function test_file_upload_is_stored_and_wired_into_content(): void
+    public function test_file_upload_is_hosted_and_wired_into_content(): void
     {
-        Storage::fake('public');
         $page = $this->homePage();
 
         $this->actingAs($this->user)->put(route('dashboard.cms.update', $page), [
@@ -96,9 +95,16 @@ class PageContentManagementTest extends TestCase
         ]);
 
         $value = $page->fresh()->getContent('slide1_image');
+
         $this->assertNotNull($value);
-        $this->assertStringStartsWith('storage/cms/', $value);
-        Storage::disk('public')->assertExists(str_replace('storage/', '', $value));
+
+        // Media is hosted on Catbox, so the stored value is the absolute URL the
+        // host assigned rather than a path on the local disk.
+        $this->assertMatchesRegularExpression(
+            '#^https://files\.catbox\.moe/\S+\.jpg$#',
+            $value
+        );
+        $this->assertContains($value, $this->catbox->uploadedUrls());
     }
 
     public function test_generic_editor_replaces_content_with_key_value_pairs(): void

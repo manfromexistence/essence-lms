@@ -16,6 +16,11 @@
         $course = $certificate->course;
         $settings = app(\App\Services\SettingsService::class);
 
+        // What the printed QR code encodes: the student's public verification
+        // page. Scanning it proves the holder is a recognised student without
+        // anyone having to phone the institute.
+        $verificationUrl = $student ? $student->verificationUrl() : route('certificates.verify');
+
         $values = [
             'institution_name' => $settings->get('institution_name', 'Dhaka IT Institute'),
             'student_name' => $user?->name ?? 'Student',
@@ -31,13 +36,18 @@
             'course_duration' => $course ? trim(($course->duration ?? '') . ' ' . ($course->duration_unit ?? '')) : '',
             'institution_phone' => $settings->get('institution_phone', ''),
             'institution_address' => $settings->get('institution_address', ''),
+            'verification_url' => $verificationUrl,
         ];
 
-        $background = $template?->background_image ? asset('storage/' . $template->background_image) : null;
+        $background = $template?->background_image ? media_url($template->background_image) : null;
     @endphp
     <div class="no-print mx-auto mb-5 flex max-w-5xl justify-between gap-3">
         <a href="{{ url()->previous() }}" class="rounded-lg border bg-white px-4 py-2 font-semibold">← Back</a>
-        <button onclick="window.print()" class="rounded-lg bg-green-800 px-5 py-2 font-semibold text-white">Print / Save PDF</button>
+        <div class="flex gap-3">
+            <a href="{{ $verificationUrl }}" target="_blank" rel="noopener"
+               class="rounded-lg border bg-white px-4 py-2 font-semibold">Verify online</a>
+            <button onclick="window.print()" class="rounded-lg bg-green-800 px-5 py-2 font-semibold text-white">Print / Save PDF</button>
+        </div>
     </div>
     <main class="certificate relative mx-auto overflow-hidden bg-white shadow-2xl"
           style="width: {{ $template?->width ?? 1200 }}px; max-width: 100%; aspect-ratio: {{ ($template?->width ?? 1200) }} / {{ ($template?->height ?? 900) }};">

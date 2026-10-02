@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Notification;
 use App\Models\ReportExport;
 use App\Services\ExportService;
+use App\Storage\CatboxStorage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -16,9 +17,13 @@ use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
- * Renders a requested report export (Excel/PDF) onto the private storage
- * disk, then notifies the requester with a download link. Slow exports no
- * longer block HTTP workers.
+ * Renders a requested report export (Excel/PDF), hosts the result, then
+ * notifies the requester with a download link. Slow exports no longer block
+ * HTTP workers.
+ *
+ * Exports are written to local disk first and then uploaded, because Excel and
+ * dompdf both need a real filesystem path and the media host only accepts an
+ * upload. The exported URL is what gets persisted.
  */
 class GenerateReportExportJob implements ShouldQueue
 {
@@ -41,25 +46,31 @@ class GenerateReportExportJob implements ShouldQueue
         [$data, $extraFilters] = $this->buildReportData($filters);
         $renderFilters = array_merge($filters, $extraFilters);
 
-        $disk = config('filesystems.private');
+        $storage = app(CatboxStorage::class);
         $extension = $this->export->format === 'pdf' ? 'pdf' : 'xlsx';
-        $path = 'report-exports/' . $this->export->uuid . '.' . $extension;
+        $localPath = 'report-exports/' . $this->export->uuid . '.' . $extension;
 
-        if ($this->export->format === 'pdf') {
-            $output = $exportService->buildPdf($this->export->report_type, $data, $renderFilters)->output();
-            Storage::disk($disk)->put($path, $output);
-        } else {
-            $exportClass = $exportService->getExportClass($this->export->report_type);
+        try {
+            if ($this->export->format === 'pdf') {
+                $output = $exportService->buildPdf($this->export->report_type, $data, $renderFilters)->output();
+                Storage::disk('local')->put($localPath, $output);
+            } else {
+                $exportClass = $exportService->getExportClass($this->export->report_type);
 
-            if (!$exportClass) {
-                throw new \InvalidArgumentException("Unsupported report type: {$this->export->report_type}.");
+                if (!$exportClass) {
+                    throw new \InvalidArgumentException("Unsupported report type: {$this->export->report_type}.");
+                }
+
+                Excel::store(new $exportClass($renderFilters), $localPath, 'local');
             }
 
-            Excel::store(new $exportClass($renderFilters), $path, $disk);
+            $url = $storage->storeFromDisk($localPath, 'local', 'report-exports');
+        } finally {
+            // The staged copy has served its purpose either way.
+            Storage::disk('local')->delete($localPath);
         }
 
-        $size = Storage::disk($disk)->size($path);
-        $this->export->markCompleted($path, $disk, $size);
+        $this->export->markCompleted($url, config('filesystems.default'), $storage->size($url));
 
         Notification::create([
             'user_id' => $this->export->requested_by,

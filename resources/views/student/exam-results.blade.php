@@ -236,10 +236,10 @@
                                         @if(is_array($attempt->screenshots[$question['id']]))
                                             @foreach($attempt->screenshots[$question['id']] as $screenshot)
                                                 <div class="relative group">
-                                                    <img src="{{ Storage::url($screenshot) }}" 
+                                                    <img src="{{ media_url($screenshot) }}" 
                                                          alt="Screenshot for question {{ $index + 1 }}" 
                                                          class="w-full h-48 object-cover rounded-lg border-2 border-gray-300 shadow-sm hover:shadow-lg transition-shadow duration-200">
-                                                    <a href="{{ Storage::url($screenshot) }}" 
+                                                    <a href="{{ media_url($screenshot) }}" 
                                                        target="_blank" rel="noopener"
                                                        class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg">
                                                         <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,10 +250,10 @@
                                             @endforeach
                                         @else
                                             <div class="relative group">
-                                                <img src="{{ Storage::url($attempt->screenshots[$question['id']]) }}" 
+                                                <img src="{{ media_url($attempt->screenshots[$question['id']]) }}" 
                                                      alt="Screenshot for question {{ $index + 1 }}" 
                                                      class="w-full h-48 object-cover rounded-lg border-2 border-gray-300 shadow-sm hover:shadow-lg transition-shadow duration-200">
-                                                <a href="{{ Storage::url($attempt->screenshots[$question['id']]) }}" 
+                                                <a href="{{ media_url($attempt->screenshots[$question['id']]) }}" 
                                                    target="_blank" rel="noopener"
                                                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg">
                                                     <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">

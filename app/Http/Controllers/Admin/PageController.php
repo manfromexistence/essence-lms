@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Storage\CatboxStorage;
 use Illuminate\Http\Request;
 
 class PageController extends Controller
@@ -74,10 +75,15 @@ class PageController extends Controller
         }
 
         // Image inputs submit URL text (or a filename when a file is picked) as content[<key>].
-        // Wherever a file was actually uploaded, store it and replace the value with the storage path.
+        // Wherever a file was actually uploaded, host it and replace the value with
+        // the resulting URL.
         foreach (array_keys($content) as $key) {
             if ($request->hasFile('content.' . $key)) {
-                $content[$key] = 'storage/' . $request->file('content.' . $key)->store('cms', 'public');
+                $content[$key] = app(CatboxStorage::class)->store(
+                    $request->file('content.' . $key),
+                    'cms',
+                    $key
+                );
             }
         }
 
