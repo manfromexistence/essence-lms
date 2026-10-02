@@ -1,7 +1,12 @@
 @php
-    $layout = $template->layout_config ?? [];
-    $elements = $layout['elements'] ?? (is_array($layout) && isset($layout[0]) ? $layout : []);
-    $bgOpacity = $layout['background_opacity'] ?? 0.6;
+    // Normalised on read as well as on write. Templates saved before the
+    // sanitiser existed may still contain unescaped element properties, and this
+    // partial emits them into a raw style attribute.
+    $sanitisedLayout = app(\App\Services\CertificateLayoutSanitiser::class)->sanitise($template->layout_config ?? []);
+
+    $layout = $sanitisedLayout;
+    $elements = $sanitisedLayout['elements'];
+    $bgOpacity = $sanitisedLayout['background_opacity'];
 
     $templateWidth = (int) ($template->width ?? 1200);
     $templateHeight = (int) ($template->height ?? 900);

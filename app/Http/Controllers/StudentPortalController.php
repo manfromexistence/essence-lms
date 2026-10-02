@@ -669,6 +669,24 @@ class StudentPortalController extends Controller
         $currentIndex = $videos->search(fn ($item) => $item->id === $video->id);
         $nextVideo = $videos->get($currentIndex + 1);
 
+        // Opening the player starts the clock for this video. completeVideo
+        // credits watch time only up to what could genuinely have elapsed since
+        // this moment, so a certificate cannot be obtained by posting to the
+        // completion endpoint without spending the time.
+        //
+        // An already-completed video keeps its row untouched, so revisiting a
+        // finished lesson does not reset the recorded progress.
+        $opened = VideoView::firstOrNew([
+            'student_id' => $student->id,
+            'course_video_id' => $video->id,
+        ]);
+
+        if (! $opened->exists || ! $opened->completed) {
+            $opened->watched_seconds = $opened->watched_seconds ?? 0;
+            $opened->last_watched_at = now();
+            $opened->save();
+        }
+
         return view('student.course-player', compact('course', 'video', 'videos', 'progress', 'nextVideo'));
     }
 
@@ -679,12 +697,61 @@ class StudentPortalController extends Controller
             && CourseEnrollment::where('student_id', $student->id)->where('course_id', $course->id)->exists(), 403);
 
         $data = $request->validate(['watched_seconds' => 'nullable|integer|min:0']);
-        $watchedSeconds = (int) ($data['watched_seconds'] ?? 0);
 
-        // Server-side playback verification: require a meaningful watch duration.
+        // Watch time is credited from the server's own clock, not from the
+        // number the browser sent. A client-reported figure is attacker input:
+        // it previously had to merely exceed the duration, so posting
+        // watched_seconds=999999 once per video marked every video complete
+        // and — because CertificateService treats "all videos complete" as
+        // finished — issued a real, publicly verifiable certificate without any
+        // playback at all.
+        //
+        // The player posts progress as it goes, so crediting only what could
+        // genuinely have elapsed since the previous post means completing a
+        // course now takes the time it actually takes.
+        $view = VideoView::where('student_id', $student->id)
+            ->where('course_video_id', $video->id)
+            ->first();
+
+        $previousTotal = (int) ($view->watched_seconds ?? 0);
+
+        // Time since the player was opened. watchCourse starts this clock; if
+        // the row is somehow missing, elapsed is zero, which credits nothing.
+        //
+        // Computed from raw timestamps rather than Carbon's diffInSeconds(),
+        // whose sign convention differs between Carbon major versions.
+        $elapsed = $view?->last_watched_at
+            ? max(0, now()->getTimestamp() - $view->last_watched_at->getTimestamp())
+            : 0;
+
+        // A small grace covers the gap between opening the page and the first
+        // playback, and ordinary clock skew. It is deliberately far smaller than
+        // any real lesson, so it cannot be used to skip one.
+        $graceSeconds = 15;
+
+        $credibleNow = min((int) ($data['watched_seconds'] ?? 0), $elapsed + $graceSeconds);
+
+        // The running total can never exceed the video length, and each attempt
+        // moves the clock forward, so repeated calls cannot bank credit faster
+        // than real time passes.
+        $watchedSeconds = min(
+            $video->duration ? (int) $video->duration : PHP_INT_MAX,
+            $previousTotal + $credibleNow,
+        );
+
+        // The clock restarts on every attempt, so the next call is again
+        // measured from now.
+        VideoView::updateOrCreate(
+            ['student_id' => $student->id, 'course_video_id' => $video->id],
+            ['watched_seconds' => $watchedSeconds, 'last_watched_at' => now()],
+        );
+
+        // Require a meaningful watch duration. Where the duration is unknown,
+        // fall back to the grace window rather than an arbitrary 15 seconds.
         $minRequired = $video->duration
             ? (int) floor($video->duration * 0.9)
-            : 15;
+            : $graceSeconds;
+
         if ($watchedSeconds < max(1, $minRequired)) {
             return response()->json([
                 'completed' => false,
@@ -710,6 +777,8 @@ class StudentPortalController extends Controller
             ], 422);
         }
 
+        // Only now is the lesson genuinely finished; the progress row above is
+        // deliberately written as incomplete.
         VideoView::updateOrCreate(
             ['student_id' => $student->id, 'course_video_id' => $video->id],
             ['watched_seconds' => $watchedSeconds, 'completed' => true, 'last_watched_at' => now()]

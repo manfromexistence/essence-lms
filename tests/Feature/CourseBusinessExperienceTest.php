@@ -8,6 +8,7 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseVideo;
 use App\Models\Role;
 use App\Models\Student;
+use App\Models\VideoView;
 use App\Models\User;
 use App\Services\SidebarService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -147,9 +148,15 @@ class CourseBusinessExperienceTest extends TestCase
             'enrolled_at' => now(),
         ]);
 
+        // Opening the player starts the watch clock; the lesson is 60s long, so
+        // a genuine viewer finishes 60s later. Backdating the row's
+        // last_watched_at is how that is expressed without sleeping in a test.
+        $this->actingAs($studentUser)->get("/student/courses/{$course->id}/watch/{$video->id}")->assertOk();
+        VideoView::where('student_id', $student->id)
+            ->where('course_video_id', $video->id)
+            ->update(['last_watched_at' => now()->subSeconds(60)]);
         $response = $this->actingAs($studentUser)
             ->postJson("/student/courses/{$course->id}/watch/{$video->id}/complete", ['watched_seconds' => 60]);
-
         $response->assertSuccessful()->assertJsonPath('completed', true)->assertJsonPath('next_url', null);
         $this->assertNotNull($response->json('certificate_url'));
         $certificate = Certificate::first();

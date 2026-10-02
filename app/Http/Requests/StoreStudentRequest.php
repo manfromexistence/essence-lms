@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\SafeUpload;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
 class StoreStudentRequest extends FormRequest
@@ -21,7 +22,7 @@ class StoreStudentRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             // Basic Information
             'name_bn' => 'nullable|required_without:name|string|max:255',
             'name' => 'nullable|required_without:name_bn|string|max:255',
@@ -34,7 +35,7 @@ class StoreStudentRequest extends FormRequest
             // Use file validation with mimes instead of image rule for better compatibility
             'profile_image_file' => [
                 'nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:204800',
-                new \App\Rules\SafeUpload(['jpeg', 'jpg', 'png', 'gif', 'webp']),
+                new SafeUpload(['jpeg', 'jpg', 'png', 'gif', 'webp']),
             ],
             'profile_image_url' => 'nullable|string|max:500',
 
@@ -75,21 +76,21 @@ class StoreStudentRequest extends FormRequest
             // Educational Background - SSC
             'ssc_institute' => 'nullable|string|max:255',
             'ssc_board' => 'nullable|string|max:100',
-            'ssc_year' => 'nullable|integer|min:1990|max:' . (date('Y') + 1),
+            'ssc_year' => 'nullable|integer|min:1990|max:'.(date('Y') + 1),
             'ssc_gpa' => 'nullable|numeric|min:0|max:5',
             'ssc_group' => 'nullable|string|max:100',
 
             // Educational Background - HSC
             'hsc_institute' => 'nullable|string|max:255',
             'hsc_board' => 'nullable|string|max:100',
-            'hsc_year' => 'nullable|integer|min:1990|max:' . (date('Y') + 1),
+            'hsc_year' => 'nullable|integer|min:1990|max:'.(date('Y') + 1),
             'hsc_gpa' => 'nullable|numeric|min:0|max:5',
             'hsc_group' => 'nullable|string|max:100',
 
             // Educational Background - Undergraduate
             'undergrad_institute' => 'nullable|string|max:255',
             'undergrad_board' => 'nullable|string|max:100',
-            'undergrad_year' => 'nullable|integer|min:1990|max:' . (date('Y') + 1),
+            'undergrad_year' => 'nullable|integer|min:1990|max:'.(date('Y') + 1),
             'undergrad_gpa' => 'nullable|numeric|min:0|max:4',
             'undergrad_group' => 'nullable|string|max:100',
             'undergrad_department' => 'nullable|string|max:255',
@@ -116,6 +117,47 @@ class StoreStudentRequest extends FormRequest
             // Other
             'featured' => 'nullable|boolean',
         ];
+
+        return $this->isPublicAdmission()
+            ? array_merge($rules, $this->publicAdmissionGuard())
+            : $rules;
+    }
+
+    /**
+     * Fields an anonymous applicant may never set.
+     *
+     * This is a second, independent guard alongside the whitelist in
+     * AdmissionController. Either one alone is sufficient today; having both
+     * means a future refactor that reintroduces `$request->validated()` cannot
+     * silently reopen the hole.
+     *
+     * `prohibited` rejects the request outright rather than dropping the value,
+     * so a caller that sends one of these gets a clear 422 instead of quietly
+     * watching their change disappear.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function publicAdmissionGuard(): array
+    {
+        $forbidden = [
+            'batch_id',            // grants course entitlement, bypassing payment
+            'total_amount',        // applicant-authored fee ledger
+            'paid_amount',
+            'featured',            // appears in the public homepage carousel
+            'verification_token',  // applicant-chosen public QR profile URL
+            'user_id',             // account takeover
+            'admission_status',    // self-approval
+            'status',
+            'applied_at',
+        ];
+
+        $rules = [];
+
+        foreach ($forbidden as $field) {
+            $rules[$field] = ['prohibited'];
+        }
+
+        return $rules;
     }
 
     /**

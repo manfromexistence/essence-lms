@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\CertificateTemplate;
+use App\Rules\SafeUpload;
+use App\Services\CertificateLayoutSanitiser;
 use App\Storage\CatboxStorage;
 use Illuminate\Http\Request;
 
@@ -18,6 +20,7 @@ class CertificateTemplateController extends Controller
     public function index()
     {
         $templates = CertificateTemplate::orderBy('is_default', 'desc')->orderBy('name')->get();
+
         return view('dashboard.certificates.templates', compact('templates'));
     }
 
@@ -26,9 +29,9 @@ class CertificateTemplateController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:100',
-            'background_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:10240', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
-            'logo_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
-            'signature_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'background_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:10240', new SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'logo_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'signature_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
             'width' => 'nullable|integer|min:600|max:3000',
             'height' => 'nullable|integer|min:400|max:2000',
             'is_default' => 'nullable|boolean',
@@ -54,6 +57,7 @@ class CertificateTemplateController extends Controller
     public function edit(CertificateTemplate $template)
     {
         $template->load('certificates');
+
         return view('dashboard.certificates.edit', compact('template'));
     }
 
@@ -62,9 +66,9 @@ class CertificateTemplateController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:100',
-            'background_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:10240', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
-            'logo_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
-            'signature_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new \App\Rules\SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'background_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:10240', new SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'logo_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
+            'signature_image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp', 'max:5120', new SafeUpload(['jpeg', 'png', 'jpg', 'webp'])],
             'width' => 'nullable|integer|min:600|max:3000',
             'height' => 'nullable|integer|min:400|max:2000',
             'is_active' => 'nullable|boolean',
@@ -77,14 +81,15 @@ class CertificateTemplateController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_default'] = $request->boolean('is_default');
 
-        // Parse layout_config JSON into array (preserve {elements, background_opacity} structure)
-        if (!empty($request->input('layout_config'))) {
+        // Element properties are normalised before storage. They are rendered into an
+        // unescaped style attribute, so accepting them verbatim would let any
+        // admin inject script into every certificate they can view, including
+        // the super-admin's browser.
+        if (! empty($request->input('layout_config'))) {
             $decoded = json_decode($request->input('layout_config'), true);
+
             if (is_array($decoded)) {
-                if (isset($decoded['elements']) && is_array($decoded['elements'])) {
-                    $decoded['elements'] = array_values($decoded['elements']);
-                }
-                $data['layout_config'] = $decoded;
+                $data['layout_config'] = app(CertificateLayoutSanitiser::class)->sanitise($decoded);
             }
         }
 
@@ -129,7 +134,7 @@ class CertificateTemplateController extends Controller
     /**
      * Host whichever template artwork files were submitted.
      *
-     * @return array<string, string>  Field => hosted URL, for the fields supplied.
+     * @return array<string, string> Field => hosted URL, for the fields supplied.
      */
     private function hostTemplateArtwork(Request $request): array
     {
