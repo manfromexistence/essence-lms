@@ -1,3 +1,18 @@
+# ===========================================================================
+# REFERENCE ONLY — this file is NOT applied to the live service.
+#
+# The service srv-d9l05lfavr4c739q5nig was created directly in the Render
+# dashboard, not from this blueprint, so Render does not read these values.
+# Verified drift (see README.md → "render.yaml is reference, not the source of
+# truth"):
+#
+#   * healthCheckPath is "" on the live service, not /up.
+#   * BREVO_API_KEY / BREVO_SENDER_EMAIL / BREVO_SENDER_NAME are absent from the
+#     live service, which is why config/mail.php had to carry a hardcoded
+#     fallback key.
+#
+# Treat the dashboard as the source of truth, or delete this file.
+# ===========================================================================
 services:
   - type: web
     name: dhaka-it-institute
@@ -20,13 +35,20 @@ services:
         value: sqlite
       - key: DB_DATABASE
         value: /var/www/html/database/database.sqlite
-      # WARNING: free-plan ephemeral filesystem — attach a paid persistent disk
-      # at /var/www/html/database AND /var/www/html/storage, or switch
-      # DB_CONNECTION/DB_URL to managed PostgreSQL before real admissions.
+      # =========================================================================
+      # DATA LOSS: no persistent disk is attached to this service
+      # (GET /v1/disks returns []). The SQLite file lives inside the container,
+      # so every deploy starts from an empty filesystem and the entrypoint
+      # re-seeds from scratch. Student and admission data does not survive a
+      # deploy.
+      #
+      # Fix before real admissions — either:
+      #   1. attach a disk at /var/www/html/database (>= 1 GB), or
+      #   2. move to managed PostgreSQL (DB_CONNECTION=pgsql + DB_* values).
       #
       # One-shot reset: temporarily add FORCE_RESEED=true to rebuild this SQLite
-      # database from the seeders on the next deploy (remember to remove it
-      # afterwards so later boots do not wipe data).
+      # database from the seeders on the next deploy (remove it afterwards).
+      # =========================================================================
       - key: FORCE_RESEED
         value: "false"
       - key: SESSION_DRIVER
@@ -41,11 +63,31 @@ services:
         value: warning
       - key: MAIL_MAILER
         value: log
-      # Transactional email is sent through Brevo's HTTP API (not Laravel Mail),
-      # so MAIL_MAILER above does not affect it. The API key is deliberately NOT
-      # stored here: `sync: false` keeps it out of git and requires it to be set
-      # in the Render dashboard (Environment tab). The DB `settings` table is
-      # wiped on every deploy, so an env var is the only durable source.
+      # Media (images, course video, exam screenshots, payment proofs, exports)
+      # is hosted on Catbox rather than on this container's filesystem, which is
+      # what makes large lecture video practical and keeps uploads across
+      # deploys. Two caveats: objects are world-readable and permanent, and they
+      # cannot be deleted without CATBOX_USERHASH.
+      - key: FILESYSTEM_DISK
+        value: catbox
+      - key: PRIVATE_FILESYSTEM_DISK
+        value: catbox
+      - key: CATBOX_API_URL
+        value: https://catbox.moe/user/api.php
+      - key: CATBOX_BASE_URL
+        value: https://files.catbox.moe
+      - key: CATBOX_USERHASH
+        sync: false
+      # Catbox's own ceiling is 200 MB. Validating against anything larger only
+      # moves the failure to after the whole transfer.
+      - key: MEDIA_MAX_UPLOAD_KB
+        value: "204800"
+      # Transactional email goes through Brevo's HTTP API, not Laravel Mail, so
+      # MAIL_MAILER above does not affect it. Set this in the dashboard.
+      #
+      # NOTE: config/mail.php currently carries a live Brevo key as a literal
+      # fallback, committed in ca58f33. That key must be rotated and the
+      # literal removed — see README.md → "Secrets currently in git".
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_EMAIL

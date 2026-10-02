@@ -151,26 +151,173 @@ php artisan migrate:status
 
 ## Render deployment
 
-The service is defined in `render.yaml` (Docker runtime, health check `/up`).
-A push to `main` auto-deploys. The container seeds the database only when it is
-empty (see `docker-entrypoint.sh`), so redeploys never overwrite live data.
+Render runs this app as a **Docker web service**. The deployment artefacts are
+`Dockerfile`, `docker-apache-config.conf` and `docker-entrypoint.sh`.
 
-### Reset the seeded (SQLite) database
+- **Dashboard:** <https://dashboard.render.com/web/srv-d9l05lfavr4c739q5nig>
+- **Service ID:** `srv-d9l05lfavr4c739q5nig` · **name:** `dhaka-it-institute`
+- **URL:** <https://dhaka-it-institute.onrender.com>
+- **Repo:** `github.com/manfromexistence/essence-lms` · **branch:** `main`
+- **Runtime:** `docker` (Dockerfile at repo root) · **plan:** `free` · **region:** `oregon`
+- **Auto-deploy:** on, triggered by any push to `main`
 
-On the free plan the SQLite file is on an ephemeral filesystem, and the
-entrypoint skips seeding once users exist. To rebuild it from the current
-seeders after a change to the seed data:
+Two builds run per deploy: Composer and npm run in a `build` stage, the runtime
+image is `php:8.3-apache` with the compiled artefacts copied in. `ca-certificates`
+is installed explicitly so outbound HTTPS (Brevo, and the media host) can verify
+TLS.
 
-1. Render dashboard → the web service → **Environment**.
-2. Add `FORCE_RESEED` = `true`.
-3. Trigger **Manual Deploy → Deploy latest commit** (or push a commit).
-4. Once the deploy is healthy, **delete the `FORCE_RESEED` variable** so the
-   next boot does not wipe the database again.
+### ⚠️ The database is on an ephemeral filesystem
 
-`FORCE_RESEED` is intentionally ignored unless `DB_CONNECTION=sqlite`, so it can
-never destroy a managed MySQL/PostgreSQL database.
+**This service has no persistent disk attached.** Verified against the Render API:
+`GET /v1/disks` returns `[]`.
+
+The database is SQLite at `/var/www/html/database/database.sqlite`, which lives
+inside the container. Render gives every deploy a brand-new container with a new
+empty filesystem, so:
+
+> **Every deploy destroys all data and rebuilds an empty database from the
+> seeders.**
+
+This has already happened on every deploy in this service's history. It is fine
+for a demo, and it is *not* fine once real admissions exist.
+
+Note that `docker-entrypoint.sh` only skips re-seeding when users already exist.
+That check protects data *within one container's lifetime*; it cannot protect
+data across deploys, because a new container has no users to find. Deploys on
+this service are therefore not data-preserving.
+
+**Before accepting real students, do one of these:**
+
+1. **Attach a persistent disk** (recommended). Render dashboard → the service →
+   *Disks* → add a disk mounted at `/var/www/html/database`, sized ≥ 1 GB. Set
+   `DB_DATABASE=/var/www/html/database/database.sqlite`. Existing data will not
+   migrate — it is already gone.
+2. **Move to a managed database.** Create a Render PostgreSQL instance and set
+   `DB_CONNECTION=pgsql` plus the `DB_*` values it gives you. This is the option
+   to take if the institute expects more than light use.
+
+### Media storage
+
+Images, course video, exam screenshots, payment proofs and report exports are
+hosted on **Catbox** (`catbox.moe`) rather than on the container filesystem — see
+`config/media.php` and `app/Storage/`. This is what makes large lecture video
+practical on a shared host, and it also means uploads survive a redeploy.
+
+Two consequences to be aware of before real admissions:
+
+- Every hosted object is **world-readable and permanent**. A URL that leaks stays
+  public. There is no signed-URL equivalent on this host.
+- Files **cannot be deleted**. Setting `CATBOX_USERHASH` to a Catbox account key
+  is what would enable real deletion; without it, removing a record only stops
+  the portal pointing at the object.
+
+If uploads must expire — payment proofs in particular — they need hosting the
+application controls, not a public anonymous host.
+
+### Environment variables
+
+Set these in the dashboard under **Environment**. Only keys that exist on the
+live service are listed as such; the rest come from `render.yaml`.
+
+| Key | Value | Notes |
+|---|---|---|
+| `APP_KEY` | generated | Render generates it. **Rotating it logs everyone out.** |
+| `APP_URL` | `https://dhaka-it-institute.onrender.com` | |
+| `APP_ENV` / `APP_DEBUG` | `production` / `false` | |
+| `DB_CONNECTION` | `sqlite` | Change with the database move above |
+| `DB_DATABASE` | `/var/www/html/database/database.sqlite` | Point at the disk once attached |
+| `SESSION_DRIVER` | `file` | |
+| `CACHE_STORE` | `file` | |
+| `QUEUE_CONNECTION` | `sync` | Jobs run in-request; see below |
+| `LOG_CHANNEL` | `stderr` | Logs surface in the Render dashboard |
+| `MAIL_MAILER` | `log` | Reset links land in the log, not an inbox |
+| `TRUSTED_PROXIES` | `*` | **Required.** Without it Laravel emits `http://` asset URLs and the dashboard renders unstyled |
+| `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` | *your values* | Set these; do not rely on the demo logins |
+| `BREVO_API_KEY` | *secret* | Transactional email. **See the warning below** |
+| `BREVO_SENDER_EMAIL` / `BREVO_SENDER_NAME` | sender identity | Must be a verified Brevo sender |
+
+Additional keys introduced with the Catbox media host:
+
+| Key | Default | Notes |
+|---|---|---|
+| `FILESYSTEM_DISK` / `PRIVATE_FILESYSTEM_DISK` | `catbox` | |
+| `CATBOX_API_URL` | `https://catbox.moe/user/api.php` | |
+| `CATBOX_BASE_URL` | `https://files.catbox.moe` | |
+| `CATBOX_USERHASH` | *(empty)* | Empty = anonymous. A Catbox account key enables deletes |
+| `CATBOX_USER_AGENT` | `Laravel-LMS` | |
+| `CATBOX_TIMEOUT` | `300` | Must cover a full-size video upload; the host cannot resume a partial transfer |
+| `CATBOX_CONNECT_TIMEOUT` | `15` | |
+| `CATBOX_READ_TIMEOUT` | `300` | |
+| `MEDIA_MAX_UPLOAD_KB` | `204800` | Catbox's ceiling is 200 MB |
+
+> **Queue caveat.** `QUEUE_CONNECTION=sync` means every queued job runs inside the
+> web request. `GenerateReportExportJob` alone can take minutes, which will hit
+> the request timeout on a large report. Use a Render background worker plus
+> `QUEUE_CONNECTION=database` before relying on scheduled exports.
+
+### 🔴 Secrets currently in git
+
+`config/mail.php` contains a **live Brevo API key** as a literal fallback value,
+committed in `ca58f33`. Anything in git is in the deploy history and in every
+clone of the repository.
+
+- Rotate that key in the Brevo dashboard now.
+- Replace the literal with `env('BREVO_API_KEY')` and set the real value as a
+  Render environment variable.
+- Never commit the Render API key either; use it from your shell only.
+
+The `render.yaml` comment claiming the key is "deliberately NOT stored here"
+became untrue when the fallback was added — `config/mail.php` and
+`render.yaml` must be read together.
+
+### `render.yaml` is reference, not the source of truth
+
+`render.yaml` describes the intended configuration, but **the live service was
+not created from it**, so Render is not applying it. Two concrete pieces of
+drift, verified via the API:
+
+- `render.yaml` declares `healthCheckPath: /up`; the live service has
+  `healthCheckPath: ""` (**no health check**). `/up` does return `200`, so set
+  it in the dashboard — it makes a bad deploy fail fast instead of looking
+  healthy.
+- `render.yaml` declares `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` and
+  `BREVO_SENDER_NAME`; **none of the three exist on the live service**, which is
+  why the hardcoded fallback in `config/mail.php` had to be added to make email
+  work at all.
+
+Either reconcile the two, or delete `render.yaml` so it cannot mislead the next
+reader.
+
+### Boot sequence and why it is ordered that way
+
+`docker-entrypoint.sh` starts **Apache first**, then runs migrations and
+seeding. This is deliberate and must not be reordered. Render fails a deploy that
+has not opened a port within ~60s; migrations on a fresh database cost ~30s and
+the full seed ~20s, so starting the web server last reliably timed out the port
+scan. Render then kept serving the *previous* build, which looks exactly like
+"my push never deployed".
+
+Because `/up` does not touch the database, the health check passes as soon as the
+port is bound. During the remaining boot window, database-backed pages may error
+briefly — a much better trade than a deploy that never lands.
+
+### Rebuilding the seeded database
+
+On the ephemeral filesystem the database is already empty at each boot, so the
+entrypoint seeds automatically. To force a rebuild mid-life (for example after
+changing seed data):
+
+1. Render dashboard → the service → **Environment** → add `FORCE_RESEED=true`.
+2. **Manual Deploy → Deploy latest commit**.
+3. When healthy, **delete `FORCE_RESEED`** so a later boot does not wipe it.
+
+`FORCE_RESEED` is ignored unless `DB_CONNECTION=sqlite`, so it cannot destroy a
+managed database by accident.
 
 ### Demo logins after a fresh seed
+
+Seeded on every boot while the service is diskless. **Change these before the
+service is reachable by anyone but you.**
 
 | Role | Email | Password |
 |------|-------|----------|
@@ -178,9 +325,35 @@ never destroy a managed MySQL/PostgreSQL database.
 | Teacher | `teacher@gmail.com` | `password` |
 | Student | `student@gmail.com` | `password` |
 
-For a real deployment, set `INITIAL_ADMIN_EMAIL` + a 16+ character
-`INITIAL_ADMIN_PASSWORD` (and, optionally, the `DEFAULT_*_EMAIL` /
-`DEFAULT_*_PASSWORD` pairs) instead of relying on the demo accounts above.
+### Deploy checklist
+
+```bash
+php artisan test
+vendor/bin/pint --test app/Storage app/Services/QrCodeService.php   # or accept the repo-wide backlog
+git push origin main          # auto-deploys
+```
+
+Then in the dashboard: confirm the deploy reaches *Live*, check `/up` returns
+`200`, and remember that **student and admission data will not survive it**.
+
+### Troubleshooting
+
+- **Dashboard unstyled / mixed content** → `TRUSTED_PROXIES=*` is missing.
+- **Deploy "succeeded" but the old build is still serving** → the container was
+  killed at the port scan. Check the deploy log for "Port scan timeout"; this is
+  the boot-order problem described above.
+- **`Port scan timeout reached, no open ports detected`** → Apache is starting
+  last. Restore the entrypoint ordering.
+- **Uploads fail with "Could not reach the media host"** → outbound HTTPS from
+  the container. Confirm `ca-certificates` is installed in the Dockerfile and
+  raise `CATBOX_TIMEOUT` for large files.
+- **Every video upload fails** → Catbox's ceiling is 200 MB. `MEDIA_MAX_UPLOAD_KB`
+  must not exceed `204800`.
+- **Emails never arrive** → check `BREVO_API_KEY` is set as an environment
+  variable and that `BREVO_SENDER_EMAIL` is a verified sender. Reset-password
+  mail bypasses Brevo entirely and follows `MAIL_MAILER`.
+- **"The defined install dir does not exist"** → cPanel only; see the cPanel
+  section above.
 
 ## Troubleshooting
 
