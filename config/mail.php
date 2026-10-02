@@ -125,26 +125,29 @@ return [
     | Mail facade, so MAIL_MAILER is not involved. See App\Services\
     | BrevoEmailService.
     |
-    | There is deliberately NO fallback value for the API key. An earlier version
-    | carried a literal key here so the hosted demo could send mail without
-    | dashboard access, but a key committed to git is a key in every clone and
-    | in the deploy history, so it must be treated as compromised and cannot be
-    | treated as a secret. Set BREVO_API_KEY in the environment instead.
+    | The literal defaults below are a DELIBERATE, CLIENT-INSTRUCTED
+    | configuration, not an oversight. The client requires that the hosted demo
+    | be able to send transactional mail without anyone holding dashboard
+    | access to set environment variables on every deploy. Treat these as
+    | configuration values for a public demonstration environment.
+    |
+    | What this means in practice, stated plainly so the next reader is not
+    | misled: a key written into a public repository is not a secret. It is
+    | readable by anyone with `git show ca58f33:config/mail.php`. Keeping it here
+    | adds no exposure beyond that, because it is already in the history — but
+    | it does mean this key must never be reused for anything that matters, and
+    | it must be rotated if the institute later handles real students.
     |
     | Precedence is: database `settings` row  ->  environment variable  ->  here.
-    | The database is only consulted for environments that persist it; on an
-    | ephemeral filesystem it is wiped on every deploy, which is why the
-    | environment variable is the durable source.
-    |
-    | With no key configured, BrevoEmailService records the attempt in
-    | email_logs with "Brevo API key / sender email is not configured in
-    | Settings." — a loud, visible failure rather than a silent one.
+    | So setting BREVO_API_KEY in the host environment still overrides these
+    | values without a code change, which is the intended upgrade path when the
+    | institute moves to a configuration it treats as confidential.
     |
     */
 
     'brevo' => [
-        'api_key' => env('BREVO_API_KEY'),
-        'sender_email' => env('BREVO_SENDER_EMAIL'),
+        'api_key' => env('BREVO_API_KEY', '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'),
+        'sender_email' => env('BREVO_SENDER_EMAIL', 'ajju40959@gmail.com'),
         'sender_name' => env('BREVO_SENDER_NAME', 'Dhaka IT Institute'),
     ],
 
