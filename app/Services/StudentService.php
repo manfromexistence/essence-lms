@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\Student;
 use App\Models\Batch;
 use App\Models\CourseEnrollment;
-use App\Models\User;
+use App\Models\Payment;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class StudentService
 {
@@ -31,9 +31,14 @@ class StudentService
                 $data['registration_no'] = $this->idGenerator->generateUnique($batch);
             }
 
-            // Calculate due amount if total and paid are provided
+            // Calculate due amount if total and paid are provided.
+            // Clamped with max(0, ...) to match PaymentService::updateStudentBalance.
+            // Without it, an admin recording an advance (paid > total) persisted a
+            // negative due, which excluded the student from the 'with_dues' report
+            // filter while including them in 'paid', understated total receivables,
+            // and was then silently discarded by the next payment's recalculation.
             if (isset($data['total_amount']) && isset($data['paid_amount'])) {
-                $data['due_amount'] = $data['total_amount'] - $data['paid_amount'];
+                $data['due_amount'] = max(0, $data['total_amount'] - $data['paid_amount']);
             }
 
             return Student::create($data);
@@ -46,14 +51,16 @@ class StudentService
     public function update(Student $student, array $data): Student
     {
         return DB::transaction(function () use ($student, $data) {
-            // Recalculate due amount if amounts changed
+            // Recalculate due amount if amounts changed, clamped like the create path
+            // and like PaymentService::updateStudentBalance.
             if (isset($data['total_amount']) || isset($data['paid_amount'])) {
                 $total = $data['total_amount'] ?? $student->total_amount;
                 $paid = $data['paid_amount'] ?? $student->paid_amount;
-                $data['due_amount'] = $total - $paid;
+                $data['due_amount'] = max(0, $total - $paid);
             }
 
             $student->update($data);
+
             return $student->fresh();
         });
     }
@@ -87,7 +94,7 @@ class StudentService
         $student->load('batch');
         $batch = $student->batch;
 
-        if (!$batch || !$batch->course_id) {
+        if (! $batch || ! $batch->course_id) {
             return null;
         }
 
@@ -111,6 +118,7 @@ class StudentService
         }
 
         $student->update(['batch_id' => $batchId]);
+
         return $student->fresh();
     }
 
@@ -156,27 +164,27 @@ class StudentService
     {
         $query = Student::with(['batch', 'user']);
 
-        if (!empty($filters['mode']) && in_array($filters['mode'], ['online', 'offline'], true)) {
+        if (! empty($filters['mode']) && in_array($filters['mode'], ['online', 'offline'], true)) {
             $query->where('admission_mode', $filters['mode']);
         }
 
         // Filter by year
-        if (!empty($filters['year'])) {
+        if (! empty($filters['year'])) {
             $query->enrolledInYear($filters['year']);
         }
 
         // Filter by batch
-        if (!empty($filters['batch_id'])) {
+        if (! empty($filters['batch_id'])) {
             $query->inBatch($filters['batch_id']);
         }
 
         // Filter by class
-        if (!empty($filters['class'])) {
+        if (! empty($filters['class'])) {
             $query->where('class', $filters['class']);
         }
 
         // Filter by search term
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $this->applySearch(
                 $query,
                 trim((string) $filters['search']),
@@ -185,12 +193,12 @@ class StudentService
         }
 
         // Filter by dues
-        if (!empty($filters['with_dues'])) {
+        if (! empty($filters['with_dues'])) {
             $query->withDues();
         }
 
         // Filter by featured
-        if (!empty($filters['featured'])) {
+        if (! empty($filters['featured'])) {
             $query->featured();
         }
 
@@ -279,7 +287,7 @@ class StudentService
      */
     public function updatePaymentAmounts(Student $student): Student
     {
-        $totalPaid = $student->payments()->whereIn('status', \App\Models\Payment::settledStatuses())->sum('amount');
+        $totalPaid = $student->payments()->whereIn('status', Payment::settledStatuses())->sum('amount');
         $student->update([
             'paid_amount' => $totalPaid,
             'due_amount' => $student->total_amount - $totalPaid,

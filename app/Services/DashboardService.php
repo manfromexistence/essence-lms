@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\Batch;
+use App\Models\ClassSchedule;
 use App\Models\Course;
+use App\Models\Exam;
+use App\Models\ExamResult;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -48,9 +51,12 @@ class DashboardService
     public function saveUserPreferences(int $userId, array $preferences): bool
     {
         $user = User::find($userId);
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         $user->dashboard_preferences = $preferences;
+
         return $user->save();
     }
 
@@ -85,6 +91,7 @@ class DashboardService
     public function updateDashboardConfig(array $config): bool
     {
         Cache::put('dashboard_config', $config, 3600);
+
         return true;
     }
 
@@ -146,7 +153,7 @@ class DashboardService
         return Cache::remember('admin_dashboard_stats', 300, function () {
             $today = now()->toDateString();
             $thisMonth = now()->startOfMonth();
-            
+
             return [
                 'total_students' => Student::count(),
                 'total_teachers' => Teacher::count(),
@@ -155,26 +162,40 @@ class DashboardService
                 'active_students' => Student::where('status', 'active')->count(),
                 'new_admissions_this_month' => Student::where('created_at', '>=', $thisMonth)->count(),
                 'today_attendance_rate' => $this->calculateTodayAttendanceRate(),
-                'monthly_revenue' => Payment::where('created_at', '>=', $thisMonth)->sum('amount'),
-                'pending_payments' => Student::where('balance', '>', 0)->count(),
-                'total_due' => Student::where('balance', '>', 0)->sum('balance'),
+                // Settled only, and dated on payment_date rather than created_at. The
+                // previous query summed pending/rejected/failed/refunded rows as
+                // revenue and bucketed them by when the row was INSERTED, so a
+                // back-dated payment landed in the wrong month — two different
+                // numbers from the payments report for the same period.
+                'monthly_revenue' => Payment::completed()->where('payment_date', '>=', $thisMonth)->sum('amount'),
+                // due_amount, not balance. students.balance is NOT NULL DEFAULT 0
+                // and no application code has ever written it, so these two were
+                // structurally always 0 while the Student::balance accessor
+                // (added earlier) returned the real figure to Blade. An aggregate
+                // on the column bypasses the accessor entirely.
+                'pending_payments' => Student::where('due_amount', '>', 0)->count(),
+                'total_due' => Student::where('due_amount', '>', 0)->sum('due_amount'),
             ];
         });
     }
 
     protected function getTeacherStatistics(?int $userId): array
     {
-        if (!$userId) return [];
-        
+        if (! $userId) {
+            return [];
+        }
+
         $teacher = Teacher::where('user_id', $userId)->first();
-        if (!$teacher) return [];
-        
+        if (! $teacher) {
+            return [];
+        }
+
         // Real counts from the course-business data
         $batchIds = $teacher->batches()->pluck('batches.id');
-        $studentCount = \App\Models\Batch::whereIn('id', $batchIds)->withCount('students')->get()->sum('students_count');
+        $studentCount = Batch::whereIn('id', $batchIds)->withCount('students')->get()->sum('students_count');
         // day_of_week is a lowercase string enum: 'sunday' ... 'saturday'
         $todayDay = strtolower(now()->format('l'));
-        $todayClasses = \App\Models\ClassSchedule::where('teacher_id', $teacher->id)
+        $todayClasses = ClassSchedule::where('teacher_id', $teacher->id)
             ->where('day_of_week', $todayDay)
             ->count();
 
@@ -182,29 +203,33 @@ class DashboardService
             'my_batches' => $batchIds->count(),
             'total_students' => $studentCount,
             'today_classes' => $todayClasses,
-            'pending_results' => \App\Models\ExamResult::where('grade', 'Pending')->count(),
+            'pending_results' => ExamResult::where('grade', 'Pending')->count(),
         ];
     }
 
     protected function getStudentStatistics(?int $userId): array
     {
-        if (!$userId) return [];
-        
+        if (! $userId) {
+            return [];
+        }
+
         $student = Student::where('user_id', $userId)->first();
-        if (!$student) return [];
-        
+        if (! $student) {
+            return [];
+        }
+
         $attendanceRate = Attendance::where('student_id', $student->id)
             ->where('status', 'present')
             ->count();
         $totalAttendance = Attendance::where('student_id', $student->id)->count();
-        
+
         return [
             'attendance_rate' => $totalAttendance > 0 ? round(($attendanceRate / $totalAttendance) * 100, 1) : 0,
             'balance' => $student->balance ?? 0,
-            'upcoming_exams' => \App\Models\Exam::where('start_time', '>=', now())
+            'upcoming_exams' => Exam::where('start_time', '>=', now())
                 ->where(function ($q) use ($student) {
                     $q->whereNull('batch_id')
-                      ->orWhere('batch_id', $student->batch_id);
+                        ->orWhere('batch_id', $student->batch_id);
                 })
                 ->count(),
             'recent_results_count' => $student->results()->count(),
@@ -222,7 +247,7 @@ class DashboardService
         $today = now()->toDateString();
         $total = Attendance::where('date', $today)->count();
         $present = Attendance::where('date', $today)->where('status', 'present')->count();
-        
+
         return $total > 0 ? round(($present / $total) * 100, 1) : 0;
     }
 
@@ -232,7 +257,7 @@ class DashboardService
     public function getRecentActivities(int $limit = 10): Collection
     {
         $activities = collect();
-        
+
         // Recent students
         Student::latest()->limit(3)->get()->each(function ($student) use ($activities) {
             $activities->push([
@@ -241,7 +266,7 @@ class DashboardService
                 'time' => $student->created_at,
             ]);
         });
-        
+
         // Recent payments
         Payment::latest()->limit(3)->get()->each(function ($payment) use ($activities) {
             $activities->push([
@@ -250,7 +275,7 @@ class DashboardService
                 'time' => $payment->created_at,
             ]);
         });
-        
+
         return $activities->sortByDesc('time')->take($limit)->values();
     }
 
@@ -276,10 +301,15 @@ class DashboardService
             $endOfMonth = $month->copy()->endOfMonth();
             $data[] = [
                 'month' => $month->format('M Y'),
-                'amount' => Payment::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                // completed() and payment_date, matching ReportService::getPaymentChartData.
+                // This series previously counted every status and bucketed by
+                // created_at, so the dashboard bar chart and the payments report
+                // chart were two different series built from two different rules.
+                'amount' => Payment::completed()->whereBetween('payment_date', [$startOfMonth, $endOfMonth])
                     ->sum('amount'),
             ];
         }
+
         return $data;
     }
 
@@ -295,6 +325,7 @@ class DashboardService
                 'rate' => $total > 0 ? round(($present / $total) * 100, 1) : 0,
             ];
         }
+
         return $data;
     }
 
@@ -311,6 +342,7 @@ class DashboardService
                     ->count(),
             ];
         }
+
         return $data;
     }
 }

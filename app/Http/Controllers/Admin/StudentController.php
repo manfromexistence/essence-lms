@@ -6,20 +6,28 @@ use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
-use App\Models\Student;
+use App\Models\Attendance;
 use App\Models\Batch;
+use App\Models\ClassSchedule;
 use App\Models\Course;
+use App\Models\Exam;
+use App\Models\ExamResult;
 use App\Models\Role;
+use App\Models\SmsLog;
+use App\Models\Student;
 use App\Models\User;
-use App\Services\StudentService;
-use App\Services\StudentIdGenerator;
+use App\Rules\SafeUpload;
 use App\Services\StudentCredentialService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use App\Services\StudentIdGenerator;
+use App\Services\StudentService;
+use App\Storage\CatboxStorage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class StudentController extends Controller
 {
@@ -41,7 +49,7 @@ class StudentController extends Controller
             'search_field' => 'nullable|in:all,name,number,batch,area,blood_group',
             'mode' => 'nullable|in:online,offline',
             'batch_id' => 'nullable|integer|exists:batches,id',
-            'year' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
+            'year' => 'nullable|integer|min:2000|max:'.(date('Y') + 1),
             'class' => 'nullable|string|max:50',
             'sort' => 'nullable|in:created_at,name_bn,phone,blood_group,admission_mode,status',
             'direction' => 'nullable|in:asc,desc',
@@ -95,14 +103,14 @@ class StudentController extends Controller
     {
         $validated = $request->validated();
 
-        $course = !empty($validated['course_id']) ? Course::findOrFail($validated['course_id']) : null;
+        $course = ! empty($validated['course_id']) ? Course::findOrFail($validated['course_id']) : null;
         if ($course && $course->delivery_mode !== $validated['admission_mode']) {
             return back()->withInput()->withErrors([
                 'course_id' => 'The selected course does not match the chosen online/offline mode.',
             ]);
         }
 
-        if (!empty($validated['batch_id'])) {
+        if (! empty($validated['batch_id'])) {
             $batch = Batch::with('course')->findOrFail($validated['batch_id']);
             if ($course && $batch->course_id !== $course->id) {
                 return back()->withInput()->withErrors(['batch_id' => 'The selected batch does not belong to this course.']);
@@ -144,7 +152,7 @@ class StudentController extends Controller
 
             $validated['user_id'] = $user->id;
             $validated['applied_at'] = now();
-            $approved = !empty($validated['batch_id']);
+            $approved = ! empty($validated['batch_id']);
             $validated['admission_status'] = $approved ? 'approved' : 'pending';
             $validated['status'] = $approved ? 'active' : 'pending';
             $student = $this->studentService->create($validated);
@@ -190,10 +198,10 @@ class StudentController extends Controller
         // Sync the linked user account: name + email can be edited here.
         if ($student->user) {
             $userData = [];
-            if (!empty($validated['name'])) {
+            if (! empty($validated['name'])) {
                 $userData['name'] = $validated['name'];
             }
-            if (!empty($validated['email']) && $validated['email'] !== $student->user->email) {
+            if (! empty($validated['email']) && $validated['email'] !== $student->user->email) {
                 $userData['email'] = $validated['email'];
             }
             if ($userData) {
@@ -206,7 +214,23 @@ class StudentController extends Controller
         if ($imagePath) {
             $validated['profile_image'] = $imagePath;
         } elseif ($request->hasFile('profile_image')) {
-            // Fallback for direct file input (legacy)
+            // Fallback for direct file input (legacy).
+            //
+            // The bare `profile_image` field is not in UpdateStudentRequest's
+            // rules (only profile_image_file is), so this path reached
+            // CatboxStorage::store() with no mimes check, no size cap, no
+            // FileScanService, and no original filename — the one call site in
+            // the app that bypassed the media pipeline entirely. Validated here
+            // rather than deleted, so the legacy form keeps working.
+            $request->validate([
+                'profile_image' => [
+                    'file',
+                    'mimes:jpeg,jpg,png,gif,webp',
+                    'max:20480',
+                    new SafeUpload(['jpeg', 'jpg', 'png', 'gif', 'webp']),
+                ],
+            ]);
+
             $validated['profile_image'] = $this->uploadFile($request, 'profile_image', 'students/profiles');
         }
 
@@ -236,7 +260,7 @@ class StudentController extends Controller
         $this->studentService->update($student, $validated);
 
         // Keep course access in sync with any batch assignment.
-        if (!empty($validated['batch_id'])) {
+        if (! empty($validated['batch_id'])) {
             $this->studentService->syncEnrollment($student->fresh());
         }
 
@@ -301,9 +325,9 @@ class StudentController extends Controller
                     $userQuery->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 })
-                ->orWhere('phone', 'like', "%{$search}%")
-                ->orWhere('class', 'like', "%{$search}%")
-                ->orWhere('student_id', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('class', 'like', "%{$search}%")
+                    ->orWhere('student_id', 'like', "%{$search}%");
             });
         }
 
@@ -340,7 +364,7 @@ class StudentController extends Controller
 
         $students = $query->paginate(15);
         $courses = Course::select('id', 'name', 'class')->orderBy('name')->get();
-        
+
         // Statistics for dashboard
         $stats = [
             'total_applications' => Student::count(),
@@ -412,9 +436,18 @@ class StudentController extends Controller
         ]);
 
         // Rejected students lose login access; approved (even unbatched) gain it.
-        $student->user?->update([
-            'is_active' => $status === 'approved',
-        ]);
+        //
+        // remember_token is rotated as well. It previously was not, so a
+        // "Remember me" cookie issued before the rejection stayed valid for
+        // years and the rejection did not actually revoke anything.
+        $isActive = $status === 'approved';
+
+        $student->user?->forceFill([
+            'is_active' => $isActive,
+            'remember_token' => $isActive
+                ? $student->user->remember_token
+                : Str::random(60),
+        ])->save();
 
         if ($status === 'approved') {
             // Batch-assigned students get course access immediately.
@@ -428,7 +461,7 @@ class StudentController extends Controller
             $this->credentialService->issueFor($student);
         }
 
-        return back()->with('success', 'Admission status updated to ' . ucfirst($status) . '.');
+        return back()->with('success', 'Admission status updated to '.ucfirst($status).'.');
     }
 
     /**
@@ -476,6 +509,7 @@ class StudentController extends Controller
         }
 
         $count = count($request->student_ids);
+
         return redirect()->route('dashboard.students.batch-assignment')
             ->with('success', "Successfully updated batch assignment for {$count} students.");
     }
@@ -485,7 +519,7 @@ class StudentController extends Controller
      */
     public function attendance(Request $request): View
     {
-        $query = \App\Models\Attendance::with(['student.user', 'batch'])
+        $query = Attendance::with(['student.user', 'batch'])
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc');
 
@@ -520,10 +554,10 @@ class StudentController extends Controller
 
         // Statistics
         $stats = [
-            'total_records' => \App\Models\Attendance::count(),
-            'present_today' => \App\Models\Attendance::whereDate('date', today())->where('status', 'present')->count(),
-            'absent_today' => \App\Models\Attendance::whereDate('date', today())->where('status', 'absent')->count(),
-            'late_today' => \App\Models\Attendance::whereDate('date', today())->where('status', 'late')->count(),
+            'total_records' => Attendance::count(),
+            'present_today' => Attendance::whereDate('date', today())->where('status', 'present')->count(),
+            'absent_today' => Attendance::whereDate('date', today())->where('status', 'absent')->count(),
+            'late_today' => Attendance::whereDate('date', today())->where('status', 'late')->count(),
         ];
 
         return view('dashboard.students.attendance', compact('attendances', 'batches', 'stats'));
@@ -545,16 +579,16 @@ class StudentController extends Controller
         $batches = Batch::select('id', 'name')->orderBy('name')->get();
 
         // Get recent SMS logs
-        $recentSms = \App\Models\SmsLog::orderBy('created_at', 'desc')
+        $recentSms = SmsLog::orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
         // SMS Statistics
         $stats = [
-            'total_sent' => \App\Models\SmsLog::where('status', 'sent')->count(),
-            'total_delivered' => \App\Models\SmsLog::where('status', 'delivered')->count(),
-            'total_failed' => \App\Models\SmsLog::where('status', 'failed')->count(),
-            'total_pending' => \App\Models\SmsLog::where('status', 'pending')->count(),
+            'total_sent' => SmsLog::where('status', 'sent')->count(),
+            'total_delivered' => SmsLog::where('status', 'delivered')->count(),
+            'total_failed' => SmsLog::where('status', 'failed')->count(),
+            'total_pending' => SmsLog::where('status', 'pending')->count(),
         ];
 
         return view('dashboard.students.sms', compact('students', 'batches', 'recentSms', 'stats'));
@@ -566,12 +600,12 @@ class StudentController extends Controller
     public function routine(Request $request): View
     {
         $batches = Batch::all();
-        
+
         // Get selected batch or first batch
         $selectedBatchId = $request->input('batch_id', $batches->first()->id ?? null);
-        
+
         // Get class schedules for the selected batch
-        $schedules = \App\Models\ClassSchedule::with(['batch', 'teacher'])
+        $schedules = ClassSchedule::with(['batch', 'teacher'])
             ->where('batch_id', $selectedBatchId)
             ->orderBy('start_time')
             ->get()
@@ -585,7 +619,7 @@ class StudentController extends Controller
      */
     public function results(Request $request): View
     {
-        $query = \App\Models\ExamResult::with(['student.user', 'student.batch', 'exam'])
+        $query = ExamResult::with(['student.user', 'student.batch', 'exam'])
             ->orderBy('created_at', 'desc');
 
         // Filter by student
@@ -621,17 +655,17 @@ class StudentController extends Controller
         }
 
         $results = $query->paginate(20);
-        
+
         // Get all students and exams for filters
         $students = Student::with('user')->orderBy('created_at', 'desc')->get();
-        $exams = \App\Models\Exam::orderBy('created_at', 'desc')->get();
+        $exams = Exam::orderBy('created_at', 'desc')->get();
 
         // Statistics
         $stats = [
-            'total_results' => \App\Models\ExamResult::count(),
-            'average_score' => \App\Models\ExamResult::avg('obtained_marks') ?? 0,
-            'highest_score' => \App\Models\ExamResult::max('obtained_marks') ?? 0,
-            'total_exams' => \App\Models\Exam::count(),
+            'total_results' => ExamResult::count(),
+            'average_score' => ExamResult::avg('obtained_marks') ?? 0,
+            'highest_score' => ExamResult::max('obtained_marks') ?? 0,
+            'total_exams' => Exam::count(),
         ];
 
         return view('dashboard.students.results', compact('results', 'students', 'exams', 'stats'));
@@ -663,7 +697,7 @@ class StudentController extends Controller
     private function uploadFile(Request $request, string $key, string $directory): ?string
     {
         if ($request->hasFile($key)) {
-            return app(\App\Storage\CatboxStorage::class)->store(
+            return app(CatboxStorage::class)->store(
                 $request->file($key),
                 $directory
             );

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -45,20 +46,104 @@ class Question extends Model
     }
 
     /**
+     * Options keyed by their letter (A, B, C, ...).
+     *
+     * `options` is stored inconsistently: the admin form and the seeder write a
+     * plain list (`['A) apple', 'B) ball']`), while older rows are letter-keyed
+     * (`['A' => 'apple']`). The student paper iterates letters and indexes by
+     * letter, so reading a list that way returned null and rendered no options at
+     * all — an unanswerable MCQ paper that silently scored zero.
+     *
+     * Both shapes are accepted here so the data does not need migrating.
+     *
+     * @return array<string, string>
+     */
+    public function optionMap(): array
+    {
+        $options = $this->options;
+
+        if (! is_array($options) || $options === []) {
+            return [];
+        }
+
+        $letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+        // Letter-keyed already: keep the keys, just upper-case them.
+        $hasLetters = array_intersect(array_map('strval', array_keys($options)), $letters) !== [];
+        if ($hasLetters) {
+            $map = [];
+            foreach ($options as $key => $value) {
+                $map[strtoupper((string) $key)] = $value;
+            }
+
+            return $map;
+        }
+
+        $map = [];
+        foreach (array_values($options) as $index => $value) {
+            if ($index >= count($letters)) {
+                break;
+            }
+            $map[$letters[$index]] = $value;
+        }
+
+        return $map;
+    }
+
+    /**
+     * The letter (A, B, C, ...) that `correct_answer` designates, if any.
+     *
+     * The admin form asks for "the correct option text", so `correct_answer` is
+     * commonly stored as free text like "A) apple" rather than as a bare letter.
+     */
+    public function correctAnswerLetter(): ?string
+    {
+        $raw = trim((string) $this->correct_answer);
+
+        if ($raw === '') {
+            return null;
+        }
+
+        if (preg_match('/^([A-F])(?:\s*[).:\-]|\s+)/i', $raw, $matches) === 1) {
+            return strtoupper($matches[1]);
+        }
+
+        // A bare letter, e.g. "A".
+        if (preg_match('/^[A-F]$/i', $raw) === 1) {
+            return strtoupper($raw);
+        }
+
+        return null;
+    }
+
+    /**
      * Check if the given answer is correct.
      *
-     * @param string $answer
-     * @return bool
+     * The student submits a bare letter ("A"), which was previously compared with
+     * `===` against the stored free text ("A) apple"). That never matched, so every
+     * MCQ question scored zero no matter what the student chose.
      */
     public function isCorrectAnswer(string $answer): bool
     {
-        return strtolower(trim($answer)) === strtolower(trim($this->correct_answer));
+        $answer = trim($answer);
+        $expected = trim((string) $this->correct_answer);
+
+        if ($answer === '' || $expected === '') {
+            return false;
+        }
+
+        // Exact text match still wins, so an explicitly typed-out answer works.
+        if (strcasecmp($answer, $expected) === 0) {
+            return true;
+        }
+
+        $letter = $this->correctAnswerLetter();
+
+        return $letter !== null && strcasecmp($answer, $letter) === 0;
     }
 
     /**
      * Check if this is an MCQ question.
-     *
-     * @return bool
      */
     public function isMcq(): bool
     {
@@ -67,8 +152,6 @@ class Question extends Model
 
     /**
      * Check if this is a CQ (creative question).
-     *
-     * @return bool
      */
     public function isCq(): bool
     {
@@ -77,8 +160,6 @@ class Question extends Model
 
     /**
      * Check if this is a true/false question.
-     *
-     * @return bool
      */
     public function isTrueFalse(): bool
     {
@@ -87,8 +168,6 @@ class Question extends Model
 
     /**
      * Check if this is a short answer question.
-     *
-     * @return bool
      */
     public function isShortAnswer(): bool
     {
@@ -97,12 +176,10 @@ class Question extends Model
 
     /**
      * Get the options as a formatted array for display.
-     *
-     * @return array
      */
     public function getFormattedOptionsAttribute(): array
     {
-        if (!$this->options || !is_array($this->options)) {
+        if (! $this->options || ! is_array($this->options)) {
             return [];
         }
 
@@ -112,9 +189,8 @@ class Question extends Model
     /**
      * Scope a query to only include questions of a given type.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $type
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeOfType($query, string $type)
     {
@@ -124,8 +200,8 @@ class Question extends Model
     /**
      * Scope a query to order by the question order.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeOrdered($query)
     {

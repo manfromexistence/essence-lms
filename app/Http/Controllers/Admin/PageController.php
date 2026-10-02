@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Rules\SafeUpload;
 use App\Storage\CatboxStorage;
 use Illuminate\Http\Request;
 
@@ -12,6 +13,7 @@ class PageController extends Controller
     public function index()
     {
         $pages = Page::orderBy('title')->get();
+
         return view('dashboard.cms.index', compact('pages'));
     }
 
@@ -54,6 +56,19 @@ class PageController extends Controller
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'is_active' => 'boolean',
+            // CMS media previously had no validation at all: no mimes, no size
+            // cap, no scan. Because these endpoints never invoked the mimes
+            // validator, Laravel's PHP-upload blocklist (.php3 and friends) was
+            // bypassed too, and the persisted extension came straight from the
+            // attacker-supplied content_keys[].
+            //
+            // A content key holds EITHER a hosted URL string or an uploaded
+            // file, so neither shape can be described by one blanket rule here.
+            // Each key is validated on its own in the loop below: files against
+            // the image allowlist, everything else as a bounded string.
+            // svg is excluded throughout — it is a text document that can carry
+            // <script>, and the host serves it inline as image/svg+xml.
+            'content' => 'nullable|array',
         ]);
 
         // Handle content from specific page editors (home, about, contact)
@@ -65,7 +80,7 @@ class PageController extends Controller
             $values = $request->input('content_values', []);
             $content = [];
             foreach ($keys as $index => $key) {
-                if (!empty($key)) {
+                if (! empty($key)) {
                     $content[$key] = $values[$index] ?? '';
                 }
             }
@@ -78,12 +93,31 @@ class PageController extends Controller
         // Wherever a file was actually uploaded, host it and replace the value with
         // the resulting URL.
         foreach (array_keys($content) as $key) {
-            if ($request->hasFile('content.' . $key)) {
+            if ($request->hasFile('content.'.$key)) {
+                // Validated here rather than with a blanket rule, because a
+                // content key is either a URL string or a file. Without this the
+                // upload reached CatboxStorage::store() unvalidated, with the
+                // extension taken from the client-supplied filename.
+                $request->validate([
+                    'content.'.$key => [
+                        'file',
+                        'mimes:jpeg,jpg,png,gif,webp',
+                        'max:5120',
+                        new SafeUpload(['jpeg', 'jpg', 'png', 'gif', 'webp']),
+                    ],
+                ]);
+
                 $content[$key] = app(CatboxStorage::class)->store(
-                    $request->file('content.' . $key),
+                    $request->file('content.'.$key),
                     'cms',
                     $key
                 );
+            } else {
+                // A non-file content value is a hosted URL or a short label;
+                // bound it so the JSON column cannot be filled arbitrarily.
+                $request->validate([
+                    'content.'.$key => ['nullable', 'string', 'max:2048'],
+                ]);
             }
         }
 
@@ -107,6 +141,7 @@ class PageController extends Controller
     public function destroy(Page $page)
     {
         $page->delete();
+
         return redirect()->route('dashboard.cms.index')->with('success', 'Page deleted successfully.');
     }
 
@@ -121,6 +156,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-home', compact('page'));
     }
 
@@ -134,6 +170,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-about', compact('page'));
     }
 
@@ -147,6 +184,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-contact', compact('page'));
     }
 
@@ -160,6 +198,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-courses', compact('page'));
     }
 
@@ -173,6 +212,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-services', compact('page'));
     }
 
@@ -186,6 +226,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-team', compact('page'));
     }
 
@@ -305,6 +346,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-teachers', compact('page'));
     }
 
@@ -318,6 +360,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-students', compact('page'));
     }
 
@@ -331,6 +374,7 @@ class PageController extends Controller
                 'sections' => [],
             ]
         );
+
         return view('dashboard.cms.edit-results', compact('page'));
     }
 

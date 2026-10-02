@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\PermissionMiddleware;
+use App\Http\Middleware\RequirePasswordChange;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\StudentExamAccessMiddleware;
-use App\Http\Middleware\RequirePasswordChange;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -37,6 +38,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 : array_filter(array_map('trim', explode(',', $trustedProxies))),
         );
         $middleware->appendToGroup('web', RequirePasswordChange::class);
+        // Deactivated accounts must stop working on their *existing* session,
+        // not merely be refused at the next login attempt.
+        $middleware->appendToGroup('web', EnsureAccountIsActive::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

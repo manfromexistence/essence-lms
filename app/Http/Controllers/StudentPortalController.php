@@ -2,26 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
+use App\Models\Batch;
+use App\Models\ClassSchedule;
+use App\Models\Course;
+use App\Models\CourseEnrollment;
+use App\Models\CourseMaterial;
+use App\Models\CourseVideo;
+use App\Models\CqSubmission;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamResult;
-use App\Models\CqSubmission;
 use App\Models\Payment;
-use App\Models\CourseMaterial;
-use App\Models\Course;
-use App\Models\CourseEnrollment;
-use App\Models\CourseVideo;
+use App\Models\Question;
+use App\Models\Student;
 use App\Models\VideoView;
-use App\Services\StudentPortalService;
-use App\Services\ExamTakingService;
-use App\Services\MarkSheetService;
+use App\Rules\SafeUpload;
 use App\Services\CertificateService;
+use App\Services\ExamTakingService;
+use App\Services\ExamTimeValidator;
+use App\Services\MarkSheetService;
+use App\Services\StudentPortalService;
 use App\Storage\CatboxStorage;
 use App\Storage\CatboxUploadFailed;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class StudentPortalController extends Controller
 {
@@ -38,6 +43,7 @@ class StudentPortalController extends Controller
     private function getStudent(): ?Student
     {
         $user = Auth::user();
+
         return Student::where('user_id', $user->id)->first();
     }
 
@@ -46,9 +52,9 @@ class StudentPortalController extends Controller
      */
     private function assertExamAvailable(Exam $exam): void
     {
-        $validator = app(\App\Services\ExamTimeValidator::class);
+        $validator = app(ExamTimeValidator::class);
 
-        if (!$validator->canStartExam($exam)) {
+        if (! $validator->canStartExam($exam)) {
             abort(403, $validator->getTimeStatusMessage($exam) ?: 'This exam is not currently available.');
         }
     }
@@ -58,7 +64,7 @@ class StudentPortalController extends Controller
      */
     private function assertExamAccess(Student $student, Exam $exam): void
     {
-        if (!$exam->batch_id) {
+        if (! $exam->batch_id) {
             return;
         }
 
@@ -75,17 +81,18 @@ class StudentPortalController extends Controller
     public function dashboard()
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             // Allow Super Admin to view placeholder
             if (Auth::user()->isSuperAdmin()) {
                 return view('student.dashboard-placeholder');
             }
+
             return redirect()->route('dashboard')->with('error', 'Student profile not found.');
         }
 
         $data = $this->portalService->getDashboardData($student);
-        
+
         return view('student.dashboard', $data);
     }
 
@@ -95,25 +102,26 @@ class StudentPortalController extends Controller
     public function materials()
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             // For admin users without student profile, show all materials
             if (Auth::user()->isAdmin()) {
                 $materials = CourseMaterial::with('course')
                     ->orderBy('created_at', 'desc')
                     ->get()
                     ->groupBy('type');
-                
+
                 return view('student.materials', [
                     'student' => null,
                     'materials' => $materials,
                 ]);
             }
+
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
         $materials = $this->portalService->getMaterials($student);
-        
+
         return view('student.materials', [
             'student' => $student,
             'materials' => $materials,
@@ -132,15 +140,16 @@ class StudentPortalController extends Controller
             ->exists();
         $hasBatchAccess = $student && $student->batch?->course_id === $material->course_id;
 
-        if (!$hasCourseAccess && !$hasBatchAccess) {
+        if (! $hasCourseAccess && ! $hasBatchAccess) {
             abort(403, 'Unauthorized access to this material.');
         }
 
         if ($material->type === 'link') {
             $url = $material->file_path;
-            if (!preg_match('#^https?://#i', $url)) {
+            if (! preg_match('#^https?://#i', $url)) {
                 abort(404, 'Invalid material link.');
             }
+
             return redirect()->away($url);
         }
 
@@ -176,25 +185,26 @@ class StudentPortalController extends Controller
     public function schedule()
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             // For admin users without student profile, show all schedules
             if (Auth::user()->isAdmin()) {
-                $schedules = \App\Models\ClassSchedule::with(['batch', 'teacher'])
+                $schedules = ClassSchedule::with(['batch', 'teacher'])
                     ->orderBy('day_of_week')
                     ->orderBy('start_time')
                     ->get();
-                
+
                 return view('student.schedule', [
                     'student' => null,
                     'schedules' => $schedules,
                 ]);
             }
+
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
         $schedules = $this->portalService->getSchedule($student);
-        
+
         return view('student.schedule', [
             'student' => $student,
             'schedules' => $schedules,
@@ -207,37 +217,38 @@ class StudentPortalController extends Controller
     public function payments()
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             // For admin users without student profile, show all payments
             if (Auth::user()->isAdmin()) {
                 $payments = Payment::with('student')
                     ->orderBy('created_at', 'desc')
                     ->paginate(20);
-                
+
                 $totalFee = Payment::sum('amount');
                 $paidAmount = Payment::completed()->sum('amount');
                 $dueAmount = $totalFee - $paidAmount;
-                
+
                 $summary = [
                     'total_fee' => $totalFee,
                     'paid_amount' => $paidAmount,
                     'due_amount' => $dueAmount,
                     'payment_percentage' => $totalFee > 0 ? round(($paidAmount / $totalFee) * 100, 2) : 0,
                 ];
-                
+
                 return view('student.payments', [
                     'student' => null,
                     'payments' => $payments,
                     'summary' => $summary,
                 ]);
             }
+
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
         $payments = $this->portalService->getPaymentHistory($student);
         $summary = $this->portalService->getPaymentSummary($student);
-        
+
         return view('student.payments', [
             'student' => $student,
             'payments' => $payments,
@@ -251,19 +262,19 @@ class StudentPortalController extends Controller
     public function downloadReceipt(Payment $payment)
     {
         $student = $this->getStudent();
-        
-        if (!$student || $payment->student_id !== $student->id) {
+
+        if (! $student || $payment->student_id !== $student->id) {
             abort(403, 'Unauthorized access to this receipt.');
         }
 
         $payment->load(['student.batch.course']);
 
-        $pdf = PDF::loadView('pdf.receipt', [
+        $pdf = Pdf::loadView('pdf.receipt', [
             'payment' => $payment,
             'student' => $student,
         ]);
 
-        return $pdf->download('receipt-' . $payment->id . '.pdf');
+        return $pdf->download('receipt-'.$payment->id.'.pdf');
     }
 
     /**
@@ -272,13 +283,13 @@ class StudentPortalController extends Controller
     public function exams()
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
         $upcomingExams = $this->portalService->getUpcomingExams($student);
-        
+
         $pastExams = ExamResult::where('student_id', $student->id)
             ->with('exam')
             ->orderBy('created_at', 'desc')
@@ -297,11 +308,11 @@ class StudentPortalController extends Controller
     public function startExam(Exam $exam)
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             abort(403, 'Student profile not found.');
         }
-        
+
         $this->assertExamAccess($student, $exam);
 
         $this->assertExamAvailable($exam);
@@ -318,15 +329,30 @@ class StudentPortalController extends Controller
     public function saveAnswer(Request $request, ExamAttempt $attempt)
     {
         $student = $this->getStudent();
-        
-        if (!$student || $attempt->student_id !== $student->id) {
+
+        if (! $student || $attempt->student_id !== $student->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $request->validate([
-            'question_id' => 'required|integer',
-            'answer' => 'required|string',
+            // Bounded, and must be a question of THIS exam.
+            //
+            // Previously 'required|integer' with no length cap and no ownership
+            // check, so a student could post a multi-megabyte string under an
+            // arbitrary key — including the id of a question belonging to a
+            // different exam — growing the answers column without limit. Two
+            // 3 MB posts produced a 6.29 MB value in a single attempt.
+            'question_id' => 'required|integer|min:1|exists:questions,id',
+            'answer' => 'required|string|max:2000',
         ]);
+
+        $belongsToThisExam = Question::where('id', $request->question_id)
+            ->where('exam_id', $attempt->exam_id)
+            ->exists();
+
+        if (! $belongsToThisExam) {
+            return response()->json(['error' => 'Unknown question for this exam'], 422);
+        }
 
         $success = $this->examService->saveAnswer(
             $attempt,
@@ -342,25 +368,40 @@ class StudentPortalController extends Controller
 
     /**
      * Record tab switch event (anti-cheating).
-     * 
+     *
      * Requirements: 6.3, 6.4
      */
     public function recordTabSwitch(Request $request, ExamAttempt $attempt)
     {
         $student = $this->getStudent();
-        
-        if (!$student || $attempt->student_id !== $student->id) {
+
+        if (! $student || $attempt->student_id !== $student->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $request->validate([
             'event_type' => 'required|string|in:tab_switch,fullscreen_exit',
-            'timestamp' => 'required|string',
+            // Bounded: the value is stored verbatim in an unbounded json column,
+            // so an uncapped string let a student append ~post_max_size per POST.
+            'timestamp' => 'required|string|max:64',
         ]);
+
+        // The attempt must still be live. This endpoint previously had neither a
+        // status nor a deadline check, so events could be appended to an already
+        // submitted or long-expired attempt indefinitely.
+        if (! $attempt->isInProgress()) {
+            return response()->json(['error' => 'This attempt is no longer active'], 422);
+        }
 
         // Get existing cheating events or initialize empty array
         $cheatingEvents = $attempt->cheating_events ?? [];
-        
+
+        // Cap the retained history. The column is unbounded json, so without this
+        // a long exam plus a determined student grows it without limit.
+        if (count($cheatingEvents) >= 200) {
+            $cheatingEvents = array_slice($cheatingEvents, -200);
+        }
+
         // Add new event
         $cheatingEvents[] = [
             'type' => $request->event_type,
@@ -381,9 +422,9 @@ class StudentPortalController extends Controller
 
     /**
      * Submit an exam.
-     * 
+     *
      * Requirements: 2.2
-     * 
+     *
      * Task details:
      * - Validate exam attempt ownership
      * - Save all answers to exam_attempts table (already saved via auto-save)
@@ -395,7 +436,7 @@ class StudentPortalController extends Controller
     {
         $student = $this->getStudent();
 
-        if (!$student) {
+        if (! $student) {
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
@@ -411,7 +452,7 @@ class StudentPortalController extends Controller
             ->first();
 
         // If no in-progress attempt, check if already submitted
-        if (!$attempt) {
+        if (! $attempt) {
             $submittedAttempt = ExamAttempt::where('student_id', $student->id)
                 ->where('exam_id', $exam->id)
                 ->where('status', 'submitted')
@@ -435,7 +476,7 @@ class StudentPortalController extends Controller
         if ($exam->type === 'cq') {
             $textAnswers = [];
             foreach ((array) $request->input('answers', []) as $questionId => $answer) {
-                if (!is_numeric($questionId)) {
+                if (! is_numeric($questionId)) {
                     continue;
                 }
                 $text = is_array($answer) ? ($answer['text'] ?? '') : $answer;
@@ -463,13 +504,13 @@ class StudentPortalController extends Controller
     public function examResult(ExamResult $result)
     {
         $student = $this->getStudent();
-        
-        if (!$student || $result->student_id !== $student->id) {
+
+        if (! $student || $result->student_id !== $student->id) {
             abort(403, 'Unauthorized access to this result.');
         }
 
         $result->load(['exam.questions']);
-        
+
         $attempt = ExamAttempt::where('student_id', $student->id)
             ->where('exam_id', $result->exam_id)
             ->first();
@@ -484,9 +525,9 @@ class StudentPortalController extends Controller
 
     /**
      * Upload screenshot for CQ exam answer.
-     * 
+     *
      * Requirements: 3.3, 3.4
-     * 
+     *
      * Task details:
      * - Validate file type (jpg/png/pdf) and size (max 5MB)
      * - Store file in storage/app/exam-screenshots
@@ -496,18 +537,18 @@ class StudentPortalController extends Controller
     public function uploadScreenshot(Request $request)
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             return response()->json(['error' => 'Student profile not found'], 403);
         }
 
         // Validate request
         $request->validate([
             'attempt_id' => 'required|exists:exam_attempts,id',
-            'question_id' => 'required|integer',
+            'question_id' => 'required|integer|min:1',
             'screenshot' => [
                 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120',
-                new \App\Rules\SafeUpload(['jpg', 'jpeg', 'png', 'pdf']),
+                new SafeUpload(['jpg', 'jpeg', 'png', 'pdf']),
             ],
         ]);
 
@@ -517,6 +558,18 @@ class StudentPortalController extends Controller
         // Verify ownership
         if ($attempt->student_id !== $student->id) {
             return response()->json(['error' => 'Unauthorized access to this exam attempt'], 403);
+        }
+
+        // The screenshot array is keyed by question_id, so an arbitrary id adds
+        // a NEW entry rather than replacing one, and each entry costs a
+        // permanent object on the keyless shared host. Require the id to be a
+        // question of this attempt's exam.
+        $questionBelongsToExam = Question::where('id', $request->question_id)
+            ->where('exam_id', $attempt->exam_id)
+            ->exists();
+
+        if (! $questionBelongsToExam) {
+            return response()->json(['error' => 'Unknown question for this exam'], 422);
         }
 
         // Verify attempt is still in progress and still within its time.
@@ -567,7 +620,7 @@ class StudentPortalController extends Controller
 
             return response()->json(['error' => $e->getMessage()], 503);
         } catch (\Exception $e) {
-            \Log::error('Screenshot upload failed: ' . $e->getMessage());
+            \Log::error('Screenshot upload failed: '.$e->getMessage());
 
             return response()->json([
                 'error' => 'Failed to upload screenshot. Please try again.',
@@ -582,7 +635,7 @@ class StudentPortalController extends Controller
     {
         $student = $this->getStudent();
 
-        if (!$student) {
+        if (! $student) {
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
@@ -597,7 +650,7 @@ class StudentPortalController extends Controller
                 return redirect()->route('student.course.watch', $course)->with('success', 'You are already enrolled.');
             }
 
-            $batches = \App\Models\Batch::where('course_id', $course->id)->active()->orderBy('name')->get();
+            $batches = Batch::where('course_id', $course->id)->active()->orderBy('name')->get();
 
             return view('student.batch-select', compact('course', 'student', 'batches'));
         } else {
@@ -608,7 +661,7 @@ class StudentPortalController extends Controller
                 ->exists();
 
             if ($isPending) {
-                 return redirect()->route('student.payment.dashboard')->with('info', 'You already have a pending payment for this course.');
+                return redirect()->route('student.payment.dashboard')->with('info', 'You already have a pending payment for this course.');
             }
 
             // Not purchased, redirect to payment form
@@ -629,11 +682,23 @@ class StudentPortalController extends Controller
             ->whereIn('status', Payment::settledStatuses())
             ->exists(), 403, 'Purchase approval is required.');
 
+        // Batch assignment is the office's decision, made once. Without this
+        // guard a student with one settled payment could POST here repeatedly and
+        // move themselves into any other active batch of the course. Since
+        // assertExamAccess compares the exam's batch against the student's, that
+        // also handed them access to another batch's exams.
+        // enroll() already refused a second assignment; this path did not.
+        if ($student->batch_id) {
+            return redirect()
+                ->route('student.dashboard')
+                ->with('info', 'You are already enrolled in a batch. Please contact the office to change it.');
+        }
+
         $validated = $request->validate([
             'batch_id' => ['required', 'integer', 'exists:batches,id'],
         ]);
 
-        $batch = \App\Models\Batch::where('id', $validated['batch_id'])
+        $batch = Batch::where('id', $validated['batch_id'])
             ->where('course_id', $course->id)
             ->active()
             ->firstOrFail();
@@ -663,7 +728,7 @@ class StudentPortalController extends Controller
         if ($video) {
             abort_unless($video->course_id === $course->id, 404);
         } else {
-            $firstIncompleteId = $videos->first(fn ($item) => !VideoView::where('student_id', $student->id)
+            $firstIncompleteId = $videos->first(fn ($item) => ! VideoView::where('student_id', $student->id)
                 ->where('course_video_id', $item->id)->where('completed', true)->exists())?->id;
             $video = $videos->firstWhere('id', $firstIncompleteId) ?? $videos->first();
         }
@@ -808,11 +873,11 @@ class StudentPortalController extends Controller
     public function showCqExam(Exam $exam)
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             abort(403, 'Student profile not found.');
         }
-        
+
         $this->assertExamAccess($student, $exam);
 
         $this->assertExamAvailable($exam);
@@ -824,15 +889,15 @@ class StudentPortalController extends Controller
             ->get();
 
         // Create or retrieve ExamAttempt for student
-        $timeValidator = app(\App\Services\ExamTimeValidator::class);
-        
+        $timeValidator = app(ExamTimeValidator::class);
+
         // First, check if any attempt exists (regardless of status)
         $attempt = ExamAttempt::where('student_id', $student->id)
             ->where('exam_id', $exam->id)
             ->first();
-        
+
         // If no attempt exists, create one
-        if (!$attempt) {
+        if (! $attempt) {
             $attempt = ExamAttempt::create([
                 'student_id' => $student->id,
                 'exam_id' => $exam->id,
@@ -844,13 +909,13 @@ class StudentPortalController extends Controller
                 'ip_address' => request()->ip(),
             ]);
         }
-        
+
         // If attempt is already submitted, redirect to results
         if ($attempt->status === 'submitted') {
             $result = ExamResult::where('student_id', $student->id)
                 ->where('exam_id', $exam->id)
                 ->first();
-            
+
             if ($result) {
                 return redirect()->route('student.exam-result', $result->id)
                     ->with('info', 'You have already submitted this exam.');
@@ -880,11 +945,11 @@ class StudentPortalController extends Controller
     public function uploadCqAnswer(Request $request, Exam $exam)
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             abort(403, 'Student profile not found.');
         }
-        
+
         $this->assertExamAccess($student, $exam);
 
         $this->assertExamAvailable($exam);
@@ -895,8 +960,8 @@ class StudentPortalController extends Controller
         ]);
 
         $errors = $this->examService->validateCqFiles($request->file('files'));
-        
-        if (!empty($errors)) {
+
+        if (! empty($errors)) {
             return back()->withErrors($errors);
         }
 
@@ -912,8 +977,8 @@ class StudentPortalController extends Controller
     public function viewCqSubmission(CqSubmission $submission)
     {
         $student = $this->getStudent();
-        
-        if (!$student || $submission->student_id !== $student->id) {
+
+        if (! $student || $submission->student_id !== $student->id) {
             abort(403, 'Unauthorized access to this submission.');
         }
 
@@ -931,37 +996,37 @@ class StudentPortalController extends Controller
     public function results(Request $request)
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             // For admin users without student profile, show all results
             if (Auth::user()->isAdmin()) {
                 $filters = $request->only(['exam_type', 'from_date', 'to_date']);
-                
+
                 $query = ExamResult::with(['student', 'exam']);
-                
-                if (!empty($filters['exam_type'])) {
-                    $query->whereHas('exam', function($q) use ($filters) {
+
+                if (! empty($filters['exam_type'])) {
+                    $query->whereHas('exam', function ($q) use ($filters) {
                         $q->where('type', $filters['exam_type']);
                     });
                 }
-                
-                if (!empty($filters['from_date'])) {
+
+                if (! empty($filters['from_date'])) {
                     $query->whereDate('created_at', '>=', $filters['from_date']);
                 }
-                
-                if (!empty($filters['to_date'])) {
+
+                if (! empty($filters['to_date'])) {
                     $query->whereDate('created_at', '<=', $filters['to_date']);
                 }
-                
+
                 $results = $query->orderBy('created_at', 'desc')->paginate(20);
-                
+
                 // Calculate trends from all results
                 $allResults = ExamResult::orderBy('created_at')->take(10)->get();
                 $trends = [
-                    'labels' => $allResults->map(fn($r) => $r->created_at->format('M d'))->toArray(),
-                    'scores' => $allResults->map(fn($r) => $r->percentage)->toArray(),
+                    'labels' => $allResults->map(fn ($r) => $r->created_at->format('M d'))->toArray(),
+                    'scores' => $allResults->map(fn ($r) => $r->percentage)->toArray(),
                 ];
-                
+
                 return view('student.results', [
                     'student' => null,
                     'results' => $results,
@@ -969,6 +1034,7 @@ class StudentPortalController extends Controller
                     'filters' => $filters,
                 ]);
             }
+
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
@@ -990,8 +1056,8 @@ class StudentPortalController extends Controller
     public function downloadMarkSheet(ExamResult $result)
     {
         $student = $this->getStudent();
-        
-        if (!$student || $result->student_id !== $student->id) {
+
+        if (! $student || $result->student_id !== $student->id) {
             abort(403, 'Unauthorized access to this mark sheet.');
         }
 
@@ -1004,8 +1070,8 @@ class StudentPortalController extends Controller
     public function performanceTrends()
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             return response()->json(['error' => 'Student not found'], 404);
         }
 
@@ -1016,9 +1082,9 @@ class StudentPortalController extends Controller
 
     /**
      * Browse all available courses.
-     * 
+     *
      * Requirements: 10.1
-     * 
+     *
      * Task details:
      * - Fetch all active courses
      * - Get authenticated student's enrolled course IDs
@@ -1028,13 +1094,13 @@ class StudentPortalController extends Controller
     public function browse()
     {
         $student = $this->getStudent();
-        
-        if (!$student) {
+
+        if (! $student) {
             return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
         }
 
         // Fetch all active courses
-        $courses = \App\Models\Course::active()
+        $courses = Course::active()
             ->with(['batches'])
             ->where('delivery_mode', request()->session()->get('course_mode', 'online'))
             ->orderBy('name')
@@ -1044,7 +1110,7 @@ class StudentPortalController extends Controller
         // Student is enrolled through batch, and batch belongs to a course
         $enrolledCourseIds = CourseEnrollment::where('student_id', $student->id)->pluck('course_id')->all();
         if ($student->batch_id) {
-            $batch = \App\Models\Batch::find($student->batch_id);
+            $batch = Batch::find($student->batch_id);
             if ($batch && $batch->course_id) {
                 $enrolledCourseIds[] = $batch->course_id;
             }
@@ -1057,7 +1123,7 @@ class StudentPortalController extends Controller
             ->whereNotNull('course_id')
             ->pluck('course_id')
             ->toArray();
-        
+
         $enrolledCourseIds = array_unique(array_merge($enrolledCourseIds, $approvedPayments));
 
         // Get course IDs with pending payments

@@ -106,12 +106,20 @@ class StudentPortalService
             ->values();
 
         $totalFee = Course::whereIn('id', $courseIds)->sum('price');
-        $paidAmount = $courseIds->isNotEmpty()
-            ? Payment::where('student_id', $student->id)
-                ->whereIn('status', Payment::settledStatuses())
-                ->whereIn('course_id', $courseIds)
-                ->sum('amount')
-            : $student->payments()->whereIn('status', Payment::settledStatuses())->sum('amount');
+
+        // Every settled payment counts, including the course-less ones.
+        //
+        // This previously added `->whereIn('course_id', $courseIds)`, which
+        // excluded offline/cash/bKash payments recorded by staff — those rows
+        // have course_id NULL because only the student online form sets it. Any
+        // batch-assigned student therefore has a non-empty $courseIds, so the
+        // filter applied, the settled payment was invisible here, and a fully
+        // paid student was told they still owed the full course price while the
+        // admin side showed due_amount 0.
+        $paidAmount = $student->payments()
+            ->whereIn('status', Payment::settledStatuses())
+            ->sum('amount');
+
         $dueAmount = max(0, $totalFee - $paidAmount);
 
         return [

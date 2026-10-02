@@ -389,14 +389,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/exams', [\App\Http\Controllers\StudentPortalController::class, 'exams'])->name('exams');
         Route::get('/exams/{exam}/start', [\App\Http\Controllers\StudentPortalController::class, 'startExam'])->name('exams.start');
         Route::post('/exams/{exam}/submit', [\App\Http\Controllers\StudentPortalController::class, 'submitExam'])->name('exams.submit');
-        Route::post('/exams/attempt/{attempt}/save-answer', [\App\Http\Controllers\StudentPortalController::class, 'saveAnswer'])->name('exams.save-answer');
-        Route::post('/exams/attempt/{attempt}/tab-switch', [\App\Http\Controllers\StudentPortalController::class, 'recordTabSwitch'])->name('exams.record-tab-switch');
+        Route::post('/exams/attempt/{attempt}/save-answer', [\App\Http\Controllers\StudentPortalController::class, 'saveAnswer'])->middleware('throttle:120,1')->name('exams.save-answer');
+        Route::post('/exams/attempt/{attempt}/tab-switch', [\App\Http\Controllers\StudentPortalController::class, 'recordTabSwitch'])->middleware('throttle:60,1')->name('exams.record-tab-switch');
         Route::get('/exams/result/{result}', [\App\Http\Controllers\StudentPortalController::class, 'examResult'])->name('exam-result');
         
         // CQ Exams
         Route::get('/exams/{exam}/cq', [\App\Http\Controllers\StudentPortalController::class, 'showCqExam'])->name('exams.cq');
-        Route::post('/exams/{exam}/cq/upload', [\App\Http\Controllers\StudentPortalController::class, 'uploadCqAnswer'])->name('exams.cq.upload');
-        Route::post('/exams/screenshot/upload', [\App\Http\Controllers\StudentPortalController::class, 'uploadScreenshot'])->name('exams.screenshot.upload');
+        Route::post('/exams/{exam}/cq/upload', [\App\Http\Controllers\StudentPortalController::class, 'uploadCqAnswer'])->middleware('throttle:30,1')->name('exams.cq.upload');
+        Route::post('/exams/screenshot/upload', [\App\Http\Controllers\StudentPortalController::class, 'uploadScreenshot'])->middleware('throttle:30,1')->name('exams.screenshot.upload');
         Route::get('/cq-submission/{submission}', [\App\Http\Controllers\StudentPortalController::class, 'viewCqSubmission'])->name('cq-submission');
         
         // Results

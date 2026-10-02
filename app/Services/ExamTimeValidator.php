@@ -13,6 +13,15 @@ class ExamTimeValidator
      */
     public function canStartExam(Exam $exam): bool
     {
+        // Published state is checked first. Exam ids are sequential, so this gate
+        // is the only thing between a student and a draft paper — the one still
+        // being written — or a cancelled/completed one. It previously consulted
+        // only the time window, so a draft exam inside its window was fully
+        // sitable and wrote real attempt and result rows.
+        if (! $exam->isActive()) {
+            return false;
+        }
+
         $now = Carbon::now();
 
         // Check if exam has started

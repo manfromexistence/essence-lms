@@ -70,34 +70,39 @@
                     <p class="text-gray-900 font-medium mb-4">{{ $question->question_text }}</p>
                     
                     <div class="space-y-2 ml-4">
-                        @foreach(['A', 'B', 'C', 'D'] as $optKey)
                         @php
-                            $optionIndex = array_search($optKey, ['A', 'B', 'C', 'D']);
-                            $optionText = $question->options[$optionIndex] ?? null;
+                            // Single source of truth for both the option list and
+                            // which letter is correct: the model. This view read
+                            // options numerically while the paper read it by
+                            // letter, so the two disagreed about the same column,
+                            // and `$optKey === $question->correct_answer` never
+                            // matched free text like "A) apple" — the "Correct
+                            // Answer" marker could never render.
+                            $optionText = $question->optionMap();
+                            $correctLetter = $question->correctAnswerLetter();
                         @endphp
-                        @if($optionText !== null)
+                        @foreach($optionText as $optKey => $optValue)
                         <div class="flex items-center p-3 rounded-lg
-                            @if($optKey === $question->correct_answer) bg-green-50 border border-green-200
+                            @if($optKey === $correctLetter) bg-green-50 border border-green-200
                             @elseif($optKey === $studentAnswer && !$isCorrect) bg-red-50 border border-red-200
                             @else bg-gray-50 @endif">
                             <span class="font-semibold mr-2 
-                                @if($optKey === $question->correct_answer) text-green-700
+                                @if($optKey === $correctLetter) text-green-700
                                 @elseif($optKey === $studentAnswer && !$isCorrect) text-red-700
                                 @else text-gray-600 @endif">{{ $optKey }}.</span>
                             <span class="
-                                @if($optKey === $question->correct_answer) text-green-700
+                                @if($optKey === $correctLetter) text-green-700
                                 @elseif($optKey === $studentAnswer && !$isCorrect) text-red-700
                                 @else text-gray-700 @endif">
-                                {{ $optionText }}
+                                {{ $optValue }}
                             </span>
-                            @if($optKey === $question->correct_answer)
+                            @if($optKey === $correctLetter)
                             <span class="ml-auto text-green-600 text-sm">✓ Correct Answer</span>
                             @endif
                             @if($optKey === $studentAnswer)
                             <span class="ml-auto text-sm {{ $isCorrect ? 'text-green-600' : 'text-red-600' }}">Your Answer</span>
                             @endif
                         </div>
-                        @endif
                         @endforeach
                     </div>
                     

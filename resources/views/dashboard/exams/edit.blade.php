@@ -116,7 +116,7 @@
                         <option value="draft">Draft</option>
                         <option value="scheduled">Scheduled</option>
                         <option value="active">Active</option>
-                        <option value="live">Live</option>
+                        <option value="cancelled">Cancelled</option>
                         <option value="completed">Completed</option>
                     </x-ui.select>
                 </div>

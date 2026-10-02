@@ -482,20 +482,23 @@
         @if($data && $data->count() > 0)
         <!-- Summary Statistics -->
         @php
+            // Same array-vs-model problem: batch_id lives under ['enrollment'],
+            // and there is no 'courses' key at all.
             $totalStudents = $data->count();
-            $activeStudents = $data->where('status', 'active')->count();
-            $uniqueBatches = $data->pluck('batch_id')->unique()->count();
-            $uniqueCourses = $data->flatMap(function($student) {
-                return $student->courses ?? collect();
-            })->unique('id')->count();
+            $activeStudents = $data->filter(fn ($s) => ($s['enrollment']['batch_status'] ?? null) !== null)->count();
+            $uniqueBatches = $data->pluck('enrollment.batch_id')->filter()->unique()->count();
+            $uniqueCourses = $data->pluck('enrollment.course_id')->filter()->unique()->count();
             
             // Calculate total payments and dues
-            $totalPayments = $data->sum(function($student) {
-                return $student->payments ? $student->payments->sum('amount') : ($student->total_paid ?? 0);
-            });
-            $totalDues = $data->sum(function($student) {
-                return $student->balance ?? $student->due_amount ?? 0;
-            });
+            // $data holds plain associative arrays from compileStudentData(), not
+            // Student models. Reading ->payments on an array raised
+            // "Attempt to read property on array", which Laravel turns into an
+            // ErrorException, so this export always failed. The same applied to
+            // `activeStudents`, `uniqueBatches` and the table rows below, which
+            // is why the tiles showed zeroes even with warnings suppressed.
+            // Read the compiled keys instead.
+            $totalPayments = $data->sum(fn ($s) => (float) ($s['payment_summary']['paid_amount'] ?? 0));
+            $totalDues = $data->sum(fn ($s) => (float) ($s['payment_summary']['due_amount'] ?? 0));
         @endphp
         <div class="summary-section">
             <div class="summary-grid">
@@ -539,16 +542,12 @@
                 @foreach($data as $index => $student)
                 @php
                     // Calculate student metrics
-                    $totalPaid = $student->payments ? $student->payments->sum('amount') : ($student->total_paid ?? 0);
-                    $balance = $student->balance ?? $student->due_amount ?? 0;
-                    
-                    // Calculate average score
-                    $avgScore = 0;
-                    if ($student->examResults && $student->examResults->count() > 0) {
-                        $avgScore = $student->examResults->avg('score');
-                    } elseif (isset($student->average_score)) {
-                        $avgScore = $student->average_score;
-                    }
+                    $totalPaid = (float) ($student['payment_summary']['paid_amount'] ?? 0);
+                    $balance = (float) ($student['payment_summary']['due_amount'] ?? 0);
+
+                    // Average from the compiled performance summary rather than
+                    // ->examResults, which is not a key on these arrays.
+                    $avgScore = (float) ($student['performance_summary']['average_percentage'] ?? 0);
                     
                     // Determine performance class
                     if ($avgScore >= 80) $perfClass = 'performance-excellent';
@@ -557,7 +556,7 @@
                     else $perfClass = 'performance-poor';
                     
                     // Status class
-                    $status = strtolower($student->status ?? 'active');
+                    $status = strtolower((string) ($student['enrollment']['batch_status'] ?? 'active'));
                     $statusClass = match($status) {
                         'active' => 'status-active',
                         'inactive' => 'status-inactive',
@@ -569,24 +568,22 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>
-                        <strong>{{ $student->name ?? 'N/A' }}</strong>
-                        @if($student->email)
-                        <div class="contact-info">{{ $student->email }}</div>
+                        <strong>{{ $student['name'] ?? 'N/A' }}</strong>
+                        @if($student['email'] ?? null)
+                        <div class="contact-info">{{ $student['email'] }}</div>
                         @endif
                     </td>
-                    <td>{{ $student->student_id ?? $student->id ?? 'N/A' }}</td>
+                    <td>{{ $student['registration_no'] ?? $student['id'] ?? 'N/A' }}</td>
                     <td>
-                        @if($student->batch)
-                            <span class="batch-badge">{{ $student->batch->name ?? 'N/A' }}</span>
-                        @elseif($student->batch_name)
-                            <span class="batch-badge">{{ $student->batch_name }}</span>
+                        @if(!empty($student['enrollment']['batch_name']))
+                            <span class="batch-badge">{{ $student['enrollment']['batch_name'] }}</span>
                         @else
                             <span class="batch-badge">N/A</span>
                         @endif
                     </td>
                     <td>
-                        @if($student->enrollment_date ?? $student->created_at)
-                            {{ \Carbon\Carbon::parse($student->enrollment_date ?? $student->created_at)->format('d M Y') }}
+                        @if($student['enrollment']['enrollment_date'] ?? null)
+                            {{ \Carbon\Carbon::parse($student['enrollment']['enrollment_date'])->format('d M Y') }}
                         @else
                             N/A
                         @endif
@@ -611,10 +608,8 @@
                         @endif
                     </td>
                     <td class="contact-info">
-                        @if($student->phone)
-                            {{ $student->phone }}
-                        @elseif($student->mobile)
-                            {{ $student->mobile }}
+                        @if($student['phone'] ?? null)
+                            {{ $student['phone'] }}
                         @else
                             -
                         @endif

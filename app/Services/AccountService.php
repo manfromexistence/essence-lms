@@ -6,9 +6,9 @@ use App\Models\Expense;
 use App\Models\Income;
 use App\Models\Payment;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class AccountService
 {
@@ -17,12 +17,14 @@ class AccountService
     public function createExpense(array $data): Expense
     {
         $data['created_by'] = Auth::id();
+
         return Expense::create($data);
     }
 
     public function updateExpense(Expense $expense, array $data): Expense
     {
         $expense->update($data);
+
         return $expense;
     }
 
@@ -35,20 +37,20 @@ class AccountService
     {
         $query = Expense::with('creator')->orderBy('expense_date', 'desc');
 
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $query->where('category', $filters['category']);
         }
 
-        if (!empty($filters['from_date'])) {
+        if (! empty($filters['from_date'])) {
             $query->where('expense_date', '>=', $filters['from_date']);
         }
 
-        if (!empty($filters['to_date'])) {
+        if (! empty($filters['to_date'])) {
             $query->where('expense_date', '<=', $filters['to_date']);
         }
 
-        if (!empty($filters['search'])) {
-            $query->where('description', 'like', '%' . $filters['search'] . '%');
+        if (! empty($filters['search'])) {
+            $query->where('description', 'like', '%'.$filters['search'].'%');
         }
 
         return $query->paginate($filters['per_page'] ?? 15);
@@ -59,6 +61,7 @@ class AccountService
     public function recordIncome(array $data): Income
     {
         $data['created_by'] = Auth::id();
+
         return Income::create($data);
     }
 
@@ -67,7 +70,7 @@ class AccountService
         return Income::create([
             'category' => 'tuition',
             'amount' => $payment->amount,
-            'description' => 'Payment from student: ' . ($payment->student?->name ?? 'Unknown'),
+            'description' => 'Payment from student: '.($payment->student?->name ?? 'Unknown'),
             'income_date' => $payment->payment_date ?? now(),
             'student_id' => $payment->student_id,
             'payment_id' => $payment->id,
@@ -80,19 +83,19 @@ class AccountService
     {
         $query = Income::with(['student', 'payment', 'creator'])->orderBy('income_date', 'desc');
 
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $query->where('category', $filters['category']);
         }
 
-        if (!empty($filters['from_date'])) {
+        if (! empty($filters['from_date'])) {
             $query->where('income_date', '>=', $filters['from_date']);
         }
 
-        if (!empty($filters['to_date'])) {
+        if (! empty($filters['to_date'])) {
             $query->where('income_date', '<=', $filters['to_date']);
         }
 
-        if (!empty($filters['student_id'])) {
+        if (! empty($filters['student_id'])) {
             $query->where('student_id', $filters['student_id']);
         }
 
@@ -123,8 +126,8 @@ class AccountService
         $income = Income::whereBetween('income_date', [$startDate, $endDate])->get();
         $expense = Expense::whereBetween('expense_date', [$startDate, $endDate])->get();
 
-        $incomeByCategory = $income->groupBy('category')->map(fn($items) => $items->sum('amount'));
-        $expenseByCategory = $expense->groupBy('category')->map(fn($items) => $items->sum('amount'));
+        $incomeByCategory = $income->groupBy('category')->map(fn ($items) => $items->sum('amount'));
+        $expenseByCategory = $expense->groupBy('category')->map(fn ($items) => $items->sum('amount'));
 
         return [
             'year' => $year,
@@ -147,8 +150,15 @@ class AccountService
         while ($current <= $endDate) {
             $dateStr = $current->format('Y-m-d');
             $dailyData[$dateStr] = [
-                'income' => $income->where('income_date', $dateStr)->sum('amount'),
-                'expense' => $expense->where('expense_date', $dateStr)->sum('amount'),
+                // Filtered on the formatted date rather than via
+                // Collection::where(). income_date/expense_date are cast to
+                // 'date', so each element holds a Carbon instance and
+                // Collection::where() compares it loosely against a string --
+                // an object never equals a string, so every day came back 0.00
+                // and the PDF went on to print "No transactions recorded in
+                // this period" directly beneath correct income/expense totals.
+                'income' => $income->filter(fn ($i) => $i->income_date->format('Y-m-d') === $dateStr)->sum('amount'),
+                'expense' => $expense->filter(fn ($e) => $e->expense_date->format('Y-m-d') === $dateStr)->sum('amount'),
             ];
             $current->addDay();
         }
@@ -159,8 +169,8 @@ class AccountService
             'total_income' => $income->sum('amount'),
             'total_expense' => $expense->sum('amount'),
             'profit_loss' => $income->sum('amount') - $expense->sum('amount'),
-            'income_by_category' => $income->groupBy('category')->map(fn($items) => $items->sum('amount')),
-            'expense_by_category' => $expense->groupBy('category')->map(fn($items) => $items->sum('amount')),
+            'income_by_category' => $income->groupBy('category')->map(fn ($items) => $items->sum('amount')),
+            'expense_by_category' => $expense->groupBy('category')->map(fn ($items) => $items->sum('amount')),
             'daily_data' => $dailyData,
         ];
     }
@@ -201,16 +211,17 @@ class AccountService
             $date = Carbon::now()->subMonths($i);
             $startOfMonth = $date->copy()->startOfMonth();
             $endOfMonth = $date->copy()->endOfMonth();
-            
+
             $income = Income::whereBetween('income_date', [$startOfMonth, $endOfMonth])->sum('amount');
             $expense = Expense::whereBetween('expense_date', [$startOfMonth, $endOfMonth])->sum('amount');
-            
+
             $data[] = [
                 'month' => $date->format('M Y'),
                 'income' => $income,
                 'expense' => $expense,
             ];
         }
+
         return $data;
     }
 }

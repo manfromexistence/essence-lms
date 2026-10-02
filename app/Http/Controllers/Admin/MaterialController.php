@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseMaterial;
+use App\Rules\SafeUpload;
 use App\Storage\CatboxStorage;
 use App\Storage\CatboxUploadFailed;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class MaterialController extends Controller
     public function index(Course $course)
     {
         $materials = $course->materials()->orderBy('order')->get();
+
         return view('dashboard.materials.index', compact('course', 'materials'));
     }
 
@@ -35,7 +37,9 @@ class MaterialController extends Controller
             'file' => [
                 'required_unless:type,link', 'file',
                 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip', 'max:51200',
-                new \App\Rules\SafeUpload,
+                // Was constructed with no argument, which left the scanner's extension
+                // allowlist empty and therefore disabled. Same list as the mimes rule.
+                new SafeUpload(['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'mp4', 'webm', 'zip']),
             ],
             'file_path' => 'required_if:type,link|nullable|url',
         ]);
@@ -87,6 +91,7 @@ class MaterialController extends Controller
     public function edit(Course $course, CourseMaterial $material)
     {
         abort_unless($material->course_id === $course->id, 404);
+
         return view('dashboard.materials.edit', compact('course', 'material'));
     }
 
@@ -100,7 +105,9 @@ class MaterialController extends Controller
             'file' => [
                 'nullable', 'file',
                 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,mp4,webm,zip', 'max:51200',
-                new \App\Rules\SafeUpload,
+                // Was constructed with no argument, which left the scanner's extension
+                // allowlist empty and therefore disabled. Same list as the mimes rule.
+                new SafeUpload(['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'mp4', 'webm', 'zip']),
             ],
             'file_path' => 'required_if:type,link|nullable|url',
         ]);
@@ -159,7 +166,7 @@ class MaterialController extends Controller
         try {
             return app(CatboxStorage::class)->store(
                 $request->file('file'),
-                'materials/' . $course->id,
+                'materials/'.$course->id,
                 $request->file('file')->getClientOriginalName()
             );
         } catch (CatboxUploadFailed $e) {

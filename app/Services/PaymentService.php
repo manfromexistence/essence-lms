@@ -116,8 +116,19 @@ class PaymentService
 
             $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth();
             $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth();
+            // Must read the newest row that actually HAS a receipt number.
+            // Student-submitted course payments are created by
+            // PaymentController::submit() via Payment::create(), which bypasses
+            // recordPayment() and so leaves receipt_number NULL. Selecting the
+            // newest row by id therefore returned that NULL row, $sequence stayed
+            // at 1, and the next staff payment collided with the month's first
+            // receipt on the unique index -> 500. Because the failing insert
+            // rolled back, the NULL row stayed newest and every subsequent staff
+            // payment failed the same way: cash collection dead for the month.
             $lastPayment = Payment::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                ->whereNotNull('receipt_number')
                 ->orderBy('id', 'desc')
+                ->lockForUpdate()
                 ->first();
 
             $sequence = 1;

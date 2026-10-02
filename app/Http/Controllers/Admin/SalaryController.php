@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\TeacherSalary;
 use App\Models\Teacher;
-use Illuminate\Http\Request;
+use App\Models\TeacherSalary;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class SalaryController extends Controller
 {
@@ -21,7 +21,7 @@ class SalaryController extends Controller
             $query->whereHas('teacher.user', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
             })->orWhere('notes', 'like', "%{$search}%")
-              ->orWhere('payment_method', 'like', "%{$search}%");
+                ->orWhere('payment_method', 'like', "%{$search}%");
         }
 
         if ($request->has('teacher_id') && $request->teacher_id) {
@@ -44,6 +44,7 @@ class SalaryController extends Controller
     public function create()
     {
         $teachers = Teacher::with('user')->get();
+
         return view('dashboard.salaries.create', compact('teachers'));
     }
 
@@ -67,7 +68,7 @@ class SalaryController extends Controller
 
         if ($duplicate) {
             return back()->withErrors([
-                'teacher_id' => 'Salary for this teacher has already been paid for this month.'
+                'teacher_id' => 'Salary for this teacher has already been paid for this month.',
             ])->withInput();
         }
 
@@ -93,6 +94,7 @@ class SalaryController extends Controller
     public function edit(TeacherSalary $salary)
     {
         $teachers = Teacher::with('user')->get();
+
         return view('dashboard.salaries.edit', compact('salary', 'teachers'));
     }
 
@@ -105,6 +107,24 @@ class SalaryController extends Controller
             'payment_method' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
+
+        // store() rejects a second salary for the same teacher-month; update()
+        // did not. Correcting a payment_date could therefore leave one teacher
+        // with two rows inside a single payroll month, which report() then sums
+        // as double pay. Excludes this record so re-saving it unchanged is fine.
+        $duplicate = TeacherSalary::where('teacher_id', $validated['teacher_id'])
+            ->where('id', '!=', $salary->id)
+            ->whereBetween('payment_date', [
+                $validated['payment_date']->copy()->startOfMonth(),
+                $validated['payment_date']->copy()->endOfMonth(),
+            ])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withErrors([
+                'amount' => 'This teacher already has a salary recorded for that month.',
+            ])->withInput();
+        }
 
         $salary->update($validated);
 
@@ -134,7 +154,7 @@ class SalaryController extends Controller
     public function report(Request $request)
     {
         $year = $request->get('year', now()->year);
-        
+
         $monthlySummary = [];
         for ($month = 1; $month <= 12; $month++) {
             $startDate = Carbon::create($year, $month, 1)->startOfMonth();

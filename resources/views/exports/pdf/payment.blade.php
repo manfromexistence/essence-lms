@@ -463,8 +463,14 @@
         @if($data && $data->count() > 0)
         <!-- Financial Summary -->
         @php
-            $totalRevenue = $data->sum('amount');
-            $transactionCount = $data->count();
+            // Settled rows only. This previously summed every payment matching
+            // the filter — pending, rejected, failed and refunded included — so
+            // refunded money was booked as revenue, the on-screen report and the
+            // exported PDF disagreed for the same filter, and the "Pending
+            // Amount" card was a subset of the total printed above it.
+            $settled = $data->whereIn('status', \App\Models\Payment::settledStatuses());
+            $totalRevenue = $settled->sum('amount');
+            $transactionCount = $settled->count();
             $averagePayment = $transactionCount > 0 ? $totalRevenue / $transactionCount : 0;
             $pendingAmount = $data->where('status', 'pending')->sum('amount');
         @endphp

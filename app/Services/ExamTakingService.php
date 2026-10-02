@@ -177,7 +177,11 @@ class ExamTakingService
 
         foreach ($questions as $question) {
             $studentAnswer = $answers[$question->id] ?? null;
-            if ($studentAnswer !== null && $studentAnswer === $question->correct_answer) {
+            // Compared through the model so a bare letter ("A") matches the
+            // stored free text ("A) apple"). A strict === against
+            // correct_answer never matched, so every MCQ question scored zero
+            // however the student answered.
+            if ($studentAnswer !== null && $question->isCorrectAnswer((string) $studentAnswer)) {
                 $score += $question->marks ?? 1;
             }
         }
@@ -326,6 +330,11 @@ class ExamTakingService
         // Create or update exam result
         $exam = $submission->exam;
 
+        // Clamp once, then use the clamped value for the marks AND the grade.
+        // The grade was previously computed from the unclamped figure, so an
+        // award above the paper's worth would have stored an A+ on a clamped row.
+        $awarded = $exam->total_marks > 0 ? min($marks, $exam->total_marks) : $marks;
+
         // Get subject name from exam title or course
         $subjectName = $exam->title;
         if ($exam->course) {
@@ -341,10 +350,10 @@ class ExamTakingService
                 'subject_name' => $subjectName,
                 // Clamped for the same reason as the auto-score: a marker cannot
                 // award more than the paper is worth.
-                'marks' => $exam->total_marks > 0 ? min($marks, $exam->total_marks) : $marks,
-                'obtained_marks' => $exam->total_marks > 0 ? min($marks, $exam->total_marks) : $marks,
+                'marks' => $awarded,
+                'obtained_marks' => $awarded,
                 'total_marks' => $exam->total_marks,
-                'grade' => $this->calculateGrade($exam->total_marks > 0 ? ($marks / $exam->total_marks) * 100 : 0.0),
+                'grade' => $this->calculateGrade($exam->total_marks > 0 ? ($awarded / $exam->total_marks) * 100 : 0.0),
                 'feedback' => $feedback,
             ]
         );

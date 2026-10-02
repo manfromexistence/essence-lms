@@ -8,34 +8,48 @@
 <div class="space-y-6">
     <!-- Summary Statistics - Requirement 6.5: Show total revenue, payment method breakdown, and outstanding dues -->
     @if($report && isset($report['summary']))
+    @php
+        // Keys must match generatePaymentReport()'s summary, which returns
+        // total_amount / total_count / average_amount. The view previously asked
+        // for total_revenue / total_transactions / average_payment, so all three
+        // `?? 0` fallbacks fired and the page showed three permanent zeros above a
+        // table of real rows. outstanding_dues is not part of this summary at
+        // all, so it is replaced with pending amount, which the row data supports.
+        $summary = $report['summary'] ?? [];
+        $pendingAmount = collect($report['data'] ?? [])
+            ->where('status', 'pending')
+            ->sum('amount');
+    @endphp
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
             <p class="text-sm font-medium text-gray-600">Total Revenue</p>
-            <p class="text-2xl font-bold text-gray-900 mt-2">৳{{ number_format($report['summary']['total_revenue'] ?? 0, 2) }}</p>
+            <p class="text-2xl font-bold text-gray-900 mt-2">৳{{ number_format($summary['total_amount'] ?? 0, 2) }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
             <p class="text-sm font-medium text-gray-600">Total Transactions</p>
-            <p class="text-2xl font-bold text-gray-900 mt-2">{{ number_format($report['summary']['total_transactions'] ?? 0) }}</p>
+            <p class="text-2xl font-bold text-gray-900 mt-2">{{ number_format($summary['total_count'] ?? 0) }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-amber-500">
-            <p class="text-sm font-medium text-gray-600">Outstanding Dues</p>
-            <p class="text-2xl font-bold text-gray-900 mt-2">৳{{ number_format($report['summary']['outstanding_dues'] ?? 0, 2) }}</p>
+            <p class="text-sm font-medium text-gray-600">Pending Amount</p>
+            <p class="text-2xl font-bold text-gray-900 mt-2">৳{{ number_format($pendingAmount, 2) }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
             <p class="text-sm font-medium text-gray-600">Average Payment</p>
-            <p class="text-2xl font-bold text-gray-900 mt-2">৳{{ number_format($report['summary']['average_payment'] ?? 0, 2) }}</p>
+            <p class="text-2xl font-bold text-gray-900 mt-2">৳{{ number_format($summary['average_amount'] ?? 0, 2) }}</p>
         </div>
     </div>
 
     <!-- Payment Method Breakdown -->
-    @if(isset($report['summary']['method_breakdown']) && !empty($report['summary']['method_breakdown']))
+    @if(!empty($summary['by_method']))
     <div class="bg-white rounded-xl shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Method Breakdown</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @foreach($report['summary']['method_breakdown'] as $method => $amount)
+            @foreach($summary['by_method'] as $method => $methodTotals)
                 <div class="text-center p-4 bg-gray-50 rounded-lg">
                     <p class="text-sm font-medium text-gray-600">{{ ucfirst(str_replace('_', ' ', $method)) }}</p>
-                    <p class="text-xl font-bold text-gray-900 mt-1">৳{{ number_format($amount, 2) }}</p>
+                    <p class="text-xl font-bold text-gray-900 mt-1">৳{{ number_format($methodTotals['amount'] ?? 0, 2) }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ $methodTotals['count'] ?? 0 }} payment(s)</p>
                 </div>
             @endforeach
         </div>

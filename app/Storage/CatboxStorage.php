@@ -157,7 +157,14 @@ class CatboxStorage
         }
 
         if ($source instanceof UploadedFile) {
-            return $source->getClientOriginalExtension() ?: ($source->guessExtension() ?: 'bin');
+            // Content-derived extension wins over the client-supplied one.
+            //
+            // The stored extension decides how the host serves the object, so
+            // trusting getClientOriginalExtension() here is what allowed a
+            // byte-valid PNG (or PDF) uploaded as "payload.html" to be published as
+            // text/html. The scanner's allowlist is checked against the same
+            // content-derived value, so the two now agree by construction.
+            return $source->guessExtension() ?: ($source->getClientOriginalExtension() ?: 'bin');
         }
 
         return pathinfo(parse_url($source, PHP_URL_PATH) ?: $source, PATHINFO_EXTENSION) ?: 'bin';

@@ -124,17 +124,12 @@
                         </div>
                         
                         <!-- Options -->
-                        @if($question->type === 'mcq' && $question->options)
+                        @if($question->type === 'mcq' && $question->optionMap())
                         <div class="space-y-3">
-                            @foreach(['A', 'B', 'C', 'D'] as $optKey)
-                                @php 
-                                    $optionValue = $question->options[$optKey] ?? null;
-                                @endphp
-                                
-                                @if($optionValue)
+                            @foreach($question->optionMap() as $optKey => $optionValue)
                                 <label class="flex items-start p-4 bg-secondary rounded-lg cursor-pointer hover:bg-accent border-2 border-border hover:border-primary transition option-label">
-                                    <input type="radio" 
-                                           name="answers[{{ $question->id }}]" 
+                                    <input type="radio"
+                                           name="answers[{{ $question->id }}]"
                                            value="{{ $optKey }}"
                                            class="mt-1 w-5 h-5 text-primary focus:ring-primary answer-input"
                                            data-question-id="{{ $question->id }}"
@@ -151,7 +146,6 @@
                                         </div>
                                     </div>
                                 </label>
-                                @endif
                             @endforeach
                         </div>
                         @else

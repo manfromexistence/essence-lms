@@ -23,15 +23,15 @@ class FileScanService
         'jpg' => [[0, "\xFF\xD8\xFF"]],
         'jpeg' => [[0, "\xFF\xD8\xFF"]],
         'png' => [[0, "\x89PNG\r\n\x1A\n"]],
-        'gif' => [[0, "GIF87a"], [0, "GIF89a"]],
-        'webp' => [[0, "RIFF"], [8, "WEBP"]],
-        'pdf' => [[0, "%PDF-"]],
-        'mp4' => [[4, "ftyp"]],
-        'm4v' => [[4, "ftyp"]],
-        'mov' => [[4, "ftyp"]],
+        'gif' => [[0, 'GIF87a'], [0, 'GIF89a']],
+        'webp' => [[0, 'RIFF'], [8, 'WEBP']],
+        'pdf' => [[0, '%PDF-']],
+        'mp4' => [[4, 'ftyp']],
+        'm4v' => [[4, 'ftyp']],
+        'mov' => [[4, 'ftyp']],
         'webm' => [[0, "\x1A\x45\xDF\xA3"]],
-        'mp3' => [[0, "ID3"], [0, "\xFF\xFB"], [0, "\xFF\xF3"], [0, "\xFF\xF2"]],
-        'wav' => [[0, "RIFF"], [8, "WAVE"]],
+        'mp3' => [[0, 'ID3'], [0, "\xFF\xFB"], [0, "\xFF\xF3"], [0, "\xFF\xF2"]],
+        'wav' => [[0, 'RIFF'], [8, 'WAVE']],
         'zip' => [[0, "PK\x03\x04"]],
         // Office Open XML / OOXML formats are ZIP containers.
         'docx' => [[0, "PK\x03\x04"]],
@@ -82,22 +82,45 @@ class FileScanService
      * Inspect a file. Returns null when safe, or a human-readable rejection
      * reason.
      *
-     * @param array<int, string> $allowedExtensions
+     * @param  array<int, string>  $allowedExtensions
      */
     public function inspect(UploadedFile $file, array $allowedExtensions = []): ?string
     {
-        if (!config('uploads.scan.enabled', true)) {
+        if (! config('uploads.scan.enabled', true)) {
             return null;
         }
 
-        if (!$file->isValid()) {
+        if (! $file->isValid()) {
             return 'The file upload is invalid or incomplete.';
         }
 
-        $extension = strtolower($file->getClientOriginalExtension() ?: (string) $file->guessExtension());
+        // Content-derived extension decides everything. getClientOriginalExtension()
+        // is attacker-controlled and Symfony's own docblock says it must not be
+        // trusted. Preferring it let a file named "notes.pdf.html" carry a
+        // byte-valid PDF body — which satisfies Laravel's content-based `mimes:`
+        // check — while this allowlist, and the extension actually stored, both
+        // saw "html", and the host serves that inline as text/html on a public
+        // origin.
+        //
+        // A disagreement between the two is logged rather than rejected: content
+        // sniffing is legitimately imprecise (progressive JPEGs, EXIF), and
+        // rejecting outright breaks honest uploads. It is no longer a security
+        // event, because the client-declared name no longer influences either
+        // the allowlist decision or the stored extension.
+        $guessed = strtolower((string) $file->guessExtension());
+        $claimed = strtolower($file->getClientOriginalExtension());
 
-        if ($allowedExtensions !== [] && !in_array($extension, $allowedExtensions, true)) {
-            return 'The file type "' . $extension . '" is not allowed.';
+        $extension = $guessed !== '' ? $guessed : $claimed;
+
+        if ($claimed !== '' && $guessed !== '' && $claimed !== $guessed) {
+            Log::notice('Uploaded file extension disagrees with its contents; using the content-derived type.', [
+                'claimed' => $claimed,
+                'detected' => $guessed,
+            ]);
+        }
+
+        if ($allowedExtensions !== [] && ! in_array($extension, $allowedExtensions, true)) {
+            return 'The file type "'.$extension.'" is not allowed.';
         }
 
         $size = $file->getSize();
@@ -108,7 +131,7 @@ class FileScanService
         // A file can disappear between upload and scan (e.g. an antivirus
         // engine quarantining it); treat that as a rejection, not a crash.
         $realPath = $file->getRealPath();
-        if ($realPath === false || !is_file($realPath)) {
+        if ($realPath === false || ! is_file($realPath)) {
             Log::warning('Upload rejected: file vanished before scanning', [
                 'original_name' => $file->getClientOriginalName(),
             ]);
@@ -131,12 +154,12 @@ class FileScanService
             $content = (string) fread($handle, $maxPatternBytes);
 
             // 1) Signature validation — the content must match its declared type.
-            if (!in_array($extension, self::TEXT_TYPES, true)) {
+            if (! in_array($extension, self::TEXT_TYPES, true)) {
                 $signatureError = $this->checkSignature($extension, $head);
                 if ($signatureError !== null) {
                     return $signatureError;
                 }
-            } elseif (!mb_check_encoding($content, 'UTF-8')) {
+            } elseif (! mb_check_encoding($content, 'UTF-8')) {
                 return 'Text files must be valid UTF-8 documents.';
             }
 
@@ -209,7 +232,7 @@ class FileScanService
             'head_bytes' => bin2hex(substr($head, 0, 16)),
         ]);
 
-        return 'The file content does not match its declared type (' . $extension . ') and was rejected.';
+        return 'The file content does not match its declared type ('.$extension.') and was rejected.';
     }
 
     /**
@@ -253,18 +276,18 @@ class FileScanService
 
             try {
                 $streamed = 0;
-                while (!feof($handle) && $streamed < $maxStream) {
+                while (! feof($handle) && $streamed < $maxStream) {
                     $chunk = (string) fread($handle, 65536);
                     if ($chunk === '') {
                         break;
                     }
                     $streamed += strlen($chunk);
-                    fwrite($socket, pack('N', strlen($chunk)) . $chunk);
+                    fwrite($socket, pack('N', strlen($chunk)).$chunk);
                 }
                 fwrite($socket, pack('N', 0));
 
                 $response = '';
-                while (!feof($socket)) {
+                while (! feof($socket)) {
                     $response .= (string) fgets($socket, 4096);
                 }
             } finally {

@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Student;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
+use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,7 +25,7 @@ class PaymentController extends Controller
     /**
      * Display payment dashboard with filters.
      * Supports filtering by date range, payment method, batch, and student search.
-     * 
+     *
      * Requirements: 3.1, 3.2, 3.3
      */
     public function index(Request $request): View
@@ -51,8 +52,10 @@ class PaymentController extends Controller
         // Calculate totals for display
         $totalRevenue = Payment::completed()->sum('amount');
         $currentMonth = now();
+        // payment_date, not created_at: a back-dated payment belongs to the
+        // month it was paid, matching ReportService and the dashboard chart.
         $monthlyRevenue = Payment::completed()
-            ->whereBetween('created_at', [$currentMonth->copy()->startOfMonth(), $currentMonth->copy()->endOfMonth()])
+            ->whereBetween('payment_date', [$currentMonth->copy()->startOfMonth(), $currentMonth->copy()->endOfMonth()])
             ->sum('amount');
         $pendingAmount = Payment::where('status', 'pending')->sum('amount');
         $totalTransactions = Payment::count();
@@ -71,14 +74,14 @@ class PaymentController extends Controller
     /**
      * Show payment form for recording a new payment.
      * Optionally pre-selects a student if provided.
-     * 
+     *
      * Requirements: 1.1, 1.2
      */
     public function create(?Student $student = null): View
     {
         $students = Student::with(['user', 'batch'])->orderBy('id', 'desc')->get();
         $batches = Batch::orderBy('name')->get();
-        
+
         // Get pending invoices for the selected student
         $pendingInvoices = [];
         if ($student) {
@@ -94,7 +97,7 @@ class PaymentController extends Controller
         ];
 
         // Mobile money configuration for display (Settings first, env second).
-        $settingsService = app(\App\Services\SettingsService::class);
+        $settingsService = app(SettingsService::class);
         $mobileMoneyConfig = [
             'bkash' => [
                 'phone' => $settingsService->get('bkash_number', config('payment-methods.methods.bkash.number')),
@@ -119,7 +122,7 @@ class PaymentController extends Controller
     /**
      * Store a new payment record.
      * Generates invoice number, updates student balance, creates receipt, and sends SMS notification.
-     * 
+     *
      * Requirements: 1.3, 1.4, 1.5, 2.3, 4.1, 4.3, 4.4
      */
     public function store(PaymentRequest $request): RedirectResponse
@@ -154,13 +157,13 @@ class PaymentController extends Controller
 
         return redirect()
             ->route('dashboard.payments.show', $payment)
-            ->with('success', 'Payment recorded successfully. Receipt #' . $payment->receipt_number);
+            ->with('success', 'Payment recorded successfully. Receipt #'.$payment->receipt_number);
     }
 
     /**
      * Display payment details.
      * Shows complete payment information including student details and invoice reference.
-     * 
+     *
      * Requirements: 2.3, 3.2
      */
     public function show(Payment $payment): View
@@ -176,7 +179,7 @@ class PaymentController extends Controller
     /**
      * Display complete payment history for a student.
      * Supports filtering by date range, payment method, and status.
-     * 
+     *
      * Requirements: 3.2
      */
     public function history(Student $student, Request $request): View
@@ -220,7 +223,7 @@ class PaymentController extends Controller
     /**
      * Generate printable receipt for a payment.
      * Includes payment details, student information, and invoice reference.
-     * 
+     *
      * Requirements: 2.3, 2.4
      */
     public function receipt(Payment $payment): View
@@ -327,7 +330,7 @@ class PaymentController extends Controller
 
     /**
      * Display a single invoice (printable format).
-     * 
+     *
      * Requirements: 2.2, 2.4
      */
     public function showInvoice(Invoice $invoice): View
@@ -370,7 +373,7 @@ class PaymentController extends Controller
 
         return redirect()
             ->route('dashboard.payments.invoices')
-            ->with('success', 'Invoice #' . $invoice->invoice_number . ' generated successfully.');
+            ->with('success', 'Invoice #'.$invoice->invoice_number.' generated successfully.');
     }
 
     /**

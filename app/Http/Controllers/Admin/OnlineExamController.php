@@ -10,11 +10,15 @@ use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Question;
 use App\Services\ExamService;
+use App\Services\ExamTakingService;
 use Illuminate\Http\Request;
 
 class OnlineExamController extends Controller
 {
-    public function __construct(protected ExamService $examService) {}
+    public function __construct(
+        protected ExamService $examService,
+        protected ExamTakingService $examTakingService,
+    ) {}
 
     public function index()
     {
@@ -43,7 +47,8 @@ class OnlineExamController extends Controller
 
     public function live()
     {
-        $exams = Exam::where('status', 'live')->with(['batch', 'course'])->get();
+        // 'live' was never a valid status; 'active' is the published state.
+        $exams = Exam::where('status', 'active')->with(['batch', 'course'])->get();
 
         return view('dashboard.exams.live', compact('exams'));
     }
@@ -100,6 +105,9 @@ class OnlineExamController extends Controller
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after:start_time',
             'instructions' => 'nullable|string',
+            // Previously absent, so every exam was created as 'draft' and could
+            // only be published by a second request to update().
+            'status' => 'nullable|in:draft,scheduled,active,completed,cancelled',
         ]);
 
         $exam = $request->type === 'mcq'
@@ -135,7 +143,11 @@ class OnlineExamController extends Controller
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after:start_time',
             'instructions' => 'nullable|string',
-            'status' => 'required|in:draft,scheduled,live,completed',
+            // Must match exams.status in the schema exactly. This previously
+            // offered 'live' (not in the enum, so an INSERT/UPDATE would fail on
+            // MySQL) and omitted 'active' (the only value isActive() accepts), so
+            // no exam could be published through the UI at all.
+            'status' => 'required|in:draft,scheduled,active,completed,cancelled',
         ]);
 
         $exam->update($request->only([
@@ -703,13 +715,18 @@ class OnlineExamController extends Controller
             'annotated_files' => 'nullable|string',
         ]);
 
+        // Marks are awarded through the service, which is the only code that syncs a
+        // CQ mark into the student's exam_results row. Writing the submission
+        // directly here left every CQ student permanently recorded as
+        // 0 / grade Pending: the marker saw 88 on the review page while the
+        // student's results page, the mark sheet PDF and hasPassed() all
+        // reported 0, so no CQ student could ever pass.
+        $this->examTakingService->evaluateCq($submission, (float) $request->marks, (string) ($request->feedback ?? ''), (int) auth()->id());
+
+        // The remaining review fields are submission-only.
         $submission->update([
-            'marks' => $request->marks,
-            'feedback' => $request->feedback,
             'teacher_notes' => $request->teacher_notes,
             'annotated_files' => $request->annotated_files ? json_decode($request->annotated_files, true) : null,
-            'evaluated_at' => now(),
-            'evaluated_by' => auth()->id(),
         ]);
 
         return redirect()->route('dashboard.exams.review-submissions', $exam)
