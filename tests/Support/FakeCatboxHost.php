@@ -95,13 +95,13 @@ class FakeCatboxHost
 
     public function contentsOf(string $url): ?string
     {
-        $key = $this->key($url);
+        $object = $this->find($url);
 
-        if ($key === null) {
+        if ($object === null) {
             return null;
         }
 
-        $contents = file_get_contents($this->objects[$key]['path']);
+        $contents = file_get_contents($object['path']);
 
         return $contents === false ? null : $contents;
     }
@@ -175,29 +175,32 @@ class FakeCatboxHost
 
     private function headResponse(string $url)
     {
-        $key = $this->key($url);
+        $object = $this->find($url);
 
-        if ($key === null) {
+        if ($object === null) {
             return Http::response('', 404);
         }
 
         return Http::response('', 200, [
-            'Content-Length' => (string) filesize($this->objects[$key]['path']),
-            'Content-Type' => $this->objects[$key]['type'],
-            'Last-Modified' => gmdate('D, d M Y H:i:s', (int) filemtime($this->objects[$key]['path'])).' GMT',
+            'Content-Length' => (string) filesize($object['path']),
+            'Content-Type' => $object['type'],
+            'Last-Modified' => gmdate('D, d M Y H:i:s', (int) filemtime($object['path'])).' GMT',
         ]);
     }
 
     private function getResponse(string $url)
     {
-        $key = $this->key($url);
+        $object = $this->find($url);
 
-        return $key === null
+        return $object === null
             ? Http::response('', 404)
-            : Http::response(file_get_contents($this->objects[$key]['path']), 200);
+            : Http::response(file_get_contents($object['path']), 200);
     }
 
-    private function key(string $url): ?string
+    /**
+     * @return array{path: string, type: string}|null The stored object, or null.
+     */
+    private function find(string $url): ?array
     {
         return $this->objects[$url] ?? null;
     }

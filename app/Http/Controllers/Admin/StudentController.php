@@ -463,7 +463,7 @@ class StudentController extends Controller
 
         if ($approved) {
             Student::whereIn('id', $request->student_ids)->get()
-                ->each(function (Student $student) {
+                ->each(function (Student $student) use ($previouslyPending) {
                     $this->studentService->syncEnrollment($student);
 
                     // Bulk assignment approves students exactly as the single
