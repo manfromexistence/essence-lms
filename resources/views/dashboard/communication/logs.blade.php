@@ -267,6 +267,18 @@ async function retrySelected() {
     }
 }
 
+// Every value interpolated into innerHTML below must pass through this.
+// sms_logs.message is built from the student's name, and that name is supplied
+// by an ANONYMOUS applicant on the public /admission form ("name" is validated
+// as a plain string, no HTML filtering). Rendering it unescaped meant anyone
+// could POST an admission form containing markup and have it execute in the
+// session of any admin who later opened the SMS log — full account takeover.
+const __esc = (s) => {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+};
+
 function showLogDetails(log) {
     const modal = document.getElementById('logDetailsModal');
     const content = document.getElementById('logDetailsContent');
@@ -279,17 +291,17 @@ function showLogDetails(log) {
     
     content.innerHTML = `
         <div class="space-y-4">
-            <div><label class="text-sm font-medium text-gray-500">Phone Number</label><p class="text-gray-900">${log.phone}</p></div>
-            <div><label class="text-sm font-medium text-gray-500">Message</label><p class="text-gray-900 bg-gray-50 p-3 rounded-lg">${log.message}</p></div>
+            <div><label class="text-sm font-medium text-gray-500">Phone Number</label><p class="text-gray-900">${__esc(log.phone)}</p></div>
+            <div><label class="text-sm font-medium text-gray-500">Message</label><p class="text-gray-900 bg-gray-50 p-3 rounded-lg">${__esc(log.message)}</p></div>
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-sm font-medium text-gray-500">Type</label><p class="text-gray-900">${log.type || 'general'}</p></div>
-                <div><label class="text-sm font-medium text-gray-500">Status</label><p><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[log.status] || 'bg-gray-100 text-gray-800'}">${log.status}</span></p></div>
+                <div><label class="text-sm font-medium text-gray-500">Type</label><p class="text-gray-900">${__esc(log.type || 'general')}</p></div>
+                <div><label class="text-sm font-medium text-gray-500">Status</label><p><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[log.status] || 'bg-gray-100 text-gray-800'}">${__esc(log.status)}</span></p></div>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-sm font-medium text-gray-500">Created At</label><p class="text-gray-900">${new Date(log.created_at).toLocaleString()}</p></div>
-                <div><label class="text-sm font-medium text-gray-500">Sent At</label><p class="text-gray-900">${log.sent_at ? new Date(log.sent_at).toLocaleString() : '-'}</p></div>
+                <div><label class="text-sm font-medium text-gray-500">Created At</label><p class="text-gray-900">${__esc(new Date(log.created_at).toLocaleString())}</p></div>
+                <div><label class="text-sm font-medium text-gray-500">Sent At</label><p class="text-gray-900">${__esc(log.sent_at ? new Date(log.sent_at).toLocaleString() : '-')}</p></div>
             </div>
-            ${log.error_message ? `<div><label class="text-sm font-medium text-gray-500">Error Message</label><p class="text-red-600 bg-red-50 p-3 rounded-lg">${log.error_message}</p></div>` : ''}
+            ${log.error_message ? `<div><label class="text-sm font-medium text-gray-500">Error Message</label><p class="text-red-600 bg-red-50 p-3 rounded-lg">${__esc(log.error_message)}</p></div>` : ''}
         </div>
     `;
     modal.classList.remove('hidden');

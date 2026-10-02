@@ -160,6 +160,13 @@
 <script>
 let cart = JSON.parse(localStorage.getItem('dii_cart') || '[]');
 
+// Escapes a value for interpolation into an innerHTML template literal.
+const escHtml = (s) => {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+};
+
 function addToCart(name, price) {
     const existing = cart.find(i => i.name === name);
     if (existing) { existing.qty = (existing.qty||1)+1; }
@@ -168,7 +175,10 @@ function addToCart(name, price) {
     showToast(name + ' added to cart');
 }
 
-function removeFromCart(name) { cart = cart.filter(i => i.name !== name); saveCart(); renderCart(); }
+// Takes the row index, not the title. Removing by title meant two rows with the
+// same name removed each other, and it forced the title into an onclick="..."
+// string literal, which is where the injection escaped from.
+function removeFromCart(idx) { cart.splice(Number(idx), 1); saveCart(); renderCart(); }
 
 function saveCart() { localStorage.setItem('dii_cart', JSON.stringify(cart)); }
 
@@ -182,7 +192,16 @@ function renderCart() {
     }
     empty.classList.add('hidden'); footer.classList.remove('hidden');
     let total = 0;
-    wrap.innerHTML = cart.map(i => { total += i.price * (i.qty||1); return `<div class="flex items-start justify-between gap-3 rounded-xl border p-3"><div><p class="text-sm font-semibold text-gray-900">${i.name}</p><p class="text-xs text-gray-500">৳${i.price.toFixed(0)} x ${i.qty||1}</p></div><button onclick="removeFromCart('${i.name.replace(/'/g,"\\'")}')" class="text-xs text-red-500 hover:underline">Remove</button></div>`; }).join('');
+    // Cart rows are re-rendered from localStorage on every visit. Only a single
+    // quote was escaped before, which does not stop a double quote or ">" from
+    // breaking out of the onclick attribute or injecting markup, so one click
+    // on "Buy" planted a payload that re-fired on every later visit.
+    // Escape for the HTML context, and address the row by index rather than
+    // splicing the title into a JS string literal.
+    wrap.innerHTML = cart.map((i, idx) => {
+        total += Number(i.price) * (Number(i.qty) || 1);
+        return `<div class="flex items-start justify-between gap-3 rounded-xl border p-3"><div><p class="text-sm font-semibold text-gray-900">${escHtml(i.name)}</p><p class="text-xs text-gray-500">?${Number(i.price).toFixed(0)} x ${Number(i.qty) || 1}</p></div><button onclick="removeFromCart(${idx})" class="text-xs text-red-500 hover:underline">Remove</button></div>`;
+    }).join('');
     totalEl.textContent = '৳' + total.toLocaleString();
 }
 

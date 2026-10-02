@@ -15,6 +15,23 @@ use Illuminate\Http\Request;
 
 class OnlineExamController extends Controller
 {
+    /**
+     * Force a CSV cell to be treated as text.
+     *
+     * A leading =, +, -, @, TAB or CR makes Excel and LibreOffice evaluate the
+     * cell. Applied to every exported cell because the rows contain
+     * admin-authored and applicant-supplied text. Numeric-looking values are
+     * left alone so amounts and counts still total.
+     */
+    private static function neutraliseCsvCell(string $value): string
+    {
+        if ($value === '' || is_numeric($value)) {
+            return $value;
+        }
+
+        return str_contains("=+-@\t\r", $value[0]) ? "'".$value : $value;
+    }
+
     public function __construct(
         protected ExamService $examService,
         protected ExamTakingService $examTakingService,
@@ -318,7 +335,16 @@ class OnlineExamController extends Controller
             $callback = function () use ($data) {
                 $file = fopen('php://output', 'w');
                 foreach ($data as $row) {
-                    fputcsv($file, $row);
+                    // Formula injection: rows carry student names (which an
+                    // anonymous applicant supplies on /admission) and, in the
+                    // question export, question text and answer keys. A cell
+                    // starting with = + - @ TAB or CR is executed when the file
+                    // is opened in Excel, and =HYPERLINK()/WEBSERVICE() fire
+                    // with macros disabled.
+                    fputcsv($file, array_map(
+                        static fn ($cell) => self::neutraliseCsvCell(is_scalar($cell) ? (string) $cell : ''),
+                        $row
+                    ));
                 }
                 fclose($file);
             };
@@ -550,7 +576,16 @@ class OnlineExamController extends Controller
             $callback = function () use ($data) {
                 $file = fopen('php://output', 'w');
                 foreach ($data as $row) {
-                    fputcsv($file, $row);
+                    // Formula injection: rows carry student names (which an
+                    // anonymous applicant supplies on /admission) and, in the
+                    // question export, question text and answer keys. A cell
+                    // starting with = + - @ TAB or CR is executed when the file
+                    // is opened in Excel, and =HYPERLINK()/WEBSERVICE() fire
+                    // with macros disabled.
+                    fputcsv($file, array_map(
+                        static fn ($cell) => self::neutraliseCsvCell(is_scalar($cell) ? (string) $cell : ''),
+                        $row
+                    ));
                 }
                 fclose($file);
             };

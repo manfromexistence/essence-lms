@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Log;
 class BrevoEmailService
 {
     protected ?string $apiKey;
+
     protected ?string $senderEmail;
+
     protected ?string $senderName;
 
     public function __construct()
@@ -43,11 +45,10 @@ class BrevoEmailService
     /**
      * Send a single email via Brevo transactional API.
      *
-     * @param string $to Recipient email
-     * @param string $subject Subject line
-     * @param string $html HTML body
-     * @param array $metadata Optional metadata (type, related model, name)
-     * @return EmailLog
+     * @param  string  $to  Recipient email
+     * @param  string  $subject  Subject line
+     * @param  string  $html  HTML body
+     * @param  array  $metadata  Optional metadata (type, related model, name)
      */
     public function send(string $to, string $subject, string $html, array $metadata = []): EmailLog
     {
@@ -124,7 +125,7 @@ class BrevoEmailService
                 $subject,
                 $type,
                 $related,
-                'Brevo API error: ' . $response->body()
+                'Brevo API error: '.$response->body()
             );
         } catch (\Throwable $e) {
             Log::error('Brevo email send failed', [
@@ -150,6 +151,67 @@ class BrevoEmailService
         return $name === ''
             ? ['email' => $email]
             : ['email' => $email, 'name' => $name];
+    }
+
+    /**
+     * Send one message to many recipients.
+     *
+     * SendBulkEmailsJob called this method, but it did not exist: every bulk
+     * campaign threw `Error: Call to undefined method`, and because the job has
+     * $tries = 1 and no failed() handler, nothing was logged or surfaced — the
+     * controller had already returned `{"success": true, "queued": true}`. Bulk
+     * email was therefore 100% broken and failed silently.
+     *
+     * Each recipient goes through send(), so the per-message logging, the
+     * deliverability check and the failure capture all apply. Recipients are
+     * de-duplicated by address because a comma-separated custom list and a student
+     * query can overlap.
+     *
+     * @param  array<int, array{email: string, name?: string|null}>  $recipients
+     * @return array{sent: int, failed: int, skipped: int}
+     */
+    public function sendBulk(array $recipients, string $subject, string $html, array $metadata = []): array
+    {
+        $result = ['sent' => 0, 'failed' => 0, 'skipped' => 0];
+        $seen = [];
+
+        foreach ($recipients as $recipient) {
+            $address = is_array($recipient)
+                ? (string) ($recipient['email'] ?? '')
+                : (string) $recipient;
+
+            $name = is_array($recipient) ? ($recipient['name'] ?? null) : null;
+
+            $address = trim($address);
+
+            // De-duplicate, and do not re-send to an address already handled in this
+            // campaign.
+            $key = mb_strtolower($address);
+
+            if ($address === '' || isset($seen[$key])) {
+                $result['skipped']++;
+
+                continue;
+            }
+
+            $seen[$key] = true;
+
+            if (! $this->isDeliverableAddress($address)) {
+                $result['skipped']++;
+
+                continue;
+            }
+
+            $log = $this->send($address, $subject, $html, $metadata);
+
+            if ($log->isSent()) {
+                $result['sent']++;
+            } else {
+                $result['failed']++;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -249,7 +311,7 @@ class BrevoEmailService
 
         return [
             'api_key_present' => (bool) $this->apiKey,
-            'api_key_preview' => $this->apiKey ? substr($this->apiKey, 0, 12) . '...' : null,
+            'api_key_preview' => $this->apiKey ? substr($this->apiKey, 0, 12).'...' : null,
             'api_key_source' => match (true) {
                 (bool) $dbKey => 'database (Settings)',
                 (bool) $envKey => 'environment variable',
@@ -279,7 +341,7 @@ class BrevoEmailService
     {
         $result = [
             'api_key_present' => (bool) $this->apiKey,
-            'api_key_preview' => $this->apiKey ? substr($this->apiKey, 0, 12) . '...' : null,
+            'api_key_preview' => $this->apiKey ? substr($this->apiKey, 0, 12).'...' : null,
             'sender_email' => $this->senderEmail,
             'sender_name' => $this->senderName,
             'account' => null,
@@ -308,7 +370,7 @@ class BrevoEmailService
             ])->timeout(15)->get('https://api.brevo.com/v3/account');
 
             if (! $account->successful()) {
-                $result['message'] = 'Brevo rejected the API key (HTTP ' . $account->status() . '): ' . $account->body();
+                $result['message'] = 'Brevo rejected the API key (HTTP '.$account->status().'): '.$account->body();
 
                 return $result;
             }
@@ -338,7 +400,7 @@ class BrevoEmailService
             }
 
             if (! $result['sender_verified']) {
-                $result['message'] = 'API key is valid, but the sender "' . $this->senderEmail . '" is not in the verified senders list. Verify it in Brevo → Senders & IPs, or Brevo will drop the mail.';
+                $result['message'] = 'API key is valid, but the sender "'.$this->senderEmail.'" is not in the verified senders list. Verify it in Brevo → Senders & IPs, or Brevo will drop the mail.';
 
                 return $result;
             }
@@ -348,7 +410,7 @@ class BrevoEmailService
 
             return $result;
         } catch (\Throwable $e) {
-            $result['message'] = 'Could not reach the Brevo API: ' . $e->getMessage();
+            $result['message'] = 'Could not reach the Brevo API: '.$e->getMessage();
 
             return $result;
         }

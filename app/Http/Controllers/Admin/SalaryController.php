@@ -53,17 +53,25 @@ class SalaryController extends Controller
         $validated = $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
             'amount' => 'required|numeric|min:0',
-            'payment_date' => 'required|date',
+            'payment_date' => 'required|date_format:Y-m-d',
             'payment_method' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
 
+        $paymentDate = Carbon::parse($validated['payment_date'])->startOfDay();
+
+        // teacher_salaries.month is NOT NULL with no default, and nothing ever
+        // supplied it — so every salary insert failed with a NOT NULL violation
+        // and salary recording was entirely broken. Deriving it here also makes
+        // the existing unique(teacher_id, month) index live, which is what
+        // actually prevents a double payment; the read-then-insert check alone
+        // races.
+        $validated['payment_date'] = $paymentDate;
+        $validated['month'] = $paymentDate->format('Y-m');
+
         // Check for duplicate payment (same teacher, same month)
-        $paymentMonth = Carbon::parse($validated['payment_date']);
-        $startOfMonth = $paymentMonth->copy()->startOfMonth();
-        $endOfMonth = $paymentMonth->copy()->endOfMonth();
         $duplicate = TeacherSalary::where('teacher_id', $validated['teacher_id'])
-            ->whereBetween('payment_date', [$startOfMonth, $endOfMonth])
+            ->where('month', $validated['month'])
             ->exists();
 
         if ($duplicate) {
@@ -103,21 +111,22 @@ class SalaryController extends Controller
         $validated = $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
             'amount' => 'required|numeric|min:0',
-            'payment_date' => 'required|date',
+            'payment_date' => 'required|date_format:Y-m-d',
             'payment_method' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
 
-        // store() rejects a second salary for the same teacher-month; update()
-        // did not. Correcting a payment_date could therefore leave one teacher
-        // with two rows inside a single payroll month, which report() then sums
-        // as double pay. Excludes this record so re-saving it unchanged is fine.
+        // Keep `month` in step with a corrected payment_date, and scope the duplicate
+        // check to that column so it matches store() and the unique index. A
+        // read-then-insert on a date range alone could leave one teacher with two
+        // rows inside a single payroll month, which report() then summed as
+        // double pay. Excludes this record so re-saving it unchanged is fine.
+        $validated['payment_date'] = Carbon::parse($validated['payment_date'])->startOfDay();
+        $validated['month'] = $validated['payment_date']->format('Y-m');
+
         $duplicate = TeacherSalary::where('teacher_id', $validated['teacher_id'])
             ->where('id', '!=', $salary->id)
-            ->whereBetween('payment_date', [
-                $validated['payment_date']->copy()->startOfMonth(),
-                $validated['payment_date']->copy()->endOfMonth(),
-            ])
+            ->where('month', $validated['month'])
             ->exists();
 
         if ($duplicate) {

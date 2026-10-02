@@ -66,7 +66,7 @@
                                 ? route('dashboard.courses.videos.stream', [$course, $video])
                                 : '';
                         @endphp
-                        <button onclick="playVideo('{{ $video->video_type }}', '{{ $video->external_id }}', '{{ $streamUrl }}')" 
+                        <button onclick="playVideo('{{ $video->video_type }}', @js($video->external_id), @js($streamUrl))" 
                                 class="text-bd-green hover:text-bd-green-dark mr-3" title="Play Video">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </button>
@@ -139,9 +139,9 @@
         let html = '';
 
         if (type === 'youtube') {
-            html = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${externalId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            html = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${encodeURIComponent(externalId)}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         } else if (type === 'vimeo') {
-            html = `<iframe src="https://player.vimeo.com/video/${externalId}?autoplay=1" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+            html = `<iframe src="https://player.vimeo.com/video/${encodeURIComponent(externalId)}?autoplay=1" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
         } else if (type === 'upload') {
             html = `<video controls autoplay class="w-full h-full"><source src="${videoPath}" type="video/mp4">Your browser does not support the video tag.</video>`;
         }

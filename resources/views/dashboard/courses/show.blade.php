@@ -276,7 +276,7 @@
                     .then(response => {
                         if (response.ok) {
                             // Thumbnail exists, replace icon with image
-                            container.innerHTML = `<img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="${videoTitle}" class="w-full h-full object-cover">`;
+                            container.innerHTML = `<img src="https://img.youtube.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg" alt="" class="w-full h-full object-cover">`;
                         }
                         // If not ok, keep the YouTube icon (already rendered)
                     })

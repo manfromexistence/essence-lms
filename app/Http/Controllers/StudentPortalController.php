@@ -64,8 +64,14 @@ class StudentPortalController extends Controller
      */
     private function assertExamAccess(Student $student, Exam $exam): void
     {
+        // Fail closed on a missing batch_id.
+        //
+        // Returning early here granted access to every student in the institute.
+        // exams.batch_id is `on delete set null`, so deleting a batch — which had
+        // no guard — silently turned that batch's exams into globally-sittable
+        // papers for anyone with any course enrolment.
         if (! $exam->batch_id) {
-            return;
+            abort(403, 'This exam is not available. Please contact your administrator.');
         }
 
         if ($exam->batch_id === $student->batch_id || $exam->batch_id === $student->batch?->id) {

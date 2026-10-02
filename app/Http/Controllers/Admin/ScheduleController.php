@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClassSchedule;
 use App\Models\Batch;
+use App\Models\ClassSchedule;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 
@@ -26,6 +26,7 @@ class ScheduleController extends Controller
     {
         $batches = Batch::active()->get();
         $teachers = Teacher::all();
+
         return view('dashboard.schedules.create', compact('batches', 'teachers'));
     }
 
@@ -35,7 +36,7 @@ class ScheduleController extends Controller
             'batch_id' => 'required|exists:batches,id',
             'teacher_id' => 'nullable|exists:teachers,id',
             'subject' => 'nullable|string|max:255',
-            'day_of_week' => 'required|integer|min:0|max:6',
+            'day_of_week' => 'required|in:sunday,monday,tuesday,wednesday,thursday,friday,saturday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'room' => 'nullable|string|max:100',
@@ -77,6 +78,7 @@ class ScheduleController extends Controller
     {
         $batches = Batch::active()->get();
         $teachers = Teacher::all();
+
         return view('dashboard.schedules.edit', compact('schedule', 'batches', 'teachers'));
     }
 
@@ -86,7 +88,7 @@ class ScheduleController extends Controller
             'batch_id' => 'required|exists:batches,id',
             'teacher_id' => 'nullable|exists:teachers,id',
             'subject' => 'nullable|string|max:255',
-            'day_of_week' => 'required|integer|min:0|max:6',
+            'day_of_week' => 'required|in:sunday,monday,tuesday,wednesday,thursday,friday,saturday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'room' => 'nullable|string|max:100',
@@ -123,7 +125,7 @@ class ScheduleController extends Controller
     public function checkConflict(Request $request)
     {
         $validated = $request->validate([
-            'day_of_week' => 'required|integer',
+            'day_of_week' => 'required|in:sunday,monday,tuesday,wednesday,thursday,friday,saturday',
             'start_time' => 'required',
             'end_time' => 'required',
             'room' => 'nullable|string',
@@ -134,10 +136,10 @@ class ScheduleController extends Controller
             ->where('room', $validated['room'])
             ->where(function ($q) use ($validated) {
                 $q->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
-                  ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']]);
+                    ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']]);
             });
 
-        if (!empty($validated['exclude_id'])) {
+        if (! empty($validated['exclude_id'])) {
             $query->where('id', '!=', $validated['exclude_id']);
         }
 

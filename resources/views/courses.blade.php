@@ -138,6 +138,18 @@
     <script>
         const courses = @json($courses->items());
 
+// Values from courses/videos land in innerHTML below. Blade's JSON directive
+        // escapes the closing-script sequence so a value cannot break out of this
+        // block, but it does NOT help here: JSON.parse restores the original
+        // characters, so a course name or description containing markup was
+        // injected straight into the public page - stored XSS against every
+        // visitor of /courses, and against any admin previewing it.
+        const escHtml = (s) => {
+            const d = document.createElement('div');
+            d.textContent = s == null ? '' : String(s);
+            return d.innerHTML;
+        };
+
         function openCourseModal(courseId) {
             const modal = document.getElementById('courseModal');
             const course = courses.find(c => c.id === courseId);
@@ -166,19 +178,19 @@
                 enrollButton = `<p class="text-center text-gray-500 py-3">শুধুমাত্র শিক্ষার্থীরা কোর্সে ভর্তি হতে পারবেন</p>`;
             }
 
-            const imageUrl = course.image_url || '/images/slide-classroom.png';
+const imageUrl = course.image_url || '/images/slide-classroom.png';
             const mediaHtml = hasEmbed
                 ? `<div class="relative mb-6 rounded-xl overflow-hidden bg-black shadow-lg">
-                    <img src="${imageUrl}" alt="${course.name}" class="w-full aspect-video object-cover">
-                    <button type="button" onclick="playDemoVideo(this)" data-embed="${embedUrl}" aria-label="Play demo video" class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition group">
+                    <img src="${escHtml(imageUrl)}" alt="${escHtml(course.name)}" class="w-full aspect-video object-cover">
+                    <button type="button" onclick="playDemoVideo(this)" data-embed="${escHtml(embedUrl)}" aria-label="Play demo video" class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition group">
                         <span class="flex items-center justify-center w-16 h-16 rounded-full bg-white/95 shadow-xl transition group-hover:scale-110 group-hover:bg-white">
                             <svg class="w-7 h-7 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                         </span>
-                        <span class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">ডেমো ক্লাস দেখুন</span>
+                        <span class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">???? ????? ?????</span>
                     </button>
-                    <div data-player class="hidden aspect-video"><iframe class="h-full w-full" src="" title="${demoVideo.title || course.name}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+                    <div data-player class="hidden aspect-video"><iframe class="h-full w-full" src="" title="${escHtml(demoVideo.title || course.name)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
                 </div>`
-                : `<div class="mb-6 overflow-hidden rounded-xl bg-black shadow-lg"><img src="${imageUrl}" alt="${course.name}" class="w-full aspect-video object-cover"></div>`;
+                : `<div class="mb-6 overflow-hidden rounded-xl bg-black shadow-lg"><img src="${escHtml(imageUrl)}" alt="${escHtml(course.name)}" class="w-full aspect-video object-cover"></div>`;
 
             const content = `
                 ${mediaHtml}
@@ -200,13 +212,13 @@
 
                 <div class="mb-6">
                     <h4 class="text-lg font-semibold text-gray-900 mb-3">কোর্স বিবরণ</h4>
-                    <p class="text-gray-600 leading-relaxed">${course.description || 'কোর্সের বিস্তারিত বিবরণ শীঘ্রই যুক্ত করা হবে।'}</p>
+                    <p class="text-gray-600 leading-relaxed">${escHtml(course.description) || 'কোর্সের বিস্তারিত বিবরণ শীঘ্রই যুক্ত করা হবে।'}</p>
                 </div>
 
                 ${course.duration ? `
                 <div class="mb-6">
                     <h4 class="text-lg font-semibold text-gray-900 mb-3">সময়কাল</h4>
-                    <p class="text-gray-600">${course.duration} ${course.duration_unit || 'months'}</p>
+                    <p class="text-gray-600">${escHtml(course.duration)} ${escHtml(course.duration_unit) || 'months'}</p>
                 </div>
                 ` : ''}
 

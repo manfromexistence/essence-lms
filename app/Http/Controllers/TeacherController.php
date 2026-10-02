@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Teacher;
+use App\Models\Attendance;
 use App\Models\Batch;
 use App\Models\ClassSchedule;
-use App\Models\Attendance;
 use App\Models\Exam;
 use App\Models\Student;
+use App\Models\Teacher;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class TeacherController extends Controller
 {
@@ -20,6 +21,7 @@ class TeacherController extends Controller
     private function getTeacher(): ?Teacher
     {
         $user = Auth::user();
+
         return Teacher::where('user_id', $user->id)->first();
     }
 
@@ -29,8 +31,8 @@ class TeacherController extends Controller
     public function dashboard()
     {
         $teacher = $this->getTeacher();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return redirect()->route('dashboard')->with('error', 'Teacher profile not found.');
         }
 
@@ -38,19 +40,19 @@ class TeacherController extends Controller
         $batches = $teacher->batches()->with('course')->get();
 
         // Get today's schedule
-        $todaySchedule = ClassSchedule::whereHas('batch.teachers', function($query) use ($teacher) {
+        $todaySchedule = ClassSchedule::whereHas('batch.teachers', function ($query) use ($teacher) {
             $query->where('teachers.id', $teacher->id);
         })
-        ->where('day_of_week', strtolower(Carbon::now()->format('l')))
-        ->with(['batch.course'])
-        ->orderBy('start_time')
-        ->get();
+            ->where('day_of_week', strtolower(Carbon::now()->format('l')))
+            ->with(['batch.course'])
+            ->orderBy('start_time')
+            ->get();
 
         // Get statistics
         $totalStudents = Student::whereIn('batch_id', $batches->pluck('id'))->count();
         $totalBatches = $batches->count();
         $totalCourses = $batches->pluck('course_id')->filter()->unique()->count();
-        
+
         // Get recent attendance
         $recentAttendance = Attendance::whereIn('batch_id', $batches->pluck('id'))
             ->with(['student', 'batch'])
@@ -75,8 +77,8 @@ class TeacherController extends Controller
     public function batches()
     {
         $teacher = $this->getTeacher();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return redirect()->route('dashboard')->with('error', 'Teacher profile not found.');
         }
 
@@ -93,8 +95,8 @@ class TeacherController extends Controller
     public function students(Batch $batch)
     {
         $teacher = $this->getTeacher();
-        
-        if (!$teacher || !$teacher->batches->contains($batch->id)) {
+
+        if (! $teacher || ! $teacher->batches->contains($batch->id)) {
             abort(403, 'Unauthorized access to this batch.');
         }
 
@@ -111,8 +113,8 @@ class TeacherController extends Controller
     public function attendance(Request $request)
     {
         $teacher = $this->getTeacher();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return redirect()->route('dashboard')->with('error', 'Teacher profile not found.');
         }
 
@@ -145,40 +147,54 @@ class TeacherController extends Controller
     public function saveAttendance(Request $request)
     {
         $teacher = $this->getTeacher();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return back()->with('error', 'Teacher profile not found.');
         }
 
         $request->validate([
             'batch_id' => 'required|exists:batches,id',
-            'date' => 'required|date',
+            // A calendar day, and not one that has not happened yet.
+            'date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'attendance' => 'required|array',
             'attendance.*' => 'required|in:present,absent,late,excused',
         ]);
 
         $batch = Batch::find($request->batch_id);
-        
-        if (!$teacher->batches->contains($batch->id)) {
+
+        if (! $teacher->batches->contains($batch->id)) {
             abort(403, 'Unauthorized access to this batch.');
         }
 
-        foreach ($request->attendance as $studentId => $status) {
-            if (!$batch->students()->whereKey($studentId)->exists()) {
-                abort(422, 'Attendance contains a student outside the selected batch.');
+        // The raw request string was used as the updateOrCreate() key while the
+        // model casts `date`, so a WRITE stored 'Y-m-d 00:00:00' but the WHERE
+        // looked for 'Y-m-d'. The lookup therefore never matched, fell through to
+        // an INSERT, and the (student_id, batch_id, date) unique index rejected
+        // it — meaning a teacher could not correct a single day they had already
+        // marked, and got a 500 instead. Normalising once keeps both sides equal.
+        $date = Carbon::parse($request->string('date')->toString())->toDateString();
+
+        // One transaction for the whole batch. Previously a mid-loop failure left
+        // the students processed so far committed while the teacher was shown an
+        // error implying nothing was saved.
+        DB::transaction(function () use ($request, $batch, $date) {
+            foreach ($request->attendance as $studentId => $status) {
+                if (! $batch->students()->whereKey($studentId)->exists()) {
+                    abort(422, 'Attendance contains a student outside the selected batch.');
+                }
+
+                Attendance::updateOrCreate(
+                    [
+                        'student_id' => $studentId,
+                        'batch_id' => $batch->id,
+                        'date' => $date,
+                    ],
+                    [
+                        'status' => $status,
+                    ]
+                );
             }
-            Attendance::updateOrCreate(
-                [
-                    'student_id' => $studentId,
-                    'batch_id' => $request->batch_id,
-                    'date' => $request->date,
-                ],
-                [
-                    'status' => $status,
-                    'marked_by' => Auth::id(),
-                ]
-            );
-        }
+        });
 
         return back()->with('success', 'Attendance saved successfully!');
     }
@@ -189,8 +205,8 @@ class TeacherController extends Controller
     public function exams()
     {
         $teacher = $this->getTeacher();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return redirect()->route('dashboard')->with('error', 'Teacher profile not found.');
         }
 
@@ -209,8 +225,8 @@ class TeacherController extends Controller
     public function schedule()
     {
         $teacher = $this->getTeacher();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return redirect()->route('dashboard')->with('error', 'Teacher profile not found.');
         }
 
@@ -219,18 +235,18 @@ class TeacherController extends Controller
         $dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         $caseSql = 'CASE day_of_week';
         foreach ($dayOrder as $index => $day) {
-            $caseSql .= " WHEN '" . $day . "' THEN " . $index;
+            $caseSql .= " WHEN '".$day."' THEN ".$index;
         }
-        $caseSql .= ' ELSE ' . count($dayOrder) . ' END';
+        $caseSql .= ' ELSE '.count($dayOrder).' END';
 
-        $schedules = ClassSchedule::whereHas('batch.teachers', function($query) use ($teacher) {
+        $schedules = ClassSchedule::whereHas('batch.teachers', function ($query) use ($teacher) {
             $query->where('teachers.id', $teacher->id);
         })
-        ->with(['batch.course'])
-        ->orderByRaw($caseSql)
-        ->orderBy('start_time')
-        ->get()
-        ->groupBy('day_of_week');
+            ->with(['batch.course'])
+            ->orderByRaw($caseSql)
+            ->orderBy('start_time')
+            ->get()
+            ->groupBy('day_of_week');
 
         $days = [
             'sunday' => 'Sunday',

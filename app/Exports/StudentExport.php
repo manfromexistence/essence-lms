@@ -2,29 +2,36 @@
 
 namespace App\Exports;
 
+use App\Exports\Concerns\NeutralisesExcelFormulas;
+use App\Models\Payment;
 use App\Models\Student;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
  * StudentExport class for exporting comprehensive student data to Excel.
- * 
+ *
  * Implements Laravel Excel interfaces for generating formatted Excel files
  * with comprehensive student information including enrollment, payments, and attendance.
  * Supports filtering by batch, course, enrollment status, search (name), and date range.
- * 
+ *
  * Requirements: 8.3, 16.2, 16.3, 16.5
  */
-class StudentExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class StudentExport implements FromCollection, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles
 {
+    use NeutralisesExcelFormulas;
+
     /**
      * Filters to apply when retrieving student data.
-     * 
+     *
      * Supported filters:
      * - batch_id: Filter by specific batch
      * - course_id: Filter by specific course (through batch relationship)
@@ -32,15 +39,13 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
      * - search: Search by student name
      * - start_date: Filter students enrolled from this date
      * - end_date: Filter students enrolled until this date
-     *
-     * @var array
      */
     protected array $filters;
 
     /**
      * Create a new StudentExport instance.
      *
-     * @param array $filters Filters to apply to the student query
+     * @param  array  $filters  Filters to apply to the student query
      */
     public function __construct(array $filters = [])
     {
@@ -49,25 +54,23 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
     /**
      * Return the collection of student data for export.
-     * 
+     *
      * Retrieves student records with related user, batch, course, payments, and attendance data,
      * applying the same filters used in the report view.
-     * 
-     * Requirements: 8.3, 16.3
      *
-     * @return Collection
+     * Requirements: 8.3, 16.3
      */
     public function collection(): Collection
     {
         $query = Student::with(['user', 'batch.course', 'payments', 'attendances']);
 
         // Apply batch filter
-        if (!empty($this->filters['batch_id'])) {
+        if (! empty($this->filters['batch_id'])) {
             $query->where('batch_id', $this->filters['batch_id']);
         }
 
         // Apply course filter through batch relationship
-        if (!empty($this->filters['course_id'])) {
+        if (! empty($this->filters['course_id'])) {
             $query->whereHas('batch', function ($q) {
                 $q->where('course_id', $this->filters['course_id']);
             });
@@ -75,9 +78,9 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
         // Apply enrollment status filter
         // Status is determined by batch status or student-specific status if available
-        if (!empty($this->filters['enrollment_status'])) {
+        if (! empty($this->filters['enrollment_status'])) {
             $status = $this->filters['enrollment_status'];
-            
+
             if ($status === 'active') {
                 $query->whereHas('batch', function ($q) {
                     $q->where('status', 'active');
@@ -88,28 +91,28 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
                 });
             } elseif ($status === 'completed' || $status === 'graduated') {
                 $query->whereHas('batch', function ($q) {
-                    $q->whereIn('status', \App\Models\Payment::settledStatuses());
+                    $q->whereIn('status', Payment::settledStatuses());
                 });
             }
         }
 
         // Apply search filter (by student name)
-        if (!empty($this->filters['search'])) {
+        if (! empty($this->filters['search'])) {
             $search = $this->filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name_bn', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         // Apply date range filters (enrollment date based on created_at)
-        if (!empty($this->filters['start_date'])) {
+        if (! empty($this->filters['start_date'])) {
             $query->where('created_at', '>=', $this->filters['start_date']);
         }
 
-        if (!empty($this->filters['end_date'])) {
+        if (! empty($this->filters['end_date'])) {
             $query->where('created_at', '<=', $this->filters['end_date']);
         }
 
@@ -120,14 +123,12 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
     /**
      * Define the column headers for the Excel file.
-     * 
+     *
      * Provides proper column headers for comprehensive student data including:
      * Student Name, Student ID, Email, Phone, Batch, Course, Enrollment Date,
      * Status, Total Fees, Total Paid, Balance, and Attendance Rate.
-     * 
-     * Requirements: 16.2
      *
-     * @return array
+     * Requirements: 16.2
      */
     public function headings(): array
     {
@@ -149,15 +150,14 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
     /**
      * Map each student record to Excel columns.
-     * 
+     *
      * Transforms the student model data into an array format
      * suitable for Excel export, handling null values gracefully.
      * Includes comprehensive student information with calculated fields.
-     * 
+     *
      * Requirements: 8.3, 16.2
      *
-     * @param mixed $student The student record to map
-     * @return array
+     * @param  mixed  $student  The student record to map
      */
     public function map($student): array
     {
@@ -190,8 +190,8 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
         }
 
         // Get enrollment date (created_at)
-        $enrollmentDate = $student->created_at 
-            ? $student->created_at->format('Y-m-d') 
+        $enrollmentDate = $student->created_at
+            ? $student->created_at->format('Y-m-d')
             : 'N/A';
 
         // Determine enrollment status based on batch status
@@ -213,7 +213,7 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
         $totalPaid = 0;
         if ($student->payments && $student->payments->count() > 0) {
             $totalPaid = $student->payments
-                ->whereIn('status', \App\Models\Payment::settledStatuses())
+                ->whereIn('status', Payment::settledStatuses())
                 ->sum('amount');
         } else {
             $totalPaid = $student->paid_amount ?? 0;
@@ -235,9 +235,9 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
                 ->whereIn('status', ['present', 'late'])
                 ->count();
             $rate = round(($presentCount / $totalAttendance) * 100, 1);
-            $attendanceRate = $rate . '%';
+            $attendanceRate = $rate.'%';
         } elseif (method_exists($student, 'getAttendancePercentageAttribute')) {
-            $attendanceRate = $student->attendance_percentage . '%';
+            $attendanceRate = $student->attendance_percentage.'%';
         }
 
         return [
@@ -258,14 +258,11 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
     /**
      * Apply styles to the Excel worksheet.
-     * 
+     *
      * Formats the header row with bold text and background color
      * for better readability.
-     * 
-     * Requirements: 16.2
      *
-     * @param Worksheet $sheet
-     * @return array
+     * Requirements: 16.2
      */
     public function styles(Worksheet $sheet): array
     {
@@ -277,11 +274,11 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
                     'color' => ['rgb' => 'FFFFFF'],
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => 'E65100'], // Orange color for student reports
                 ],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
                 ],
             ],
         ];
@@ -289,8 +286,6 @@ class StudentExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
     /**
      * Get the filters applied to this export.
-     *
-     * @return array
      */
     public function getFilters(): array
     {
