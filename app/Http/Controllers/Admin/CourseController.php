@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Concerns\HandlesHostedMedia;
 use App\Http\Controllers\Controller;
+use App\Models\Batch;
 use App\Models\Course;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
     use HandlesHostedMedia;
+
     public function index(Request $request)
     {
         $query = Course::query();
@@ -29,8 +32,8 @@ class CourseController extends Controller
             $search = $request->search;
             $q->where(function ($subQ) use ($search) {
                 $subQ->where('name', 'like', "%{$search}%")
-                     ->orWhere('code', 'like', "%{$search}%")
-                     ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         });
 
@@ -76,7 +79,7 @@ class CourseController extends Controller
             'prerequisites' => 'nullable|array',
             'objectives' => 'nullable|array',
             'syllabus' => 'nullable|array',
-            'materials_url' => 'nullable|url'
+            'materials_url' => 'nullable|url',
         ]);
 
         // Handle image upload - file takes priority over URL
@@ -99,6 +102,7 @@ class CourseController extends Controller
     public function show(Course $course)
     {
         $course->load(['batches.students', 'batches.teachers']);
+
         return view('dashboard.courses.show', compact('course'));
     }
 
@@ -111,7 +115,7 @@ class CourseController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:courses,code,' . $course->id,
+            'code' => 'required|string|max:50|unique:courses,code,'.$course->id,
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'duration' => 'nullable|integer|min:1',
@@ -131,7 +135,7 @@ class CourseController extends Controller
             'prerequisites' => 'nullable|array',
             'objectives' => 'nullable|array',
             'syllabus' => 'nullable|array',
-            'materials_url' => 'nullable|url'
+            'materials_url' => 'nullable|url',
         ]);
 
         // Handle image upload - file takes priority over URL
@@ -151,6 +155,24 @@ class CourseController extends Controller
 
     public function destroy(Course $course)
     {
+        // payments.course_id cascades on delete, so removing a course would
+        // physically erase its settled payment records — including completed
+        // ones — while the denormalised students.paid_amount / due_amount
+        // columns stayed behind and became silently wrong with no audit trail.
+        // Refuse instead, and let an administrator deactivate the course.
+        $settledPayments = Payment::where('course_id', $course->id)
+            ->whereIn('status', Payment::settledStatuses())
+            ->count();
+
+        if ($settledPayments > 0) {
+            return back()->with(
+                'error',
+                "This course has {$settledPayments} settled payment(s) and cannot be deleted, "
+                    .'because doing so would erase the financial record. '
+                    .'Set it to inactive instead — students keep their certificates and receipts.'
+            );
+        }
+
         $this->unlinkMedia($course->image);
 
         $course->delete();
@@ -161,7 +183,8 @@ class CourseController extends Controller
 
     public function routine()
     {
-        $batches = \App\Models\Batch::with(['course', 'teachers'])->active()->get();
+        $batches = Batch::with(['course', 'teachers'])->active()->get();
+
         return view('dashboard.courses.routine', compact('batches'));
     }
 
@@ -173,6 +196,7 @@ class CourseController extends Controller
         if ($request->filled('course_id')) {
             $course = Course::findOrFail($request->course_id);
             $materials = $course->materials()->orderBy('order')->get();
+
             return view('dashboard.materials.index', compact('course', 'materials'));
         }
 
@@ -181,16 +205,18 @@ class CourseController extends Controller
 
     public function groups()
     {
-        $batches = \App\Models\Batch::with(['course', 'teachers', 'students.user'])->active()->get();
+        $batches = Batch::with(['course', 'teachers', 'students.user'])->active()->get();
+
         return view('dashboard.courses.groups', compact('batches'));
     }
 
     public function attendance(Request $request)
     {
-        $batches = \App\Models\Batch::with(['course', 'students'])->active()->get();
+        $batches = Batch::with(['course', 'students'])->active()->get();
         if ($request->filled('batch_id')) {
             $batches = $batches->where('id', (int) $request->batch_id)->values();
         }
+
         return view('dashboard.courses.attendance', compact('batches'));
     }
 

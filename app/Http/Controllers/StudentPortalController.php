@@ -519,9 +519,13 @@ class StudentPortalController extends Controller
             return response()->json(['error' => 'Unauthorized access to this exam attempt'], 403);
         }
 
-        // Verify attempt is still in progress
+        // Verify attempt is still in progress and still within its time.
         if ($attempt->status !== 'in_progress') {
             return response()->json(['error' => 'This exam attempt is no longer active'], 400);
+        }
+
+        if ($attempt->isExpired()) {
+            return response()->json(['error' => 'This exam attempt has ended'], 400);
         }
 
         try {

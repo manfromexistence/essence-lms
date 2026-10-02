@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -59,12 +60,10 @@ class ExamResult extends Model
 
     /**
      * Get the percentage score.
-     *
-     * @return float
      */
     public function getPercentageAttribute(): float
     {
-        if (!$this->total_marks || $this->total_marks === 0) {
+        if (! $this->total_marks || $this->total_marks === 0) {
             return 0;
         }
 
@@ -73,12 +72,10 @@ class ExamResult extends Model
 
     /**
      * Check if the student passed the exam.
-     *
-     * @return bool
      */
     public function hasPassed(): bool
     {
-        if (!$this->exam) {
+        if (! $this->exam) {
             return false;
         }
 
@@ -86,37 +83,44 @@ class ExamResult extends Model
     }
 
     /**
-     * Calculate grade based on percentage.
+     * The institute's single grading scale.
      *
-     * @return string
+     * This is the canonical definition. It used to exist in five places with
+     * two different sets of thresholds, so the letter stored on the row and the
+     * letter recomputed for a report could disagree: 72% was stored as "A" but
+     * reported as "B", and 45% was stored as "C" but reported as "F".
+     *
+     * These thresholds are the ones that write the `grade` column, so they are
+     * the ones adopted. Changing them would re-letter historical results; if
+     * the institute ever wants different bands, change them here and nowhere
+     * else.
+     */
+    public static function gradeForPercentage(float $percentage): string
+    {
+        return match (true) {
+            $percentage >= 80 => 'A+',
+            $percentage >= 70 => 'A',
+            $percentage >= 60 => 'A-',
+            $percentage >= 50 => 'B',
+            $percentage >= 40 => 'C',
+            $percentage >= 33 => 'D',
+            default => 'F',
+        };
+    }
+
+    /**
+     * Calculate grade based on percentage.
      */
     public function calculateGrade(): string
     {
-        $percentage = $this->percentage;
-
-        if ($percentage >= 90) {
-            return 'A+';
-        } elseif ($percentage >= 80) {
-            return 'A';
-        } elseif ($percentage >= 70) {
-            return 'B+';
-        } elseif ($percentage >= 60) {
-            return 'B';
-        } elseif ($percentage >= 50) {
-            return 'C';
-        } elseif ($percentage >= 40) {
-            return 'D';
-        } else {
-            return 'F';
-        }
+        return self::gradeForPercentage($this->percentage);
     }
 
     /**
      * Scope a query to only include results for a specific exam.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param int $examId
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeForExam($query, int $examId)
     {
@@ -126,9 +130,8 @@ class ExamResult extends Model
     /**
      * Scope a query to only include results for a specific student.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param int $studentId
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeForStudent($query, int $studentId)
     {
@@ -138,8 +141,8 @@ class ExamResult extends Model
     /**
      * Scope a query to order by rank.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeOrderByRank($query)
     {
@@ -149,8 +152,8 @@ class ExamResult extends Model
     /**
      * Scope a query to order by obtained marks descending.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeOrderByScore($query)
     {

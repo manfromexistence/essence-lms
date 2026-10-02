@@ -570,17 +570,14 @@
         
         <!-- Grade Distribution -->
         @php
+            // Single institute scale, shared with the stored `grade` column.
+            // This view previously used its own thresholds, so the exported PDF
+            // could disagree with the mark sheet and the student's own record.
             $gradeDistribution = $data->groupBy(function($item) {
-                $score = floatval($item->score ?? 0);
-                if ($score >= 90) return 'A+';
-                if ($score >= 80) return 'A';
-                if ($score >= 70) return 'B';
-                if ($score >= 60) return 'C';
-                if ($score >= 50) return 'D';
-                return 'F';
+                return \App\Models\ExamResult::gradeForPercentage(floatval($item->score ?? 0));
             })->map->count();
-            
-            $grades = ['A+', 'A', 'B', 'C', 'D', 'F'];
+
+            $grades = ['A+', 'A', 'A-', 'B', 'C', 'D', 'F'];
         @endphp
         <div class="grade-distribution">
             <div class="distribution-title">Grade Distribution</div>
@@ -622,13 +619,8 @@
                     $maxScore = floatval($result->max_score ?? $result->total_marks ?? 100);
                     $percentage = $maxScore > 0 ? ($score / $maxScore) * 100 : 0;
                     
-                    // Determine grade
-                    if ($percentage >= 90) $grade = 'A+';
-                    elseif ($percentage >= 80) $grade = 'A';
-                    elseif ($percentage >= 70) $grade = 'B';
-                    elseif ($percentage >= 60) $grade = 'C';
-                    elseif ($percentage >= 50) $grade = 'D';
-                    else $grade = 'F';
+                    // Determine grade — single institute scale.
+                    $grade = \App\Models\ExamResult::gradeForPercentage($percentage);
                     
                     // Determine grade class
                     $gradeClass = match($grade) {

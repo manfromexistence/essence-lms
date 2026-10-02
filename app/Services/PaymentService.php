@@ -2,17 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\Payment;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Student;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\QueryException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Database\QueryException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Exception;
 
 class PaymentService
 {
@@ -23,7 +22,7 @@ class PaymentService
     /**
      * Record a payment for a student.
      * Enhanced to support both Student object and array data with student_id.
-     * 
+     *
      * @throws Exception If payment recording fails
      */
     public function recordPayment($studentOrData, ?array $additionalData = null): Payment
@@ -42,13 +41,26 @@ class PaymentService
                 // Generate receipt number if not provided
                 $receiptNumber = $data['receipt_number'] ?? $this->generateReceiptNumber();
 
+                // Same canonical form the student-facing payment path uses, so
+                // one gateway transaction cannot be credited twice by submitting
+                // it here after submitting it online. See
+                // PaymentController::normaliseTransactionId().
+                $transactionId = self::normaliseTransactionId($data['transaction_id'] ?? null);
+                $paymentMethod = $data['payment_method'] ?? 'cash';
+
                 $payment = Payment::create([
                     'student_id' => $student->id,
                     'invoice_id' => $data['invoice_id'] ?? null,
                     'amount' => $data['amount'],
-                    'payment_method' => $data['payment_method'] ?? 'cash',
+                    'payment_method' => $paymentMethod,
                     'receipt_number' => $receiptNumber,
-                    'transaction_id' => $data['transaction_id'] ?? null,
+                    'transaction_id' => $transactionId !== '' ? $transactionId : null,
+                    // Previously left NULL here, which meant the unique index
+                    // added for de-duplication never applied to staff-recorded
+                    // payments at all.
+                    'transaction_reference' => $transactionId !== ''
+                        ? $paymentMethod.':'.$transactionId
+                        : null,
                     'payment_date' => $data['payment_date'] ?? now(),
                     'notes' => $data['notes'] ?? null,
                     'status' => $data['status'] ?? 'completed',
@@ -67,16 +79,34 @@ class PaymentService
                 'amount' => $data['amount'] ?? null,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('Failed to record payment: ' . $e->getMessage());
+            throw new Exception('Failed to record payment: '.$e->getMessage());
         }
     }
 
     /**
      * Generate a unique receipt number.
-     * 
+     *
      * @return string The generated receipt number
+     *
      * @throws Exception If receipt number generation fails
      */
+    /**
+     * Canonical form of a gateway transaction id.
+     *
+     * Trimmed, upper-cased, and internal whitespace collapsed. Gateways print
+     * these inconsistently, and the same money movement must not be creditable
+     * twice under two spellings of one id. Shared by the student-facing and
+     * staff-facing payment paths so both store the same string.
+     */
+    public static function normaliseTransactionId(mixed $value): string
+    {
+        if (! is_scalar($value)) {
+            return '';
+        }
+
+        return mb_strtoupper(preg_replace('/\s+/u', ' ', trim((string) $value)) ?? '');
+    }
+
     public function generateReceiptNumber(): string
     {
         try {
@@ -96,7 +126,7 @@ class PaymentService
                 $sequence = $lastSequence + 1;
             }
 
-            return $prefix . $year . $month . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            return $prefix.$year.$month.str_pad($sequence, 4, '0', STR_PAD_LEFT);
         } catch (QueryException $e) {
             Log::error('Database error generating receipt number', [
                 'error' => $e->getMessage(),
@@ -112,10 +142,11 @@ class PaymentService
 
     /**
      * Generate an invoice for a student.
-     * 
-     * @param Student $student The student to generate invoice for
-     * @param array $data Invoice data
+     *
+     * @param  Student  $student  The student to generate invoice for
+     * @param  array  $data  Invoice data
      * @return Invoice The created invoice
+     *
      * @throws Exception If invoice generation fails
      */
     public function generateInvoice(Student $student, array $data = []): Invoice
@@ -144,14 +175,15 @@ class PaymentService
                 'student_id' => $student->id,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('Unable to generate invoice: ' . $e->getMessage());
+            throw new Exception('Unable to generate invoice: '.$e->getMessage());
         }
     }
 
     /**
      * Generate a unique invoice number.
-     * 
+     *
      * @return string The generated invoice number
+     *
      * @throws Exception If invoice number generation fails
      */
     public function generateInvoiceNumber(): string
@@ -173,7 +205,7 @@ class PaymentService
                 $sequence = $lastSequence + 1;
             }
 
-            return $prefix . $year . $month . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            return $prefix.$year.$month.str_pad($sequence, 4, '0', STR_PAD_LEFT);
         } catch (QueryException $e) {
             Log::error('Database error generating invoice number', [
                 'error' => $e->getMessage(),
@@ -189,9 +221,10 @@ class PaymentService
 
     /**
      * Update student balance after payment.
-     * 
-     * @param Student $student The student to update
+     *
+     * @param  Student  $student  The student to update
      * @return Student The updated student
+     *
      * @throws Exception If balance update fails
      */
     public function updateStudentBalance(Student $student): Student
@@ -218,15 +251,15 @@ class PaymentService
                 'student_id' => $student->id,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('Unable to update student balance: ' . $e->getMessage());
+            throw new Exception('Unable to update student balance: '.$e->getMessage());
         }
     }
 
     /**
      * Calculate current balance for a student.
      * Returns the due amount (total - paid).
-     * 
-     * @param Student $student The student to calculate balance for
+     *
+     * @param  Student  $student  The student to calculate balance for
      * @return float The calculated balance
      */
     public function calculateBalance(Student $student): float
@@ -242,6 +275,7 @@ class PaymentService
                 'student_id' => $student->id,
                 'error' => $e->getMessage(),
             ]);
+
             // Return the stored due_amount as fallback
             return (float) ($student->due_amount ?? 0);
         } catch (Exception $e) {
@@ -249,6 +283,7 @@ class PaymentService
                 'student_id' => $student->id,
                 'error' => $e->getMessage(),
             ]);
+
             return (float) ($student->due_amount ?? 0);
         }
     }
@@ -256,8 +291,8 @@ class PaymentService
     /**
      * Send payment notification via SMS.
      * Integrates with SmsService to send payment confirmation.
-     * 
-     * @param Payment $payment The payment to notify about
+     *
+     * @param  Payment  $payment  The payment to notify about
      * @return bool Whether the notification was sent successfully
      */
     public function sendPaymentNotification(Payment $payment): bool
@@ -265,17 +300,18 @@ class PaymentService
         try {
             $payment->load(['student.user']);
             $student = $payment->student;
-            
-            if (!$student) {
+
+            if (! $student) {
                 Log::warning('Cannot send payment notification: student not found', [
                     'payment_id' => $payment->id,
                 ]);
+
                 return false;
             }
 
             // Get SmsService instance
             $smsService = app(SmsService::class);
-            
+
             // Prepare payment details for SMS
             $paymentDetails = [
                 'amount' => $payment->amount,
@@ -286,21 +322,23 @@ class PaymentService
 
             // Send payment confirmation SMS
             $smsLog = $smsService->sendPaymentConfirmation($student, $paymentDetails);
-            
+
             if ($smsLog && ($smsLog->isSent() || $smsLog->isDelivered())) {
                 Log::info('Payment notification sent successfully', [
                     'payment_id' => $payment->id,
                     'student_id' => $student->id,
                     'sms_log_id' => $smsLog->id,
                 ]);
+
                 return true;
             }
-            
+
             Log::warning('Payment notification may have failed', [
                 'payment_id' => $payment->id,
                 'student_id' => $student->id,
                 'sms_status' => $smsLog ? $smsLog->status : 'no_log',
             ]);
+
             return false;
         } catch (Exception $e) {
             // Log error but don't throw - SMS failure shouldn't block payment
@@ -308,6 +346,7 @@ class PaymentService
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -315,9 +354,9 @@ class PaymentService
     /**
      * Get payment history for a student with optional filtering.
      * Supports filtering by date range, payment method, and status.
-     * 
-     * @param Student $student The student to get history for
-     * @param array $filters Filter criteria
+     *
+     * @param  Student  $student  The student to get history for
+     * @param  array  $filters  Filter criteria
      * @return Collection Payment history collection
      */
     public function getPaymentHistory(Student $student, array $filters = []): Collection
@@ -327,19 +366,19 @@ class PaymentService
                 ->orderBy('payment_date', 'desc');
 
             // Apply filters
-            if (!empty($filters['start_date'])) {
+            if (! empty($filters['start_date'])) {
                 $query->where('payment_date', '>=', $filters['start_date']);
             }
 
-            if (!empty($filters['end_date'])) {
+            if (! empty($filters['end_date'])) {
                 $query->where('payment_date', '<=', $filters['end_date']);
             }
 
-            if (!empty($filters['payment_method'])) {
+            if (! empty($filters['payment_method'])) {
                 $query->where('payment_method', $filters['payment_method']);
             }
 
-            if (!empty($filters['status'])) {
+            if (! empty($filters['status'])) {
                 $query->where('status', $filters['status']);
             }
 
@@ -350,12 +389,14 @@ class PaymentService
                 'filters' => $filters,
                 'error' => $e->getMessage(),
             ]);
+
             return collect();
         } catch (Exception $e) {
             Log::error('Failed to retrieve payment history', [
                 'student_id' => $student->id,
                 'error' => $e->getMessage(),
             ]);
+
             return collect();
         }
     }
@@ -363,8 +404,8 @@ class PaymentService
     /**
      * Get dashboard statistics with optional filtering.
      * Returns metrics like total due, total collected, payment counts, etc.
-     * 
-     * @param array $filters Filter criteria
+     *
+     * @param  array  $filters  Filter criteria
      * @return array Dashboard statistics
      */
     public function getDashboardStats(array $filters = []): array
@@ -372,22 +413,22 @@ class PaymentService
         try {
             // Build payment query with filters
             $paymentQuery = Payment::query();
-            
-            if (!empty($filters['start_date'])) {
+
+            if (! empty($filters['start_date'])) {
                 $paymentQuery->where('payment_date', '>=', $filters['start_date']);
             }
 
-            if (!empty($filters['end_date'])) {
+            if (! empty($filters['end_date'])) {
                 $paymentQuery->where('payment_date', '<=', $filters['end_date']);
             }
 
-            if (!empty($filters['batch_id'])) {
+            if (! empty($filters['batch_id'])) {
                 $paymentQuery->whereHas('student', function ($q) use ($filters) {
                     $q->where('batch_id', $filters['batch_id']);
                 });
             }
 
-            if (!empty($filters['payment_method'])) {
+            if (! empty($filters['payment_method'])) {
                 $paymentQuery->where('payment_method', $filters['payment_method']);
             }
 
@@ -395,8 +436,8 @@ class PaymentService
 
             // Build student query for due amounts
             $studentQuery = Student::query();
-            
-            if (!empty($filters['batch_id'])) {
+
+            if (! empty($filters['batch_id'])) {
                 $studentQuery->where('batch_id', $filters['batch_id']);
             }
 
@@ -404,11 +445,11 @@ class PaymentService
             $totalDue = $studentQuery->sum('due_amount');
             $totalCollected = $payments->whereIn('status', Payment::settledStatuses())->sum('amount');
             $totalPending = $payments->where('status', 'pending')->sum('amount');
-            
+
             // Payment method breakdown
             $byMethod = $payments->whereIn('status', Payment::settledStatuses())
                 ->groupBy('payment_method')
-                ->map(fn($group) => [
+                ->map(fn ($group) => [
                     'count' => $group->count(),
                     'amount' => $group->sum('amount'),
                 ]);
@@ -433,6 +474,7 @@ class PaymentService
                 'filters' => $filters,
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'total_due' => 0,
                 'total_collected' => 0,
@@ -448,6 +490,7 @@ class PaymentService
             Log::error('Failed to retrieve dashboard stats', [
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'total_due' => 0,
                 'total_collected' => 0,
@@ -464,9 +507,9 @@ class PaymentService
 
     /**
      * Get payment summary for a date range.
-     * 
-     * @param Carbon|null $startDate Start date filter
-     * @param Carbon|null $endDate End date filter
+     *
+     * @param  Carbon|null  $startDate  Start date filter
+     * @param  Carbon|null  $endDate  End date filter
      * @return array Payment summary
      */
     public function getPaymentSummary(?Carbon $startDate = null, ?Carbon $endDate = null): array
@@ -491,7 +534,7 @@ class PaymentService
                 'pending_count' => $payments->where('status', 'pending')->count(),
                 'by_method' => $payments->whereIn('status', Payment::settledStatuses())
                     ->groupBy('payment_method')
-                    ->map(fn($group) => [
+                    ->map(fn ($group) => [
                         'count' => $group->count(),
                         'amount' => $group->sum('amount'),
                     ]),
@@ -502,6 +545,7 @@ class PaymentService
                 'end_date' => $endDate?->toDateString(),
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'total_amount' => 0,
                 'total_count' => 0,
@@ -514,6 +558,7 @@ class PaymentService
             Log::error('Failed to retrieve payment summary', [
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'total_amount' => 0,
                 'total_count' => 0,
@@ -527,9 +572,9 @@ class PaymentService
 
     /**
      * Get paginated payments.
-     * 
-     * @param array $filters Filter criteria
-     * @param int $perPage Items per page
+     *
+     * @param  array  $filters  Filter criteria
+     * @param  int  $perPage  Items per page
      * @return LengthAwarePaginator Paginated payments
      */
     public function getPaginated(array $filters = [], int $perPage = 15): LengthAwarePaginator
@@ -537,34 +582,34 @@ class PaymentService
         try {
             $query = Payment::with(['student.user']);
 
-            if (!empty($filters['student_id'])) {
+            if (! empty($filters['student_id'])) {
                 $query->where('student_id', $filters['student_id']);
             }
 
-            if (!empty($filters['status'])) {
+            if (! empty($filters['status'])) {
                 $query->where('status', $filters['status']);
             }
 
-            if (!empty($filters['payment_method'])) {
+            if (! empty($filters['payment_method'])) {
                 $query->where('payment_method', $filters['payment_method']);
             }
 
-            if (!empty($filters['start_date'])) {
+            if (! empty($filters['start_date'])) {
                 $query->where('payment_date', '>=', $filters['start_date']);
             }
 
-            if (!empty($filters['end_date'])) {
+            if (! empty($filters['end_date'])) {
                 $query->where('payment_date', '<=', $filters['end_date']);
             }
 
-            if (!empty($filters['search'])) {
+            if (! empty($filters['search'])) {
                 $search = $filters['search'];
                 $query->where(function ($q) use ($search) {
                     $q->where('receipt_number', 'like', "%{$search}%")
-                      ->orWhere('transaction_id', 'like', "%{$search}%")
-                      ->orWhereHas('student', function ($sq) use ($search) {
-                          $sq->where('registration_no', 'like', "%{$search}%");
-                      });
+                        ->orWhere('transaction_id', 'like', "%{$search}%")
+                        ->orWhereHas('student', function ($sq) use ($search) {
+                            $sq->where('registration_no', 'like', "%{$search}%");
+                        });
                 });
             }
 
@@ -574,19 +619,21 @@ class PaymentService
                 'filters' => $filters,
                 'error' => $e->getMessage(),
             ]);
+
             // Return empty paginator on error
             return new LengthAwarePaginator([], 0, $perPage);
         } catch (Exception $e) {
             Log::error('Failed to retrieve paginated payments', [
                 'error' => $e->getMessage(),
             ]);
+
             return new LengthAwarePaginator([], 0, $perPage);
         }
     }
 
     /**
      * Get students with outstanding dues.
-     * 
+     *
      * @return Collection Students with dues
      */
     public function getStudentsWithDues(): Collection
@@ -600,18 +647,20 @@ class PaymentService
             Log::error('Database error retrieving students with dues', [
                 'error' => $e->getMessage(),
             ]);
+
             return collect();
         } catch (Exception $e) {
             Log::error('Failed to retrieve students with dues', [
                 'error' => $e->getMessage(),
             ]);
+
             return collect();
         }
     }
 
     /**
      * Get overdue invoices.
-     * 
+     *
      * @return Collection Overdue invoices
      */
     public function getOverdueInvoices(): Collection
@@ -625,26 +674,30 @@ class PaymentService
             Log::error('Database error retrieving overdue invoices', [
                 'error' => $e->getMessage(),
             ]);
+
             return collect();
         } catch (Exception $e) {
             Log::error('Failed to retrieve overdue invoices', [
                 'error' => $e->getMessage(),
             ]);
+
             return collect();
         }
     }
 
     /**
      * Mark invoice as paid.
-     * 
-     * @param Invoice $invoice The invoice to mark as paid
+     *
+     * @param  Invoice  $invoice  The invoice to mark as paid
      * @return Invoice The updated invoice
+     *
      * @throws Exception If update fails
      */
     public function markInvoicePaid(Invoice $invoice): Invoice
     {
         try {
             $invoice->update(['status' => 'paid']);
+
             return $invoice->fresh();
         } catch (QueryException $e) {
             Log::error('Database error marking invoice as paid', [
@@ -657,13 +710,13 @@ class PaymentService
                 'invoice_id' => $invoice->id,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('Unable to update invoice status: ' . $e->getMessage());
+            throw new Exception('Unable to update invoice status: '.$e->getMessage());
         }
     }
 
     /**
      * Get payment statistics.
-     * 
+     *
      * @return array Payment statistics
      */
     public function getStatistics(): array
@@ -686,6 +739,7 @@ class PaymentService
             Log::error('Database error retrieving payment statistics', [
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'today' => 0,
                 'this_month' => 0,
@@ -698,6 +752,7 @@ class PaymentService
             Log::error('Failed to retrieve payment statistics', [
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'today' => 0,
                 'this_month' => 0,
@@ -711,10 +766,11 @@ class PaymentService
 
     /**
      * Refund a payment.
-     * 
-     * @param Payment $payment The payment to refund
-     * @param string|null $reason Refund reason
+     *
+     * @param  Payment  $payment  The payment to refund
+     * @param  string|null  $reason  Refund reason
      * @return Payment The updated payment
+     *
      * @throws Exception If refund fails
      */
     public function refundPayment(Payment $payment, ?string $reason = null): Payment
@@ -723,7 +779,7 @@ class PaymentService
             return DB::transaction(function () use ($payment, $reason) {
                 $payment->update([
                     'status' => 'refunded',
-                    'notes' => $payment->notes . "\nRefunded: " . ($reason ?? 'No reason provided'),
+                    'notes' => $payment->notes."\nRefunded: ".($reason ?? 'No reason provided'),
                 ]);
 
                 // Update student balance
@@ -742,14 +798,14 @@ class PaymentService
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('Unable to process refund: ' . $e->getMessage());
+            throw new Exception('Unable to process refund: '.$e->getMessage());
         }
     }
 
     /**
      * Get daily payment report.
-     * 
-     * @param Carbon $date The date to get report for
+     *
+     * @param  Carbon  $date  The date to get report for
      * @return array Daily report data
      */
     public function getDailyReport(Carbon $date): array
@@ -770,6 +826,7 @@ class PaymentService
                 'date' => $date->toDateString(),
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'date' => $date->toDateString(),
                 'total_amount' => 0,
@@ -782,6 +839,7 @@ class PaymentService
                 'date' => $date->toDateString(),
                 'error' => $e->getMessage(),
             ]);
+
             return [
                 'date' => $date->toDateString(),
                 'total_amount' => 0,

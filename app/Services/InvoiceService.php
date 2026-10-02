@@ -192,7 +192,11 @@ class InvoiceService
     {
         try {
             DB::transaction(function () use ($invoice, $payment) {
-                $totalPaid = Payment::where('student_id', $invoice->student_id)
+                // Scoped to this invoice. Previously this summed every settled
+                // payment the student had ever made, so with two invoices
+                // outstanding a single payment against one flipped the other to
+                // "paid" as well, despite nothing having been paid against it.
+                $totalPaid = Payment::where('invoice_id', $invoice->id)
                     ->whereIn('status', \App\Models\Payment::settledStatuses())
                     ->sum('amount');
 

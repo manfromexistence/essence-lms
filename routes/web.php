@@ -24,7 +24,12 @@ Route::get('/teachers', [HomeController::class, 'teachers'])->name('teachers');
 
 Route::get('/students', [HomeController::class, 'students'])->name('students');
 
-Route::get('/results', [HomeController::class, 'results'])->name('results');
+// Public result lookup. Throttled because it takes a registration number and an
+// exam id, both of which are sequential, so without a limit the whole student
+// body can be walked one guess at a time.
+Route::get('/results', [HomeController::class, 'results'])
+    ->middleware('throttle:30,1')
+    ->name('results');
 
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 Route::post('/contact', [HomeController::class, 'submitContact'])->name('contact.submit')->middleware('throttle:5,1');

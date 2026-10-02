@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Course;
+use App\Models\CqSubmission;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Question;
@@ -13,13 +14,12 @@ use Illuminate\Http\Request;
 
 class OnlineExamController extends Controller
 {
-    public function __construct(protected ExamService $examService)
-    {
-    }
+    public function __construct(protected ExamService $examService) {}
 
     public function index()
     {
         $exams = Exam::with(['batch', 'course'])->latest()->paginate(15);
+
         return view('dashboard.exams.index', compact('exams'));
     }
 
@@ -28,6 +28,7 @@ class OnlineExamController extends Controller
         $exams = Exam::where('type', 'mcq')->with(['batch', 'course'])->latest()->paginate(15);
         $batches = Batch::active()->get();
         $courses = Course::active()->get();
+
         return view('dashboard.exams.mcq', compact('exams', 'batches', 'courses'));
     }
 
@@ -36,26 +37,28 @@ class OnlineExamController extends Controller
         $exams = Exam::where('type', 'cq')->with(['batch', 'course'])->latest()->paginate(15);
         $batches = Batch::active()->get();
         $courses = Course::active()->get();
+
         return view('dashboard.exams.cq', compact('exams', 'batches', 'courses'));
     }
 
     public function live()
     {
         $exams = Exam::where('status', 'live')->with(['batch', 'course'])->get();
+
         return view('dashboard.exams.live', compact('exams'));
     }
 
     public function results(Request $request)
     {
         $query = ExamResult::with(['student.user', 'exam']);
-        
+
         if ($request->exam_id) {
             $query->where('exam_id', $request->exam_id);
         }
-        
+
         $results = $query->latest()->paginate(20);
         $exams = Exam::all();
-        
+
         return view('dashboard.exams.results', compact('results', 'exams'));
     }
 
@@ -63,16 +66,16 @@ class OnlineExamController extends Controller
     {
         $examId = $request->get('exam_id');
         $leaderboard = collect();
-        
+
         if ($examId) {
             $leaderboard = ExamResult::with(['student.user', 'exam'])
                 ->where('exam_id', $examId)
                 ->orderByDesc('obtained_marks')
                 ->get();
         }
-        
+
         $exams = Exam::whereHas('results')->withCount('results')->with('results')->get();
-        
+
         return view('dashboard.exams.leaderboard', compact('leaderboard', 'exams', 'examId'));
     }
 
@@ -80,6 +83,7 @@ class OnlineExamController extends Controller
     {
         $batches = Batch::active()->get();
         $courses = Course::active()->get();
+
         return view('dashboard.exams.create', compact('batches', 'courses'));
     }
 
@@ -98,7 +102,7 @@ class OnlineExamController extends Controller
             'instructions' => 'nullable|string',
         ]);
 
-        $exam = $request->type === 'mcq' 
+        $exam = $request->type === 'mcq'
             ? $this->examService->createMcqExam($request->all())
             : $this->examService->createCqExam($request->all());
 
@@ -109,6 +113,7 @@ class OnlineExamController extends Controller
     public function show(Exam $exam)
     {
         $exam->load(['batch', 'course', 'questions', 'results.student']);
+
         return view('dashboard.exams.show', compact('exam'));
     }
 
@@ -116,6 +121,7 @@ class OnlineExamController extends Controller
     {
         $batches = Batch::active()->get();
         $courses = Course::active()->get();
+
         return view('dashboard.exams.edit', compact('exam', 'batches', 'courses'));
     }
 
@@ -134,7 +140,7 @@ class OnlineExamController extends Controller
 
         $exam->update($request->only([
             'title', 'total_marks', 'pass_marks', 'duration_minutes',
-            'start_time', 'end_time', 'instructions', 'status'
+            'start_time', 'end_time', 'instructions', 'status',
         ]));
 
         return redirect()->route('dashboard.exams.show', $exam)
@@ -155,7 +161,7 @@ class OnlineExamController extends Controller
     {
         $request->validate([
             'question_text' => 'required|string',
-            'type' => 'required|in:mcq,short,long',
+            'type' => 'required|in:mcq,cq,true_false,short_answer',
             'options' => 'required_if:type,mcq|array',
             'correct_answer' => 'required_if:type,mcq',
             'marks' => 'required|integer|min:1',
@@ -170,7 +176,7 @@ class OnlineExamController extends Controller
     {
         $request->validate([
             'question_text' => 'required|string',
-            'type' => 'required|in:mcq,short,long',
+            'type' => 'required|in:mcq,cq,true_false,short_answer',
             'options' => 'required_if:type,mcq|array|min:2',
             'options.*' => 'required_if:type,mcq|string',
             'correct_answer' => 'required_if:type,mcq|string',
@@ -178,10 +184,10 @@ class OnlineExamController extends Controller
         ]);
 
         $data = $request->only(['question_text', 'type', 'marks']);
-        
+
         if ($request->type === 'mcq') {
             // Filter out empty options
-            $options = array_filter($request->options, fn($opt) => !empty(trim($opt)));
+            $options = array_filter($request->options, fn ($opt) => ! empty(trim($opt)));
             $data['options'] = array_values($options);
             $data['correct_answer'] = $request->correct_answer;
         }
@@ -199,10 +205,12 @@ class OnlineExamController extends Controller
             if ($question->exam_id !== $exam->id) {
                 return response()->json(['error' => 'Question not found'], 404);
             }
+
             return response()->json($question);
         } catch (\Exception $e) {
-            \Log::error('Error fetching question: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load question: ' . $e->getMessage()], 500);
+            \Log::error('Error fetching question: '.$e->getMessage());
+
+            return response()->json(['error' => 'Failed to load question: '.$e->getMessage()], 500);
         }
     }
 
@@ -210,7 +218,7 @@ class OnlineExamController extends Controller
     {
         $request->validate([
             'question_text' => 'required|string',
-            'type' => 'required|in:mcq,short,long',
+            'type' => 'required|in:mcq,cq,true_false,short_answer',
             'options' => 'required_if:type,mcq|array|min:2',
             'options.*' => 'required_if:type,mcq|string',
             'correct_answer' => 'required_if:type,mcq|string',
@@ -221,12 +229,12 @@ class OnlineExamController extends Controller
         if ($question->exam_id !== $exam->id) {
             abort(404);
         }
-        
+
         $data = $request->only(['question_text', 'type', 'marks']);
-        
+
         if ($request->type === 'mcq') {
             // Filter out empty options
-            $options = array_filter($request->options, fn($opt) => !empty(trim($opt)));
+            $options = array_filter($request->options, fn ($opt) => ! empty(trim($opt)));
             $data['options'] = array_values($options);
             $data['correct_answer'] = $request->correct_answer;
         } else {
@@ -246,7 +254,7 @@ class OnlineExamController extends Controller
         if ($question->exam_id !== $exam->id) {
             abort(404);
         }
-        
+
         $question->delete();
 
         return redirect()->route('dashboard.exams.show', $exam)
@@ -258,10 +266,10 @@ class OnlineExamController extends Controller
     {
         $exam = Exam::with('results.student')->findOrFail($examId);
         $format = $request->get('format', 'excel');
-        $filename = 'results-' . $exam->id . '-' . date('Y-m-d');
+        $filename = 'results-'.$exam->id.'-'.date('Y-m-d');
 
         if ($format === 'json') {
-            $results = $exam->results->map(function($r) use ($exam) {
+            $results = $exam->results->map(function ($r) use ($exam) {
                 return [
                     'student_name' => $r->student->name_bn ?? $r->student->user->name ?? 'N/A',
                     'student_id' => $r->student->registration_no ?? 'N/A',
@@ -275,27 +283,27 @@ class OnlineExamController extends Controller
 
             return response()->json($results)
                 ->header('Content-Type', 'application/json')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '.json"');
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'.json"');
         }
 
         // For Excel/CSV, we'll create a simple array export
         $data = [];
         $data[] = ['Student Name', 'Student ID', 'Obtained Marks', 'Total Marks', 'Percentage', 'Grade', 'Status'];
-        
+
         foreach ($exam->results as $result) {
             $data[] = [
                 $result->student->name_bn ?? $result->student->user->name ?? 'N/A',
                 $result->student->registration_no ?? 'N/A',
                 $result->obtained_marks,
                 $result->total_marks,
-                number_format(($result->obtained_marks / $result->total_marks) * 100, 2) . '%',
+                number_format(($result->obtained_marks / $result->total_marks) * 100, 2).'%',
                 $result->grade,
                 $result->obtained_marks >= $exam->pass_marks ? 'Passed' : 'Failed',
             ];
         }
 
         if ($format === 'csv') {
-            $callback = function() use ($data) {
+            $callback = function () use ($data) {
                 $file = fopen('php://output', 'w');
                 foreach ($data as $row) {
                     fputcsv($file, $row);
@@ -305,21 +313,21 @@ class OnlineExamController extends Controller
 
             return response()->stream($callback, 200, [
                 'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'.csv"',
             ]);
         }
 
         // Simple Excel export using HTML table
         $html = '<table><thead><tr>';
         foreach ($data[0] as $header) {
-            $html .= '<th>' . htmlspecialchars($header) . '</th>';
+            $html .= '<th>'.htmlspecialchars($header).'</th>';
         }
         $html .= '</tr></thead><tbody>';
-        
+
         for ($i = 1; $i < count($data); $i++) {
             $html .= '<tr>';
             foreach ($data[$i] as $cell) {
-                $html .= '<td>' . htmlspecialchars($cell) . '</td>';
+                $html .= '<td>'.htmlspecialchars($cell).'</td>';
             }
             $html .= '</tr>';
         }
@@ -327,47 +335,74 @@ class OnlineExamController extends Controller
 
         return response($html, 200, [
             'Content-Type' => 'application/vnd.ms-excel',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '.xls"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'.xls"',
         ]);
+    }
+
+    /**
+     * Confirm a nested resource really belongs to the exam in the URL.
+     *
+     * Route model binding resolves {exam} and {result} independently, so without
+     * this any result in the database could be read, edited or deleted through
+     * any exam's URL — and updateResult() would validate the mark against the
+     * wrong exam's total_marks, defeating that clamp entirely.
+     *
+     * The sibling methods (getQuestion, updateQuestion, destroyQuestion,
+     * reviewSubmission, saveReview) already did this; these four did not.
+     */
+    private function assertResultBelongsToExam(Exam $exam, ExamResult $result): void
+    {
+        abort_if($result->exam_id !== $exam->id, 404, 'Result not found for this exam.');
     }
 
     // View Result
     public function viewResult(Exam $exam, ExamResult $result)
     {
+        $this->assertResultBelongsToExam($exam, $result);
+
         $result->load('student', 'exam');
+
         return view('dashboard.exams.view-result', compact('exam', 'result'));
     }
 
     // Edit Result
     public function editResult(Exam $exam, ExamResult $result)
     {
+        $this->assertResultBelongsToExam($exam, $result);
+
         $result->load('student', 'exam');
+
         return view('dashboard.exams.edit-result', compact('exam', 'result'));
     }
 
     // Update Result
     public function updateResult(Request $request, Exam $exam, ExamResult $result)
     {
+        $this->assertResultBelongsToExam($exam, $result);
+
         $request->validate([
-            'obtained_marks' => 'required|numeric|min:0|max:' . $exam->total_marks,
+            'obtained_marks' => 'required|numeric|min:0|max:'.$exam->total_marks,
             'grade' => 'nullable|string',
         ]);
 
-        // Auto-calculate grade if not provided
+        // Auto-calculate grade if not provided, using the institute's single
+        // scale so a manual edit agrees with the auto-scored rows.
         $grade = $request->grade;
         if (empty($grade)) {
-            $percentage = ($request->obtained_marks / $exam->total_marks) * 100;
-            if ($percentage >= 80) $grade = 'A+';
-            elseif ($percentage >= 70) $grade = 'A';
-            elseif ($percentage >= 60) $grade = 'A-';
-            elseif ($percentage >= 50) $grade = 'B';
-            elseif ($percentage >= 40) $grade = 'C';
-            elseif ($percentage >= 33) $grade = 'D';
-            else $grade = 'F';
+            $percentage = $exam->total_marks > 0
+                ? ((float) $request->obtained_marks / $exam->total_marks) * 100
+                : 0.0;
+
+            $grade = ExamResult::gradeForPercentage($percentage);
         }
 
+        // `marks` is the legacy column the downloadable mark sheet prints.
+        // Updating only obtained_marks left the PDF showing the original number
+        // after an admin corrected the mark in the UI.
         $result->update([
             'obtained_marks' => $request->obtained_marks,
+            'marks' => $request->obtained_marks,
+            'total_marks' => $exam->total_marks,
             'grade' => $grade,
         ]);
 
@@ -378,6 +413,8 @@ class OnlineExamController extends Controller
     // Delete Result
     public function deleteResult(Exam $exam, ExamResult $result)
     {
+        $this->assertResultBelongsToExam($exam, $result);
+
         $result->delete();
 
         return redirect()->route('dashboard.exams.show', $exam)
@@ -405,7 +442,7 @@ class OnlineExamController extends Controller
             if ($format === 'json') {
                 $content = file_get_contents($file->getRealPath());
                 $questions = json_decode($content, true);
-                
+
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     throw new \Exception('Invalid JSON format');
                 }
@@ -423,10 +460,12 @@ class OnlineExamController extends Controller
                 // CSV/Excel import
                 $handle = fopen($file->getRealPath(), 'r');
                 $header = fgetcsv($handle); // Skip header row
-                
+
                 while (($row = fgetcsv($handle)) !== false) {
-                    if (count($row) < 3) continue; // Skip invalid rows
-                    
+                    if (count($row) < 3) {
+                        continue;
+                    } // Skip invalid rows
+
                     $options = null;
                     if ($row[1] === 'mcq' && isset($row[3])) {
                         $options = array_filter([
@@ -451,7 +490,7 @@ class OnlineExamController extends Controller
             return redirect()->route('dashboard.exams.show', $exam)
                 ->with('success', 'Questions imported successfully!');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Import failed: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Import failed: '.$e->getMessage()]);
         }
     }
 
@@ -459,10 +498,10 @@ class OnlineExamController extends Controller
     public function exportQuestions(Request $request, Exam $exam)
     {
         $format = $request->get('format', 'excel');
-        $filename = 'questions-' . $exam->id . '-' . date('Y-m-d');
+        $filename = 'questions-'.$exam->id.'-'.date('Y-m-d');
 
         if ($format === 'json') {
-            $questions = $exam->questions->map(function($q) {
+            $questions = $exam->questions->map(function ($q) {
                 return [
                     'question_text' => $q->question_text,
                     'type' => $q->type,
@@ -474,13 +513,13 @@ class OnlineExamController extends Controller
 
             return response()->json($questions)
                 ->header('Content-Type', 'application/json')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '.json"');
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'.json"');
         }
 
         // Prepare data
         $data = [];
         $data[] = ['Question Text', 'Type', 'Marks', 'Option A', 'Option B', 'Option C', 'Option D', 'Correct Answer'];
-        
+
         foreach ($exam->questions as $question) {
             $options = $question->options ?? [];
             $data[] = [
@@ -496,7 +535,7 @@ class OnlineExamController extends Controller
         }
 
         if ($format === 'csv') {
-            $callback = function() use ($data) {
+            $callback = function () use ($data) {
                 $file = fopen('php://output', 'w');
                 foreach ($data as $row) {
                     fputcsv($file, $row);
@@ -506,21 +545,21 @@ class OnlineExamController extends Controller
 
             return response()->stream($callback, 200, [
                 'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'.csv"',
             ]);
         }
 
         // Simple Excel export
         $html = '<table><thead><tr>';
         foreach ($data[0] as $header) {
-            $html .= '<th>' . htmlspecialchars($header) . '</th>';
+            $html .= '<th>'.htmlspecialchars($header).'</th>';
         }
         $html .= '</tr></thead><tbody>';
-        
+
         for ($i = 1; $i < count($data); $i++) {
             $html .= '<tr>';
             foreach ($data[$i] as $cell) {
-                $html .= '<td>' . htmlspecialchars($cell) . '</td>';
+                $html .= '<td>'.htmlspecialchars($cell).'</td>';
             }
             $html .= '</tr>';
         }
@@ -528,7 +567,7 @@ class OnlineExamController extends Controller
 
         return response($html, 200, [
             'Content-Type' => 'application/vnd.ms-excel',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '.xls"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'.xls"',
         ]);
     }
 
@@ -562,11 +601,11 @@ class OnlineExamController extends Controller
 
             return response()->json($jsonData)
                 ->header('Content-Type', 'application/json')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '.json"');
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'.json"');
         }
 
         if ($format === 'csv') {
-            $callback = function() use ($sampleData) {
+            $callback = function () use ($sampleData) {
                 $file = fopen('php://output', 'w');
                 foreach ($sampleData as $row) {
                     fputcsv($file, $row);
@@ -576,21 +615,21 @@ class OnlineExamController extends Controller
 
             return response()->stream($callback, 200, [
                 'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'.csv"',
             ]);
         }
 
         // Excel template
         $html = '<table><thead><tr>';
         foreach ($sampleData[0] as $header) {
-            $html .= '<th>' . htmlspecialchars($header) . '</th>';
+            $html .= '<th>'.htmlspecialchars($header).'</th>';
         }
         $html .= '</tr></thead><tbody>';
-        
+
         for ($i = 1; $i < count($sampleData); $i++) {
             $html .= '<tr>';
             foreach ($sampleData[$i] as $cell) {
-                $html .= '<td>' . htmlspecialchars($cell) . '</td>';
+                $html .= '<td>'.htmlspecialchars($cell).'</td>';
             }
             $html .= '</tr>';
         }
@@ -598,14 +637,14 @@ class OnlineExamController extends Controller
 
         return response($html, 200, [
             'Content-Type' => 'application/vnd.ms-excel',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '.xls"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'.xls"',
         ]);
     }
 
     // Review Submissions List
     public function reviewSubmissions(Exam $exam)
     {
-        $base = \App\Models\CqSubmission::where('exam_id', $exam->id);
+        $base = CqSubmission::where('exam_id', $exam->id);
 
         // Paginated: the view renders ->total() and ->links(), which only exist
         // on a paginator (a plain get() collection made the page 500).
@@ -639,8 +678,8 @@ class OnlineExamController extends Controller
     // Review Single Submission
     public function reviewSubmission(Exam $exam, $submission)
     {
-        $submission = \App\Models\CqSubmission::findOrFail($submission);
-        
+        $submission = CqSubmission::findOrFail($submission);
+
         if ($submission->exam_id !== $exam->id) {
             abort(404);
         }
@@ -651,14 +690,14 @@ class OnlineExamController extends Controller
     // Save Review
     public function saveReview(Request $request, Exam $exam, $submission)
     {
-        $submission = \App\Models\CqSubmission::findOrFail($submission);
-        
+        $submission = CqSubmission::findOrFail($submission);
+
         if ($submission->exam_id !== $exam->id) {
             abort(404);
         }
 
         $request->validate([
-            'marks' => 'required|numeric|min:0|max:' . $exam->total_marks,
+            'marks' => 'required|numeric|min:0|max:'.$exam->total_marks,
             'feedback' => 'nullable|string',
             'teacher_notes' => 'nullable|string',
             'annotated_files' => 'nullable|string',

@@ -2,18 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\Student;
-use App\Models\Exam;
-use App\Models\ExamResult;
-use App\Models\Attendance;
-use App\Models\Payment;
 use App\Models\Announcement;
+use App\Models\Attendance;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\CourseVideo;
+use App\Models\CourseMaterial;
+use App\Models\Exam;
+use App\Models\ExamResult;
+use App\Models\Payment;
+use App\Models\Student;
 use App\Models\VideoView;
 use Carbon\Carbon;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class StudentPortalService
@@ -49,7 +50,7 @@ class StudentPortalService
         $progress = [];
         foreach ($enrollments as $enrollment) {
             $course = $enrollment->course;
-            if (!$course) {
+            if (! $course) {
                 continue;
             }
 
@@ -60,7 +61,7 @@ class StudentPortalService
                 ->pluck('course_video_id')
                 ->toArray();
 
-            $nextVideo = $videos->first(fn ($item) => !in_array($item->id, $completedVideos));
+            $nextVideo = $videos->first(fn ($item) => ! in_array($item->id, $completedVideos));
 
             $progress[] = [
                 'course' => $course,
@@ -136,7 +137,7 @@ class StudentPortalService
         }
 
         $totalClasses = $query->count();
-        $presentClasses = (clone $query)->where('status', 'present')->count();
+        $presentClasses = (clone $query)->attended()->count();
         $percentage = $totalClasses > 0 ? round(($presentClasses / $totalClasses) * 100, 1) : 0;
 
         return [
@@ -155,9 +156,9 @@ class StudentPortalService
         // Get all active exams that the student has access to
         // Either exams with no batch restriction OR exams for the student's batch
         $query = Exam::where('status', 'active')
-            ->where(function($q) use ($student) {
+            ->where(function ($q) use ($student) {
                 $q->whereNull('batch_id')
-                  ->orWhere('batch_id', $student->batch_id);
+                    ->orWhere('batch_id', $student->batch_id);
             });
 
         // Get exam IDs that the student has already completed
@@ -166,7 +167,7 @@ class StudentPortalService
             ->toArray();
 
         // Exclude completed exams
-        if (!empty($completedExamIds)) {
+        if (! empty($completedExamIds)) {
             $query->whereNotIn('id', $completedExamIds);
         }
 
@@ -203,22 +204,22 @@ class StudentPortalService
     /**
      * Get all exam results for a student with filtering.
      */
-    public function getResults(Student $student, array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getResults(Student $student, array $filters = []): LengthAwarePaginator
     {
         $query = ExamResult::where('student_id', $student->id)
             ->with(['exam']);
 
-        if (!empty($filters['exam_type'])) {
+        if (! empty($filters['exam_type'])) {
             $query->whereHas('exam', function ($q) use ($filters) {
                 $q->where('type', $filters['exam_type']);
             });
         }
 
-        if (!empty($filters['from_date'])) {
+        if (! empty($filters['from_date'])) {
             $query->whereDate('created_at', '>=', $filters['from_date']);
         }
 
-        if (!empty($filters['to_date'])) {
+        if (! empty($filters['to_date'])) {
             $query->whereDate('created_at', '<=', $filters['to_date']);
         }
 
@@ -239,7 +240,7 @@ class StudentPortalService
         return [
             'labels' => $results->pluck('exam.title')->toArray(),
             'scores' => $results->pluck('percentage')->toArray(),
-            'dates' => $results->pluck('created_at')->map(fn($d) => $d->format('M d'))->toArray(),
+            'dates' => $results->pluck('created_at')->map(fn ($d) => $d->format('M d'))->toArray(),
         ];
     }
 
@@ -248,7 +249,7 @@ class StudentPortalService
      */
     public function getSchedule(Student $student): Collection
     {
-        if (!$student->batch_id) {
+        if (! $student->batch_id) {
             return collect();
         }
 
@@ -258,7 +259,7 @@ class StudentPortalService
     /**
      * Get payment history for a student.
      */
-    public function getPaymentHistory(Student $student): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getPaymentHistory(Student $student): LengthAwarePaginator
     {
         return Payment::where('student_id', $student->id)
             ->orderBy('created_at', 'desc')
@@ -282,7 +283,7 @@ class StudentPortalService
             return collect();
         }
 
-        return \App\Models\CourseMaterial::whereIn('course_id', $courseIds)
+        return CourseMaterial::whereIn('course_id', $courseIds)
             ->orderBy('order')
             ->get()
             ->groupBy('type');

@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\Student;
+use App\Models\CqSubmission;
 use App\Models\Exam;
-use App\Storage\CatboxStorage;
 use App\Models\ExamAttempt;
 use App\Models\ExamResult;
-use App\Models\CqSubmission;
 use App\Models\Question;
+use App\Models\Student;
+use App\Storage\CatboxStorage;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ExamTakingService
 {
@@ -52,7 +52,7 @@ class ExamTakingService
 
         $answers = $attempt->answers ?? [];
         $answers[$questionId] = $answer;
-        
+
         $timePerQuestion = $attempt->time_per_question ?? [];
         $timePerQuestion[$questionId] = Carbon::now()->toISOString();
 
@@ -69,16 +69,24 @@ class ExamTakingService
      * before grading. Text answers live inside ExamAttempt.answers keyed by
      * question id; file uploads continue through submitCqAnswer().
      *
-     * @param array<int, string> $textAnswers
+     * @param  array<int, string>  $textAnswers
      */
     public function saveCqTextAnswers(ExamAttempt $attempt, array $textAnswers): void
     {
+        // Enforced here rather than trusting the browser, whose countdown is
+        // only a convenience. Without this a student could keep saving answers
+        // long after the attempt expired.
+        if ($attempt->status !== 'in_progress' || $attempt->isExpired()) {
+            return;
+        }
+
         $answers = $attempt->answers ?? [];
 
         foreach ($textAnswers as $questionId => $text) {
             $clean = trim(strip_tags((string) $text, '<p><br><ul><ol><li><b><strong><i><em><u>'));
             if ($clean === '') {
                 unset($answers[$questionId]);
+
                 continue;
             }
             $answers[$questionId] = mb_substr((string) $text, 0, 20000);
@@ -89,9 +97,9 @@ class ExamTakingService
 
     /**
      * Submit an exam attempt.
-     * 
+     *
      * Requirements: 2.2
-     * 
+     *
      * Task details:
      * - Validate exam attempt ownership (handled by controller)
      * - Save all answers to exam_attempts table (already saved via auto-save)
@@ -104,7 +112,7 @@ class ExamTakingService
         return DB::transaction(function () use ($attempt) {
             // Get exam details
             $exam = $attempt->exam;
-            
+
             // Calculate score based on exam type
             if ($exam->type === 'mcq') {
                 $score = $this->calculateMcqScore($attempt);
@@ -112,14 +120,26 @@ class ExamTakingService
                 // CQ exams need manual grading, set score to 0 initially
                 $score = 0;
             }
-            
-            // Mark attempt as submitted
+
+            // Mark attempt as submitted. An expired attempt is recorded as
+            // 'expired' rather than 'submitted', so the audit trail distinguishes
+            // a deadline that passed from a student pressing submit in time.
+            $expired = $attempt->status === 'in_progress' && $attempt->isExpired();
+
             $attempt->update([
-                'status' => 'submitted',
+                'status' => $expired ? 'expired' : 'submitted',
                 'submitted_at' => Carbon::now(),
+                'auto_submitted_at' => $expired ? Carbon::now() : $attempt->auto_submitted_at,
             ]);
 
             $percentage = $exam->total_marks > 0 ? ($score / $exam->total_marks) * 100 : 0;
+
+            // The auto-score is the sum of question marks, which is not validated
+            // against exams.total_marks. If they disagree a perfect paper could
+            // write obtained_marks above the total, producing a percentage over
+            // 100 and a grade the admin UI could no longer correct, because the
+            // edit form clamps to total_marks.
+            $cappedScore = $exam->total_marks > 0 ? min($score, $exam->total_marks) : $score;
 
             // Get subject name from exam title or course
             $subjectName = $exam->title;
@@ -135,8 +155,8 @@ class ExamTakingService
                 ],
                 [
                     'subject_name' => $subjectName,
-                    'marks' => $score,
-                    'obtained_marks' => $score,
+                    'marks' => $cappedScore,
+                    'obtained_marks' => $cappedScore,
                     'total_marks' => $exam->total_marks,
                     'grade' => $exam->type === 'cq' ? 'Pending' : $this->calculateGrade($percentage),
                     'feedback' => $exam->type === 'cq' ? 'Awaiting manual grading' : $this->getRemarks($percentage),
@@ -184,18 +204,26 @@ class ExamTakingService
     }
 
     /**
-     * Auto-submit expired exams (for scheduled job).
+     * Auto-submit expired exams.
+     *
+     * This is a backstop for students who closed the tab rather than the
+     * primary enforcement — the deadline is also checked inline when an answer is
+     * saved or the exam is submitted, so nothing here is load-bearing for
+     * correctness.
      */
     public function autoSubmitExpired(): int
     {
         $count = 0;
-        
+
         $expiredAttempts = ExamAttempt::where('status', 'in_progress')
             ->get()
-            ->filter(fn($attempt) => $attempt->isExpired());
+            ->filter(fn ($attempt) => $attempt->isExpired());
 
         foreach ($expiredAttempts as $attempt) {
-            $attempt->update(['status' => 'expired']);
+            // submitExam() decides the final status itself from isExpired(), so
+            // the attempt is deliberately left as 'in_progress' here. Presetting
+            // it to 'expired' first used to make submitExam() see a non-running
+            // attempt and overwrite the status back to 'submitted'.
             $this->submitExam($attempt);
             $count++;
         }
@@ -205,9 +233,23 @@ class ExamTakingService
 
     /**
      * Submit CQ answer with file uploads.
+     *
+     * Refused once the attempt's time is up. Previously the only gate was the
+     * exam's start/end window, so an upload script could keep replacing the
+     * answer script long after the deadline.
      */
     public function submitCqAnswer(Student $student, Exam $exam, array $files): CqSubmission
     {
+        $attempt = ExamAttempt::where('student_id', $student->id)
+            ->where('exam_id', $exam->id)
+            ->first();
+
+        if ($attempt && ($attempt->status !== 'in_progress' || $attempt->isExpired())) {
+            throw ValidationException::withMessages([
+                'files' => 'This exam attempt has ended. Answers can no longer be submitted.',
+            ]);
+        }
+
         $storedFiles = [];
         $storage = app(CatboxStorage::class);
 
@@ -216,7 +258,7 @@ class ExamTakingService
                 $storedFiles[] = [
                     'path' => $storage->store(
                         $file,
-                        'cq-submissions/' . $exam->id,
+                        'cq-submissions/'.$exam->id,
                         $file->getClientOriginalName()
                     ),
                     'original_name' => $file->getClientOriginalName(),
@@ -250,12 +292,14 @@ class ExamTakingService
 
         foreach ($files as $index => $file) {
             if ($file instanceof UploadedFile) {
-                if (!in_array($file->getMimeType(), $allowedTypes)) {
+                if (! in_array($file->getMimeType(), $allowedTypes)) {
                     $errors[] = "File {$index}: Invalid file type. Allowed: PDF, JPG, PNG.";
+
                     continue;
                 }
                 if ($rejection = app(FileScanService::class)->inspect($file, $allowedExtensions)) {
                     $errors[] = "File {$index}: {$rejection}";
+
                     continue;
                 }
                 if ($file->getSize() > $maxSize) {
@@ -281,13 +325,13 @@ class ExamTakingService
 
         // Create or update exam result
         $exam = $submission->exam;
-        
+
         // Get subject name from exam title or course
         $subjectName = $exam->title;
         if ($exam->course) {
             $subjectName = $exam->course->name ?? $exam->title;
         }
-        
+
         ExamResult::updateOrCreate(
             [
                 'student_id' => $submission->student_id,
@@ -295,10 +339,12 @@ class ExamTakingService
             ],
             [
                 'subject_name' => $subjectName,
-                'marks' => $marks,
-                'obtained_marks' => $marks,
+                // Clamped for the same reason as the auto-score: a marker cannot
+                // award more than the paper is worth.
+                'marks' => $exam->total_marks > 0 ? min($marks, $exam->total_marks) : $marks,
+                'obtained_marks' => $exam->total_marks > 0 ? min($marks, $exam->total_marks) : $marks,
                 'total_marks' => $exam->total_marks,
-                'grade' => $this->calculateGrade(($marks / $exam->total_marks) * 100),
+                'grade' => $this->calculateGrade($exam->total_marks > 0 ? ($marks / $exam->total_marks) * 100 : 0.0),
                 'feedback' => $feedback,
             ]
         );
@@ -330,7 +376,7 @@ class ExamTakingService
             'total_marks' => $totalMarks,
             'total_possible' => $totalPossible,
             'percentage' => $totalPossible > 0 ? round(($totalMarks / $totalPossible) * 100, 2) : 0,
-            'grade' => $this->calculateGrade(($totalMarks / $totalPossible) * 100),
+            'grade' => $this->calculateGrade($totalPossible > 0 ? ($totalMarks / $totalPossible) * 100 : 0.0),
         ];
     }
 
@@ -339,15 +385,7 @@ class ExamTakingService
      */
     private function calculateGrade(float $percentage): string
     {
-        return match (true) {
-            $percentage >= 80 => 'A+',
-            $percentage >= 70 => 'A',
-            $percentage >= 60 => 'A-',
-            $percentage >= 50 => 'B',
-            $percentage >= 40 => 'C',
-            $percentage >= 33 => 'D',
-            default => 'F',
-        };
+        return ExamResult::gradeForPercentage($percentage);
     }
 
     /**

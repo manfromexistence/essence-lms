@@ -222,7 +222,7 @@ class StudentVerificationService
     private function attendance(Student $student): array
     {
         $total = Attendance::where('student_id', $student->id)->count();
-        $present = Attendance::where('student_id', $student->id)->where('status', 'present')->count();
+        $present = Attendance::where('student_id', $student->id)->attended()->count();
 
         return [
             'total_classes' => $total,

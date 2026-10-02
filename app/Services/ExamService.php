@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Models\Exam;
-use App\Models\Question;
 use App\Models\ExamResult;
+use App\Models\Question;
 use App\Models\Student;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class ExamService
 {
@@ -19,6 +19,7 @@ class ExamService
     public function createMcqExam(array $data): Exam
     {
         $data['type'] = 'mcq';
+
         return $this->createExam($data);
     }
 
@@ -28,6 +29,7 @@ class ExamService
     public function createCqExam(array $data): Exam
     {
         $data['type'] = 'cq';
+
         return $this->createExam($data);
     }
 
@@ -52,7 +54,7 @@ class ExamService
             ]);
 
             // Add questions if provided
-            if (!empty($data['questions'])) {
+            if (! empty($data['questions'])) {
                 foreach ($data['questions'] as $index => $questionData) {
                     $this->addQuestion($exam, array_merge($questionData, ['order' => $index + 1]));
                 }
@@ -86,6 +88,7 @@ class ExamService
     public function updateQuestion(Question $question, array $data): Question
     {
         $question->update($data);
+
         return $question->fresh();
     }
 
@@ -103,7 +106,7 @@ class ExamService
     public function submitExam(Exam $exam, Student $student, array $answers): ExamResult
     {
         // Check if exam is active
-        if (!$exam->isActive()) {
+        if (! $exam->isActive()) {
             throw new \RuntimeException('Exam is not currently active');
         }
 
@@ -176,23 +179,7 @@ class ExamService
             return 'N/A';
         }
 
-        $percentage = ($obtainedMarks / $totalMarks) * 100;
-
-        if ($percentage >= 90) {
-            return 'A+';
-        } elseif ($percentage >= 80) {
-            return 'A';
-        } elseif ($percentage >= 70) {
-            return 'B+';
-        } elseif ($percentage >= 60) {
-            return 'B';
-        } elseif ($percentage >= 50) {
-            return 'C';
-        } elseif ($percentage >= 40) {
-            return 'D';
-        } else {
-            return 'F';
-        }
+        return ExamResult::gradeForPercentage(($obtainedMarks / $totalMarks) * 100);
     }
 
     /**
@@ -208,6 +195,7 @@ class ExamService
             ->get()
             ->map(function ($result, $index) {
                 $result->position = $index + 1;
+
                 return $result;
             });
     }
@@ -253,6 +241,7 @@ class ExamService
     public function activateExam(Exam $exam): Exam
     {
         $exam->update(['status' => 'active']);
+
         return $exam->fresh();
     }
 
@@ -263,6 +252,7 @@ class ExamService
     {
         $exam->update(['status' => 'completed']);
         $this->updateRankings($exam);
+
         return $exam->fresh();
     }
 
@@ -289,24 +279,24 @@ class ExamService
         $query = Exam::with(['batch', 'course'])
             ->withCount('questions');
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->ofType($filters['type']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->withStatus($filters['status']);
         }
 
-        if (!empty($filters['batch_id'])) {
+        if (! empty($filters['batch_id'])) {
             $query->forBatch($filters['batch_id']);
         }
 
-        if (!empty($filters['course_id'])) {
+        if (! empty($filters['course_id'])) {
             $query->forCourse($filters['course_id']);
         }
 
-        if (!empty($filters['search'])) {
-            $query->where('title', 'like', '%' . $filters['search'] . '%');
+        if (! empty($filters['search'])) {
+            $query->where('title', 'like', '%'.$filters['search'].'%');
         }
 
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
@@ -320,7 +310,7 @@ class ExamService
         return Exam::active()
             ->where(function ($query) use ($student) {
                 $query->where('batch_id', $student->batch_id)
-                      ->orWhereNull('batch_id');
+                    ->orWhereNull('batch_id');
             })
             ->whereDoesntHave('results', function ($query) use ($student) {
                 $query->where('student_id', $student->id);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Services\PaymentService;
 use App\Models\Batch;
 use App\Models\CourseEnrollment;
 use App\Models\Notification;
@@ -59,6 +60,18 @@ class PaymentController extends Controller
         ));
         abort_if($configuredMethods === [], 503, 'Online payment is not configured yet. Please contact the office to complete admission.');
 
+        // A gateway transaction id identifies one movement of money, so it has to reach
+        // validation in the same form it is stored in. The unique rule compares
+        // the raw request value while the column is stored upper-cased and
+        // trimmed, so `abc123` slipped past the check and then collided on the
+        // unique index as an uncaught QueryException (a 500). Internal whitespace
+        // was worse: `ABC 123` is the same bKash transaction as `ABC123`, and
+        // both were credited.
+        //
+        // prepareForValidation() normalises first, so the check and the stored
+        // value can no longer disagree.
+        $request->merge(['transaction_id' => PaymentService::normaliseTransactionId($request->input('transaction_id'))]);
+
         $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'payment_method' => ['required', Rule::in($configuredMethods)],
@@ -110,9 +123,9 @@ class PaymentController extends Controller
             'student_id' => $student->id,
             'course_id' => $validated['course_id'],
             'payment_method' => $validated['payment_method'],
-            'transaction_id' => strtoupper(trim($validated['transaction_id'])),
+            'transaction_id' => $validated['transaction_id'],
             'sender_number' => $validated['sender_number'] ?? null,
-            'transaction_reference' => $validated['payment_method'] . ':' . strtoupper(trim($validated['transaction_id'])),
+            'transaction_reference' => $validated['payment_method'] . ':' . $validated['transaction_id'],
             'screenshot_path' => $screenshotUrl,
             'amount' => $course->price,
             'payment_date' => today(),
@@ -138,6 +151,7 @@ class PaymentController extends Controller
             ->with('success', 'Payment submitted successfully. Your payment is under review.');
     }
 
+    
     /**
      * Display list of pending payments for admin review.
      * Task 13.1

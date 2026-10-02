@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class ExamAttempt extends Model
 {
@@ -60,18 +60,26 @@ class ExamAttempt extends Model
 
     /**
      * Get remaining time in seconds.
+     *
+     * An exam with no duration is untimed, and is reported as unlimited rather
+     * than as zero. Treating a NULL duration as zero made `isExpired()` return
+     * true immediately, so every answer was rejected and the student was scored
+     * zero while their on-screen timer counted down from PHP_INT_MAX.
      */
     public function getRemainingTimeAttribute(): int
     {
-        if (!$this->exam || !$this->started_at) {
-            return 0;
+        if (! $this->exam || ! $this->started_at || ! $this->exam->duration_minutes) {
+            return $this->exam && ! $this->exam->duration_minutes ? PHP_INT_MAX : 0;
         }
 
-        $durationSeconds = ($this->exam->duration_minutes ?? 0) * 60;
-        $elapsedSeconds = Carbon::now()->diffInSeconds($this->started_at);
-        $remaining = $durationSeconds - $elapsedSeconds;
+        $durationSeconds = (int) $this->exam->duration_minutes * 60;
 
-        return max(0, $remaining);
+        // Subtracted from raw timestamps: Carbon's diffInSeconds() changed sign
+        // convention between major versions, which silently produced a huge
+        // elapsed value here.
+        $elapsedSeconds = max(0, Carbon::now()->getTimestamp() - $this->started_at->getTimestamp());
+
+        return max(0, $durationSeconds - $elapsedSeconds);
     }
 
     /**
@@ -91,7 +99,7 @@ class ExamAttempt extends Model
      */
     public function isInProgress(): bool
     {
-        return $this->status === 'in_progress' && !$this->isExpired();
+        return $this->status === 'in_progress' && ! $this->isExpired();
     }
 
     /**

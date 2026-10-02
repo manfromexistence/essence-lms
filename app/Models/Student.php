@@ -121,8 +121,20 @@ class Student extends Model
      */
     public function getBalanceAttribute($value): float
     {
-        // If balance is not set, return due_amount
-        return $value ?? $this->attributes['due_amount'] ?? 0;
+        // `balance` is declared NOT NULL DEFAULT 0 and nothing has ever written
+        // it since the one-off backfill, so `$value` was never null and the
+        // intended fallback never fired — "Total Outstanding" on the mark sheet,
+        // the student export and the dashboard always read ৳0.
+        //
+        // due_amount is the figure that is actually maintained, so it is
+        // preferred. An explicit non-zero balance, if one is ever recorded, wins.
+        $due = (float) ($this->attributes['due_amount'] ?? 0);
+
+        if ($due !== 0.0) {
+            return $due;
+        }
+
+        return (float) ($value ?? 0);
     }
 
     /**

@@ -43,6 +43,19 @@ Schedule::command('queue:prune-failed --hours=720')->daily();
 
 /*
 |--------------------------------------------------------------------------
+| Exam deadlines
+|--------------------------------------------------------------------------
+|
+| autoSubmitExpired() previously had no callers, so an attempt left open when a
+| student closed their browser stayed 'in_progress' forever. The deadline is
+| also enforced inline on save and submit, so this is a housekeeping backstop
+| rather than the thing making the deadline stick.
+*/
+
+Schedule::command('exams:auto-submit-expired')->everyFiveMinutes();
+
+/*
+|--------------------------------------------------------------------------
 | Report export housekeeping
 |--------------------------------------------------------------------------
 |

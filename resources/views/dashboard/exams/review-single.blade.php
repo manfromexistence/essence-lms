@@ -416,13 +416,16 @@
         const total = {{ $exam->total_marks }};
         const percentage = (marks / total) * 100;
         
+        // Mirrors ExamResult::gradeForPercentage. Kept in step deliberately:
+        // this scale decides which letter gets saved to the row.
         let grade = 'F';
         if (percentage >= 80) grade = 'A+';
         else if (percentage >= 70) grade = 'A';
-        else if (percentage >= 60) grade = 'B';
-        else if (percentage >= 50) grade = 'C';
-        else if (percentage >= 40) grade = 'D';
-        
+        else if (percentage >= 60) grade = 'A-';
+        else if (percentage >= 50) grade = 'B';
+        else if (percentage >= 40) grade = 'C';
+        else if (percentage >= 33) grade = 'D';
+
         document.getElementById('grade').value = grade;
     });
 </script>

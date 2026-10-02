@@ -6,9 +6,9 @@ use App\Models\Attendance;
 use App\Models\Batch;
 use App\Models\Student;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class AttendanceService
 {
@@ -29,7 +29,7 @@ class AttendanceService
         DB::transaction(function () use ($batch, $date, $attendanceData) {
             foreach ($attendanceData as $studentId => $status) {
                 // Validate status
-                if (!in_array($status, self::VALID_STATUSES)) {
+                if (! in_array($status, self::VALID_STATUSES)) {
                     throw new \InvalidArgumentException("Invalid attendance status: {$status}");
                 }
 
@@ -103,7 +103,7 @@ class AttendanceService
             return 0.0;
         }
 
-        $present = (clone $query)->whereIn('status', ['present', 'late'])->count();
+        $present = (clone $query)->attended()->count();
 
         return round(($present / $total) * 100, 2);
     }
@@ -119,10 +119,12 @@ class AttendanceService
             ->get()
             ->filter(function ($student) use ($threshold) {
                 $percentage = $this->calculateAttendancePercentage($student);
+
                 return $percentage < $threshold && $percentage > 0;
             })
             ->map(function ($student) {
                 $student->attendance_percentage = $this->calculateAttendancePercentage($student);
+
                 return $student;
             })
             ->sortBy('attendance_percentage');
@@ -154,23 +156,23 @@ class AttendanceService
     {
         $query = Attendance::with(['student.user', 'batch']);
 
-        if (!empty($filters['batch_id'])) {
+        if (! empty($filters['batch_id'])) {
             $query->where('batch_id', $filters['batch_id']);
         }
 
-        if (!empty($filters['student_id'])) {
+        if (! empty($filters['student_id'])) {
             $query->where('student_id', $filters['student_id']);
         }
 
-        if (!empty($filters['start_date'])) {
+        if (! empty($filters['start_date'])) {
             $query->where('date', '>=', $filters['start_date']);
         }
 
-        if (!empty($filters['end_date'])) {
+        if (! empty($filters['end_date'])) {
             $query->where('date', '<=', $filters['end_date']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
@@ -184,15 +186,15 @@ class AttendanceService
     {
         $query = Attendance::with(['student.user', 'batch']);
 
-        if (!empty($filters['batch_id'])) {
+        if (! empty($filters['batch_id'])) {
             $query->where('batch_id', $filters['batch_id']);
         }
 
-        if (!empty($filters['date'])) {
+        if (! empty($filters['date'])) {
             $query->where('date', $filters['date']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
@@ -237,7 +239,7 @@ class AttendanceService
             'absent_count' => $attendances->where('status', 'absent')->count(),
             'late_count' => $attendances->where('status', 'late')->count(),
             'excused_count' => $attendances->where('status', 'excused')->count(),
-            'average_attendance' => $totalDays > 0 
+            'average_attendance' => ($totalDays > 0 && $totalStudents > 0)
                 ? round(($attendances->whereIn('status', ['present', 'late'])->count() / ($totalDays * $totalStudents)) * 100, 2)
                 : 0,
         ];
@@ -257,6 +259,7 @@ class AttendanceService
 
         return $students->map(function ($student) use ($existingAttendance) {
             $student->attendance_status = $existingAttendance->get($student->id);
+
             return $student;
         });
     }

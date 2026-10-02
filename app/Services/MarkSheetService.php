@@ -2,18 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\Student;
 use App\Models\Exam;
 use App\Models\ExamResult;
+use App\Models\Student;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\View;
+use Illuminate\Http\Response;
 
 class MarkSheetService
 {
     /**
      * Generate a mark sheet PDF for a student and exam.
      */
-    public function generateMarkSheet(Student $student, ?Exam $exam = null): \Illuminate\Http\Response
+    public function generateMarkSheet(Student $student, ?Exam $exam = null): Response
     {
         $student->load(['batch.course']);
 
@@ -21,7 +21,7 @@ class MarkSheetService
             $result = ExamResult::where('student_id', $student->id)
                 ->where('exam_id', $exam->id)
                 ->first();
-            
+
             $data = [
                 'student' => $student,
                 'exam' => $exam,
@@ -52,10 +52,10 @@ class MarkSheetService
             ];
         }
 
-        $pdf = PDF::loadView('pdf.mark-sheet', $data);
+        $pdf = Pdf::loadView('pdf.mark-sheet', $data);
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'mark-sheet-' . $student->student_id . '-' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'mark-sheet-'.$student->student_id.'-'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -71,7 +71,7 @@ class MarkSheetService
             $result = ExamResult::where('student_id', $student->id)
                 ->where('exam_id', $exam->id)
                 ->first();
-            
+
             $data = [
                 'student' => $student,
                 'exam' => $exam,
@@ -101,7 +101,8 @@ class MarkSheetService
             ];
         }
 
-        $pdf = PDF::loadView('pdf.mark-sheet', $data);
+        $pdf = Pdf::loadView('pdf.mark-sheet', $data);
+
         return $pdf->stream();
     }
 
@@ -110,14 +111,6 @@ class MarkSheetService
      */
     private function calculateGrade(float $percentage): string
     {
-        return match (true) {
-            $percentage >= 80 => 'A+',
-            $percentage >= 70 => 'A',
-            $percentage >= 60 => 'A-',
-            $percentage >= 50 => 'B',
-            $percentage >= 40 => 'C',
-            $percentage >= 33 => 'D',
-            default => 'F',
-        };
+        return ExamResult::gradeForPercentage($percentage);
     }
 }
